@@ -34,6 +34,38 @@ final class RecordingLibrary: ObservableObject {
         await save()
     }
 
+    func delete(_ item: RecordingItem) async {
+        playbackSafeDelete(fileURL: item.fileURL)
+        items.removeAll { $0.id == item.id }
+        await save()
+    }
+
+    func rename(_ item: RecordingItem, to rawName: String) async {
+        guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
+        let cleanName = sanitizedFileName(rawName)
+        guard !cleanName.isEmpty else { return }
+
+        let oldURL = items[index].fileURL
+        let newURL = oldURL
+            .deletingLastPathComponent()
+            .appendingPathComponent(cleanName)
+            .appendingPathExtension(oldURL.pathExtension)
+
+        do {
+            if oldURL != newURL {
+                if FileManager.default.fileExists(atPath: newURL.path) {
+                    try FileManager.default.removeItem(at: newURL)
+                }
+                try FileManager.default.moveItem(at: oldURL, to: newURL)
+                items[index].fileURL = newURL
+            }
+            items[index].customName = cleanName
+            await save()
+        } catch {
+            assertionFailure("Failed to rename recording: \(error)")
+        }
+    }
+
     private func save() async {
         do {
             try RecordingStorage.ensureDirectories()
@@ -42,5 +74,18 @@ final class RecordingLibrary: ObservableObject {
         } catch {
             assertionFailure("Failed to save recording index: \(error)")
         }
+    }
+
+    private func playbackSafeDelete(fileURL: URL) {
+        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
+        try? FileManager.default.removeItem(at: fileURL)
+    }
+
+    private func sanitizedFileName(_ name: String) -> String {
+        let invalid = CharacterSet(charactersIn: "/\\?%*|\"<>:")
+        return name
+            .components(separatedBy: invalid)
+            .joined(separator: "-")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

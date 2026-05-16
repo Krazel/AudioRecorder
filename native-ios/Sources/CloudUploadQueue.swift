@@ -64,6 +64,11 @@ final class CloudUploadQueue: ObservableObject {
         await save()
     }
 
+    func removeJobs(recordingID: UUID) async {
+        jobs.removeAll { $0.recordingID == recordingID }
+        await save()
+    }
+
     private func save() async {
         do {
             try RecordingStorage.ensureDirectories()

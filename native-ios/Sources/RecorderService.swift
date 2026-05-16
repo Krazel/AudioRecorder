@@ -14,8 +14,7 @@ final class RecorderService: ObservableObject {
     private let analyzer = VoiceNoiseAnalyzer()
     private var currentFile: AVAudioFile?
     private var currentURL: URL?
-    private var segmentTimer: Timer?
-    private var elapsedTimer: Timer?
+    private var writtenDuration: TimeInterval = 0
     private var settings: RecordingSettingsStore?
     private var library: RecordingLibrary?
     private var uploadQueue: CloudUploadQueue?
@@ -35,7 +34,6 @@ final class RecorderService: ObservableObject {
             try configureAudioSession()
             try startNewSegment()
             try startEngine()
-            startTimers()
             isRecording = true
             lastError = nil
         } catch {
@@ -45,10 +43,6 @@ final class RecorderService: ObservableObject {
     }
 
     func stop() {
-        segmentTimer?.invalidate()
-        elapsedTimer?.invalidate()
-        segmentTimer = nil
-        elapsedTimer = nil
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
         completeCurrentSegment()
@@ -106,6 +100,7 @@ final class RecorderService: ObservableObject {
         currentFile = file
         currentURL = url
         currentSegmentStartedAt = Date()
+        writtenDuration = 0
         elapsed = 0
     }
 
@@ -129,7 +124,13 @@ final class RecorderService: ObservableObject {
 
         do {
             try currentFile?.write(from: buffer)
+            let bufferDuration = Double(buffer.frameLength) / buffer.format.sampleRate
+            writtenDuration += bufferDuration
+            elapsed = writtenDuration
             isWritingAudio = true
+            if let settings, writtenDuration >= settings.segmentDuration {
+                rotateSegment()
+            }
         } catch {
             lastError = error.localizedDescription
         }
@@ -147,21 +148,6 @@ final class RecorderService: ObservableObject {
         }
     }
 
-    private func startTimers() {
-        guard let settings else { return }
-        segmentTimer = Timer.scheduledTimer(withTimeInterval: settings.segmentDuration, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.rotateSegment()
-            }
-        }
-        elapsedTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                guard let startedAt = self?.currentSegmentStartedAt else { return }
-                self?.elapsed = Date().timeIntervalSince(startedAt)
-            }
-        }
-    }
-
     private func completeCurrentSegment() {
         guard let url = currentURL, let startedAt = currentSegmentStartedAt else {
             currentFile = nil
@@ -169,8 +155,11 @@ final class RecorderService: ObservableObject {
             return
         }
 
-        let duration = Date().timeIntervalSince(startedAt)
+        let duration = writtenDuration
         guard duration > 1, let settings else {
+            if FileManager.default.fileExists(atPath: url.path) {
+                try? FileManager.default.removeItem(at: url)
+            }
             currentFile = nil
             currentURL = nil
             return
@@ -183,7 +172,8 @@ final class RecorderService: ObservableObject {
             fileURL: url,
             mode: settings.mode,
             quality: settings.quality,
-            uploadState: settings.uploadAutomatically && settings.cloudProvider != .none ? .queued : .localOnly
+            uploadState: settings.uploadAutomatically && settings.cloudProvider != .none ? .queued : .localOnly,
+            customName: nil
         )
 
         Task {
@@ -196,6 +186,7 @@ final class RecorderService: ObservableObject {
 
         currentFile = nil
         currentURL = nil
+        writtenDuration = 0
     }
 }
 

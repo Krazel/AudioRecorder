@@ -2,7 +2,7 @@ param(
   [string]$Repo = "Krazel/AudioRecorder",
   [string]$WorkflowName = "Build unsigned iOS IPA",
   [string]$ArtifactName = "AudioRecorder-unsigned-ipa",
-  [string]$AppVersion = "1.1",
+  [string]$AppVersion = "1.2",
   [string]$Commit = "",
   [int]$IntervalSeconds = 60,
   [int]$MaxAttempts = 30
