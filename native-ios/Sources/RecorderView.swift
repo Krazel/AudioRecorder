@@ -43,7 +43,7 @@ struct RecorderView: View {
                     DetailRow(title: "Modo", value: settings.mode.title)
                     DetailRow(title: "Calidad", value: settings.quality.title)
                     DetailRow(title: "Corte", value: "\(settings.segmentMinutes) min")
-                    DetailRow(title: "Umbral", value: "\(Int(settings.recordingThresholdDB)) dBFS")
+                    DetailRow(title: "Sensibilidad", value: "\(settings.sensitivityPercent)%")
                     DetailRow(title: "Subida", value: settings.uploadAutomatically ? settings.cloudProvider.title : "No")
                 }
                 .padding()
@@ -71,7 +71,7 @@ struct RecorderView: View {
             } else if recorder.isWritingAudio {
                 "Supera el umbral y se esta guardando audio"
             } else {
-                "Esperando a que el nivel supere \(Int(settings.recordingThresholdDB)) dBFS"
+                "Esperando sonido suficiente (\(settings.sensitivityPercent)% sensibilidad)"
             }
         } else {
             "Toca el micrófono para empezar"

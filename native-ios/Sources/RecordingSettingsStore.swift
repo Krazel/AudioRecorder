@@ -48,6 +48,16 @@ final class RecordingSettingsStore: ObservableObject {
         TimeInterval(segmentMinutes * 60)
     }
 
+    var sensitivityPercent: Int {
+        let bounded = min(max(recordingThresholdDB, -80), -10)
+        return Int(round(((-10 - bounded) / 70) * 100))
+    }
+
+    func setSensitivityPercent(_ percent: Double) {
+        let bounded = min(max(percent, 0), 100)
+        recordingThresholdDB = Float(-10 - ((bounded / 100) * 70))
+    }
+
     private func save() {
         defaults.set(quality.rawValue, forKey: "quality")
         defaults.set(mode.rawValue, forKey: "mode")

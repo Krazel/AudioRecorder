@@ -29,20 +29,27 @@ struct SettingsView: View {
 
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Text("Umbral")
+                            Text("Sensibilidad")
                             Spacer()
-                            Text("\(Int(settings.recordingThresholdDB)) dBFS")
+                            Text("\(settings.sensitivityPercent)%")
                                 .foregroundStyle(.secondary)
                         }
                         Slider(
                             value: Binding(
-                                get: { Double(settings.recordingThresholdDB) },
-                                set: { settings.recordingThresholdDB = Float($0) }
+                                get: { Double(settings.sensitivityPercent) },
+                                set: { settings.setSensitivityPercent($0) }
                             ),
-                            in: -80 ... -10,
+                            in: 0 ... 100,
                             step: 1
                         )
-                        Text("Es dBFS: 0 es el maximo digital, por eso el nivel normal aparece en negativo. Mas bajo = mas sensible.")
+                        HStack {
+                            Text("Menos")
+                            Spacer()
+                            Text("Mas")
+                        }
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        Text("Umbral tecnico: \(Int(settings.recordingThresholdDB)) dBFS. dBFS es nivel digital: 0 es el maximo y los niveles normales son negativos.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
