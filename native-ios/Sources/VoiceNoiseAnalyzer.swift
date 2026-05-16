@@ -7,23 +7,43 @@ struct VoiceNoiseAnalysis {
 
 final class VoiceNoiseAnalyzer {
     func analyze(_ buffer: AVAudioPCMBuffer) -> VoiceNoiseAnalysis {
-        guard let channel = buffer.floatChannelData?.pointee else {
-            return VoiceNoiseAnalysis(rms: -120)
-        }
-
         let count = Int(buffer.frameLength)
         guard count > 0 else {
             return VoiceNoiseAnalysis(rms: -120)
         }
 
-        var sum: Float = 0
-        for index in 0..<count {
-            let sample = channel[index]
-            sum += sample * sample
+        if let channelData = buffer.floatChannelData {
+            var sum: Float = 0
+            let channels = Int(buffer.format.channelCount)
+            for channelIndex in 0..<max(channels, 1) {
+                let channel = channelData[channelIndex]
+                for frameIndex in 0..<count {
+                    let sample = channel[frameIndex]
+                    sum += sample * sample
+                }
+            }
+            let mean = sum / Float(count * max(channels, 1))
+            return VoiceNoiseAnalysis(rms: rms(fromMeanSquare: mean))
         }
 
-        let mean = sum / Float(count)
-        let rms = 20 * log10(max(sqrt(mean), 0.000_001))
-        return VoiceNoiseAnalysis(rms: rms)
+        if let channelData = buffer.int16ChannelData {
+            var sum: Float = 0
+            let channels = Int(buffer.format.channelCount)
+            for channelIndex in 0..<max(channels, 1) {
+                let channel = channelData[channelIndex]
+                for frameIndex in 0..<count {
+                    let sample = Float(channel[frameIndex]) / Float(Int16.max)
+                    sum += sample * sample
+                }
+            }
+            let mean = sum / Float(count * max(channels, 1))
+            return VoiceNoiseAnalysis(rms: rms(fromMeanSquare: mean))
+        }
+
+        return VoiceNoiseAnalysis(rms: -120)
+    }
+
+    private func rms(fromMeanSquare mean: Float) -> Float {
+        20 * log10(max(sqrt(mean), 0.000_001))
     }
 }

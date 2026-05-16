@@ -40,7 +40,7 @@ final class RecordingSettingsStore: ObservableObject {
         segmentMinutes = storedSegmentMinutes == 0 ? 30 : storedSegmentMinutes
         cloudProvider = CloudProvider(rawValue: defaults.string(forKey: "cloudProvider") ?? "") ?? .none
         uploadAutomatically = defaults.object(forKey: "uploadAutomatically") as? Bool ?? false
-        recordingThresholdDB = storedThreshold ?? -42
+        recordingThresholdDB = storedThreshold ?? -55
         startRecordingOnLaunch = defaults.object(forKey: "startRecordingOnLaunch") as? Bool ?? false
     }
 

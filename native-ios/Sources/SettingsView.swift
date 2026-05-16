@@ -39,9 +39,12 @@ struct SettingsView: View {
                                 get: { Double(settings.recordingThresholdDB) },
                                 set: { settings.recordingThresholdDB = Float($0) }
                             ),
-                            in: -70 ... -10,
+                            in: -80 ... -10,
                             step: 1
                         )
+                        Text("Mas bajo = mas sensible. Solo afecta a Voces y Ruido.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
 
                     Toggle("Grabar al abrir la app", isOn: $settings.startRecordingOnLaunch)
