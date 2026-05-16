@@ -1,0 +1,10 @@
+DerivedData/
+build/
+native-ios/*.xcodeproj/
+native-ios/*.xcworkspace/
+artifact/*.ipa
+artifact/*.zip
+artifact/old/
+*.xcuserdata/
+*.xcuserstate
+.DS_Store
