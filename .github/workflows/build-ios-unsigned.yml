@@ -51,6 +51,11 @@ jobs:
             echo "No .app found"
             exit 1
           fi
+          if [ ! -f "$APP_PATH/Info.plist" ]; then
+            echo "App bundle missing Info.plist"
+            find "$APP_PATH" -maxdepth 2 -type f | sort
+            exit 1
+          fi
           mkdir -p unsigned-ipa/Payload
           cp -R "$APP_PATH" "unsigned-ipa/Payload/$(basename "$APP_PATH")"
           VERSIONED_IPA="AudioRecorder-iPhone-v${APP_VERSION}-build-${GITHUB_RUN_NUMBER}.ipa"

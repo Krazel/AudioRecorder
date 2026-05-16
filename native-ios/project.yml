@@ -13,8 +13,11 @@ targets:
     deploymentTarget: "16.0"
     sources:
       - Sources
-    resources:
-      - Resources
+      - path: Resources
+        buildPhase: resources
+        excludes:
+          - Info.plist
+          - AudioRecorderApp.entitlements
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.dmkr.audio
