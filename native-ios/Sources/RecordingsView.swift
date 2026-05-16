@@ -3,6 +3,7 @@ import SwiftUI
 struct RecordingsView: View {
     @EnvironmentObject private var library: RecordingLibrary
     @EnvironmentObject private var uploadQueue: CloudUploadQueue
+    @EnvironmentObject private var playback: AudioPlaybackService
 
     var body: some View {
         NavigationStack {
@@ -12,6 +13,7 @@ struct RecordingsView: View {
                 } else {
                     ForEach(library.items) { item in
                         RecordingRow(item: item)
+                            .environmentObject(playback)
                     }
                 }
             }
@@ -51,31 +53,44 @@ private struct EmptyRecordingsView: View {
 }
 
 private struct RecordingRow: View {
+    @EnvironmentObject private var playback: AudioPlaybackService
+
     let item: RecordingItem
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(item.title)
-                    .font(.headline)
-                Spacer()
-                Text(item.uploadState.title)
-                    .font(.caption)
-                    .foregroundStyle(color)
+        HStack(spacing: 12) {
+            Button {
+                playback.toggle(item)
+            } label: {
+                Image(systemName: playback.playingID == item.id ? "stop.circle.fill" : "play.circle.fill")
+                    .font(.title2)
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel(playback.playingID == item.id ? "Parar audio" : "Escuchar audio")
 
-            HStack(spacing: 12) {
-                Label(formatDuration(item.duration), systemImage: "clock")
-                Label(item.mode.title, systemImage: "slider.horizontal.2.square")
-                Label(item.quality.title, systemImage: "speaker.wave.2")
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(item.title)
+                        .font(.headline)
+                    Spacer()
+                    Text(item.uploadState.title)
+                        .font(.caption)
+                        .foregroundStyle(color)
+                }
+
+                HStack(spacing: 12) {
+                    Label(formatDuration(item.duration), systemImage: "clock")
+                    Label(item.mode.title, systemImage: "slider.horizontal.2.square")
+                    Label(item.quality.title, systemImage: "speaker.wave.2")
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+                Text(item.fileURL.lastPathComponent)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
             }
-            .font(.caption)
-            .foregroundStyle(.secondary)
-
-            Text(item.fileURL.lastPathComponent)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .lineLimit(1)
         }
         .padding(.vertical, 6)
     }

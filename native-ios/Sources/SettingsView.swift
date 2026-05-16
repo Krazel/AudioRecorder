@@ -26,6 +26,25 @@ struct SettingsView: View {
                             Text("\(minutes) minutos").tag(minutes)
                         }
                     }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Baremo")
+                            Spacer()
+                            Text("\(Int(settings.recordingThresholdDB)) dB")
+                                .foregroundStyle(.secondary)
+                        }
+                        Slider(
+                            value: Binding(
+                                get: { Double(settings.recordingThresholdDB) },
+                                set: { settings.recordingThresholdDB = Float($0) }
+                            ),
+                            in: -70 ... -10,
+                            step: 1
+                        )
+                    }
+
+                    Toggle("Grabar al abrir la app", isOn: $settings.startRecordingOnLaunch)
                 }
 
                 Section("Subida automatica") {

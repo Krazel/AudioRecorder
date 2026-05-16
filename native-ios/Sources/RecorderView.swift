@@ -36,12 +36,14 @@ struct RecorderView: View {
                 HStack(spacing: 16) {
                     MetricView(title: "Segmento", value: formatTime(recorder.elapsed))
                     MetricView(title: "Nivel", value: "\(Int(recorder.currentLevel)) dB")
+                    MetricView(title: "Estado", value: recorder.isWritingAudio ? "Guarda" : "Espera")
                 }
 
                 VStack(spacing: 12) {
                     DetailRow(title: "Modo", value: settings.mode.title)
                     DetailRow(title: "Calidad", value: settings.quality.title)
                     DetailRow(title: "Corte", value: "\(settings.segmentMinutes) min")
+                    DetailRow(title: "Umbral", value: "\(Int(settings.recordingThresholdDB)) dB")
                     DetailRow(title: "Subida", value: settings.uploadAutomatically ? settings.cloudProvider.title : "No")
                 }
                 .padding()
@@ -64,7 +66,13 @@ struct RecorderView: View {
 
     private var statusText: String {
         if recorder.isRecording {
-            "Se crea un archivo nuevo cada \(settings.segmentMinutes) minutos"
+            if settings.mode == .everything || settings.mode == .separated {
+                "Se crea un archivo nuevo cada \(settings.segmentMinutes) minutos"
+            } else if recorder.isWritingAudio {
+                "Supera el umbral y se esta guardando audio"
+            } else {
+                "Esperando a que el nivel supere \(Int(settings.recordingThresholdDB)) dB"
+            }
         } else {
             "Toca el micrófono para empezar"
         }

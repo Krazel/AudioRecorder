@@ -22,15 +22,26 @@ final class RecordingSettingsStore: ObservableObject {
         didSet { save() }
     }
 
+    @Published var recordingThresholdDB: Float {
+        didSet { save() }
+    }
+
+    @Published var startRecordingOnLaunch: Bool {
+        didSet { save() }
+    }
+
     private let defaults = UserDefaults.standard
 
     init() {
         let storedSegmentMinutes = defaults.integer(forKey: "segmentMinutes")
+        let storedThreshold = defaults.object(forKey: "recordingThresholdDB") as? Float
         quality = AudioQuality(rawValue: defaults.string(forKey: "quality") ?? "") ?? .medium
         mode = RecordingMode(rawValue: defaults.string(forKey: "mode") ?? "") ?? .everything
         segmentMinutes = storedSegmentMinutes == 0 ? 30 : storedSegmentMinutes
         cloudProvider = CloudProvider(rawValue: defaults.string(forKey: "cloudProvider") ?? "") ?? .none
         uploadAutomatically = defaults.object(forKey: "uploadAutomatically") as? Bool ?? false
+        recordingThresholdDB = storedThreshold ?? -42
+        startRecordingOnLaunch = defaults.object(forKey: "startRecordingOnLaunch") as? Bool ?? false
     }
 
     var segmentDuration: TimeInterval {
@@ -43,5 +54,7 @@ final class RecordingSettingsStore: ObservableObject {
         defaults.set(segmentMinutes, forKey: "segmentMinutes")
         defaults.set(cloudProvider.rawValue, forKey: "cloudProvider")
         defaults.set(uploadAutomatically, forKey: "uploadAutomatically")
+        defaults.set(recordingThresholdDB, forKey: "recordingThresholdDB")
+        defaults.set(startRecordingOnLaunch, forKey: "startRecordingOnLaunch")
     }
 }

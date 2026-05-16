@@ -8,6 +8,7 @@ final class RecorderService: ObservableObject {
     @Published private(set) var elapsed: TimeInterval = 0
     @Published private(set) var lastError: String?
     @Published private(set) var currentLevel: Float = -120
+    @Published private(set) var isWritingAudio = false
 
     private let engine = AVAudioEngine()
     private let analyzer = VoiceNoiseAnalyzer()
@@ -53,6 +54,7 @@ final class RecorderService: ObservableObject {
         completeCurrentSegment()
         try? AVAudioSession.sharedInstance().setActive(false)
         isRecording = false
+        isWritingAudio = false
     }
 
     private func requestMicrophonePermission() async throws {
@@ -120,24 +122,28 @@ final class RecorderService: ObservableObject {
         let analysis = analyzer.analyze(buffer)
         currentLevel = analysis.rms
 
-        guard shouldWriteBuffer(analysis: analysis) else { return }
+        guard shouldWriteBuffer(analysis: analysis) else {
+            isWritingAudio = false
+            return
+        }
 
         do {
             try currentFile?.write(from: buffer)
+            isWritingAudio = true
         } catch {
             lastError = error.localizedDescription
         }
     }
 
     private func shouldWriteBuffer(analysis: VoiceNoiseAnalysis) -> Bool {
-        guard let mode = settings?.mode else { return true }
-        switch mode {
+        guard let settings else { return true }
+        switch settings.mode {
         case .everything, .separated:
             return true
         case .voiceFocused:
-            return analysis.likelyVoice
+            return analysis.rms >= settings.recordingThresholdDB
         case .noiseFocused:
-            return analysis.likelyNoise
+            return analysis.rms >= settings.recordingThresholdDB
         }
     }
 
