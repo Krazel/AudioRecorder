@@ -25,12 +25,10 @@ final class RecordingSettingsStore: ObservableObject {
     private let defaults = UserDefaults.standard
 
     init() {
+        let storedSegmentMinutes = defaults.integer(forKey: "segmentMinutes")
         quality = AudioQuality(rawValue: defaults.string(forKey: "quality") ?? "") ?? .medium
         mode = RecordingMode(rawValue: defaults.string(forKey: "mode") ?? "") ?? .everything
-        segmentMinutes = defaults.integer(forKey: "segmentMinutes")
-        if segmentMinutes == 0 {
-            segmentMinutes = 30
-        }
+        segmentMinutes = storedSegmentMinutes == 0 ? 30 : storedSegmentMinutes
         cloudProvider = CloudProvider(rawValue: defaults.string(forKey: "cloudProvider") ?? "") ?? .none
         uploadAutomatically = defaults.object(forKey: "uploadAutomatically") as? Bool ?? false
     }
