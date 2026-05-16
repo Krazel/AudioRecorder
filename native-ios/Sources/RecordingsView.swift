@@ -125,25 +125,46 @@ private struct RecordingRow: View {
                 HStack {
                     Text(item.title)
                         .font(.headline)
+                        .lineLimit(1)
                     Spacer()
                     Text(item.uploadState.title)
                         .font(.caption)
                         .foregroundStyle(color)
                 }
 
-                HStack(spacing: 12) {
-                    Label(formatDuration(item.duration), systemImage: "clock")
-                    Label(item.fileSizeText, systemImage: "internaldrive")
-                    Label(item.mode.title, systemImage: "slider.horizontal.2.square")
-                    Label(item.quality.title, systemImage: "speaker.wave.2")
+                HStack(spacing: 10) {
+                    MetadataPill(text: formatDuration(item.duration), icon: "clock")
+                    MetadataPill(text: item.fileSizeText, icon: "internaldrive")
                 }
-                .font(.caption)
-                .foregroundStyle(.secondary)
+
+                HStack(spacing: 10) {
+                    MetadataPill(text: item.mode.title, icon: "slider.horizontal.2.square")
+                    MetadataPill(text: item.quality.title, icon: "speaker.wave.2")
+                }
 
                 Text(item.fileURL.lastPathComponent)
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
+
+                if playback.playingID == item.id {
+                    VStack(spacing: 4) {
+                        Slider(
+                            value: Binding(
+                                get: { playback.currentTime },
+                                set: { playback.seek(to: $0) }
+                            ),
+                            in: 0 ... max(playback.duration, 0.1)
+                        )
+                        HStack {
+                            Text(formatDuration(playback.currentTime))
+                            Spacer()
+                            Text(formatDuration(playback.duration))
+                        }
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                    }
+                }
             }
         }
         .padding(.vertical, 6)
@@ -203,5 +224,21 @@ private struct RecordingRow: View {
         let minutes = Int(duration) / 60
         let seconds = Int(duration) % 60
         return String(format: "%02d:%02d", minutes, seconds)
+    }
+}
+
+private struct MetadataPill: View {
+    let text: String
+    let icon: String
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+            Text(text)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
     }
 }

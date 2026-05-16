@@ -31,18 +31,18 @@ struct SettingsView: View {
                         HStack {
                             Text("Baremo")
                             Spacer()
-                            Text("\(Int(settings.recordingThresholdDB)) dB")
+                            Text("\(Int(-settings.recordingThresholdDB)) dB")
                                 .foregroundStyle(.secondary)
                         }
                         Slider(
                             value: Binding(
-                                get: { Double(settings.recordingThresholdDB) },
-                                set: { settings.recordingThresholdDB = Float($0) }
+                                get: { Double(-settings.recordingThresholdDB) },
+                                set: { settings.recordingThresholdDB = -Float($0) }
                             ),
-                            in: -80 ... -10,
+                            in: 10 ... 80,
                             step: 1
                         )
-                        Text("Mas bajo = mas sensible. Solo afecta a Voces y Ruido.")
+                        Text("Mas alto = mas sensible. Solo afecta a Voces y Ruido.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -63,6 +63,12 @@ struct SettingsView: View {
 
                 Section("Notas") {
                     Text("Google Drive y OneDrive quedan preparados como proveedores. Falta conectar OAuth y las APIs reales antes de publicar.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
+                Section("Modos") {
+                    Text("Ahora mismo Voces y Ruido usan el mismo baremo de volumen: guardan solo cuando hay sonido por encima del umbral. Separado todavia no separa voz y ruido en pistas distintas; guarda el audio original para procesarlo despues.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
