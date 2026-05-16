@@ -44,6 +44,14 @@ function Move-CurrentArtifacts {
     ForEach-Object { Move-Item -LiteralPath $_.FullName -Destination $oldDir -Force }
 }
 
+function Keep-OnlyCurrentArtifact {
+  param([string]$CurrentPath)
+
+  Get-ChildItem -LiteralPath $artifactDir |
+    Where-Object { $_.Name -ne "old" -and $_.FullName -ne $CurrentPath } |
+    ForEach-Object { Move-Item -LiteralPath $_.FullName -Destination $oldDir -Force }
+}
+
 for ($attempt = 1; $attempt -le $MaxAttempts; $attempt += 1) {
   $run = Get-LatestRun
 
@@ -65,6 +73,7 @@ for ($attempt = 1; $attempt -le $MaxAttempts; $attempt += 1) {
       Invoke-WebRequest -Uri $releaseUrl -Headers @{ "User-Agent" = "AudioRecorder-Artifact-Watcher" } -OutFile $latestPath
       Copy-Item -LiteralPath $latestPath -Destination $versionedPath -Force
       Copy-Item -LiteralPath $latestPath -Destination $latestVersionedPath -Force
+      Keep-OnlyCurrentArtifact -CurrentPath $latestVersionedPath
     } catch {
       if (-not $env:GITHUB_TOKEN) {
         throw "La build termino, pero la release latest-ipa aun no esta disponible o requiere token. Reintenta en un minuto."
@@ -86,11 +95,11 @@ for ($attempt = 1; $attempt -le $MaxAttempts; $attempt += 1) {
       Copy-Item -LiteralPath $ipaPath -Destination $latestPath -Force
       Copy-Item -LiteralPath $ipaPath -Destination $versionedPath -Force
       Copy-Item -LiteralPath $ipaPath -Destination $latestVersionedPath -Force
+      Keep-OnlyCurrentArtifact -CurrentPath $latestVersionedPath
     }
 
-    Write-Host "IPA descargada: $latestPath"
-    Write-Host "IPA versionada: $versionedPath"
-    Write-Host "IPA latest versionada: $latestVersionedPath"
+    Write-Host "IPA actual: $latestVersionedPath"
+    Write-Host "Copias anteriores movidas a: $oldDir"
     exit 0
   } else {
     Write-Error "Build fallida: $($run.conclusion) $($run.html_url)"
