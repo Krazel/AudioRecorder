@@ -24,8 +24,15 @@ final class RecordingLibrary: ObservableObject {
     }
 
     func add(_ item: RecordingItem) async {
+        addImmediately(item)
+    }
+
+    func addImmediately(_ item: RecordingItem) {
+        if items.contains(where: { $0.id == item.id }) {
+            return
+        }
         items.insert(item, at: 0)
-        await save()
+        saveImmediately()
     }
 
     func updateUploadState(id: UUID, state: UploadState) async {
@@ -67,6 +74,10 @@ final class RecordingLibrary: ObservableObject {
     }
 
     private func save() async {
+        saveImmediately()
+    }
+
+    private func saveImmediately() {
         do {
             try RecordingStorage.ensureDirectories()
             let data = try JSONEncoder().encode(items)

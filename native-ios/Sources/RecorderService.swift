@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import UIKit
 
 @MainActor
 final class RecorderService: ObservableObject {
@@ -15,6 +16,8 @@ final class RecorderService: ObservableObject {
     private var currentFile: AVAudioFile?
     private var currentURL: URL?
     private var writtenDuration: TimeInterval = 0
+    private var didWriteCurrentSegment = false
+    private var installedObservers = false
     private var settings: RecordingSettingsStore?
     private var library: RecordingLibrary?
     private var uploadQueue: CloudUploadQueue?
@@ -28,6 +31,7 @@ final class RecorderService: ObservableObject {
         self.settings = settings
         self.library = library
         self.uploadQueue = uploadQueue
+        installEmergencySaveObserversIfNeeded()
 
         do {
             try await requestMicrophonePermission()
@@ -101,6 +105,7 @@ final class RecorderService: ObservableObject {
         currentURL = url
         currentSegmentStartedAt = Date()
         writtenDuration = 0
+        didWriteCurrentSegment = false
         elapsed = 0
     }
 
@@ -127,6 +132,7 @@ final class RecorderService: ObservableObject {
             let bufferDuration = Double(buffer.frameLength) / buffer.format.sampleRate
             writtenDuration += bufferDuration
             elapsed = writtenDuration
+            didWriteCurrentSegment = true
             isWritingAudio = true
             if let settings, writtenDuration >= settings.segmentDuration {
                 rotateSegment()
@@ -155,13 +161,16 @@ final class RecorderService: ObservableObject {
             return
         }
 
+        currentFile = nil
         let duration = writtenDuration
-        guard duration > 1, let settings else {
+        guard didWriteCurrentSegment, duration > 0.02, let settings else {
             if FileManager.default.fileExists(atPath: url.path) {
                 try? FileManager.default.removeItem(at: url)
             }
-            currentFile = nil
             currentURL = nil
+            writtenDuration = 0
+            didWriteCurrentSegment = false
+            elapsed = 0
             return
         }
 
@@ -176,9 +185,9 @@ final class RecorderService: ObservableObject {
             customName: nil
         )
 
-        Task {
-            await library?.add(item)
-            if settings.uploadAutomatically {
+        library?.addImmediately(item)
+        if settings.uploadAutomatically {
+            Task {
                 await uploadQueue?.enqueue(recording: item, provider: settings.cloudProvider)
                 await uploadQueue?.processNext()
             }
@@ -187,6 +196,45 @@ final class RecorderService: ObservableObject {
         currentFile = nil
         currentURL = nil
         writtenDuration = 0
+        didWriteCurrentSegment = false
+    }
+
+    private func installEmergencySaveObserversIfNeeded() {
+        guard !installedObservers else { return }
+        installedObservers = true
+
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.willTerminateNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.emergencyStopAndSave()
+            }
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let rawType = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+                  AVAudioSession.InterruptionType(rawValue: rawType) == .began else {
+                return
+            }
+            Task { @MainActor in
+                self?.emergencyStopAndSave()
+            }
+        }
+    }
+
+    private func emergencyStopAndSave() {
+        guard isRecording else { return }
+        engine.inputNode.removeTap(onBus: 0)
+        engine.stop()
+        completeCurrentSegment()
+        isRecording = false
+        isWritingAudio = false
     }
 }
 
