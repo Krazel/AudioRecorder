@@ -60,15 +60,16 @@ enum AudioQuality: String, CaseIterable, Codable, Identifiable {
 
         switch self {
         case .low, .medium:
-            [
+            let settings: [String: Any] = [
                 AVFormatIDKey: kAudioFormatMPEG4AAC,
                 AVSampleRateKey: sampleRate,
                 AVNumberOfChannelsKey: channels,
                 AVEncoderBitRateKey: bitRate,
                 AVEncoderAudioQualityKey: AVAudioQuality.medium.rawValue
             ]
+            return settings
         case .high:
-            [
+            let settings: [String: Any] = [
                 AVFormatIDKey: kAudioFormatLinearPCM,
                 AVSampleRateKey: sampleRate,
                 AVNumberOfChannelsKey: channels,
@@ -76,6 +77,7 @@ enum AudioQuality: String, CaseIterable, Codable, Identifiable {
                 AVLinearPCMIsFloatKey: true,
                 AVLinearPCMIsBigEndianKey: false
             ]
+            return settings
         }
     }
 }
