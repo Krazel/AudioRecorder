@@ -2,7 +2,7 @@ param(
   [string]$Repo = "Krazel/AudioRecorder",
   [string]$WorkflowName = "Build unsigned iOS IPA",
   [string]$ArtifactName = "AudioRecorder-unsigned-ipa",
-  [string]$AppVersion = "1.0",
+  [string]$AppVersion = "1.1",
   [string]$Commit = "",
   [int]$IntervalSeconds = 60,
   [int]$MaxAttempts = 30
@@ -57,12 +57,14 @@ for ($attempt = 1; $attempt -le $MaxAttempts; $attempt += 1) {
     New-Item -ItemType Directory -Force -Path $runDir | Out-Null
     $latestPath = Join-Path $artifactDir "AudioRecorder-iPhone-latest.ipa"
     $versionedPath = Join-Path $artifactDir "AudioRecorder-iPhone-v$AppVersion-build-$($run.run_number).ipa"
+    $latestVersionedPath = Join-Path $artifactDir "AudioRecorder-iPhone-latest-v$AppVersion-build-$($run.run_number).ipa"
     $releaseUrl = "https://github.com/$Repo/releases/download/latest-ipa/AudioRecorder-iPhone-latest.ipa"
 
     Move-CurrentArtifacts
     try {
       Invoke-WebRequest -Uri $releaseUrl -Headers @{ "User-Agent" = "AudioRecorder-Artifact-Watcher" } -OutFile $latestPath
       Copy-Item -LiteralPath $latestPath -Destination $versionedPath -Force
+      Copy-Item -LiteralPath $latestPath -Destination $latestVersionedPath -Force
     } catch {
       if (-not $env:GITHUB_TOKEN) {
         throw "La build termino, pero la release latest-ipa aun no esta disponible o requiere token. Reintenta en un minuto."
@@ -83,10 +85,12 @@ for ($attempt = 1; $attempt -le $MaxAttempts; $attempt += 1) {
       }
       Copy-Item -LiteralPath $ipaPath -Destination $latestPath -Force
       Copy-Item -LiteralPath $ipaPath -Destination $versionedPath -Force
+      Copy-Item -LiteralPath $ipaPath -Destination $latestVersionedPath -Force
     }
 
     Write-Host "IPA descargada: $latestPath"
     Write-Host "IPA versionada: $versionedPath"
+    Write-Host "IPA latest versionada: $latestVersionedPath"
     exit 0
   } else {
     Write-Error "Build fallida: $($run.conclusion) $($run.html_url)"

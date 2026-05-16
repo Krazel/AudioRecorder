@@ -12,7 +12,7 @@ Flujo:
 2. Sube este proyecto a la rama `main`.
 3. GitHub ejecutara `.github/workflows/build-ios-unsigned.yml`.
 4. El artifact se llamara `AudioRecorder-unsigned-ipa`.
-5. La release `latest-ipa` tendra `AudioRecorder-iPhone-latest.ipa`.
+5. La release `latest-ipa` tendra `AudioRecorder-iPhone-latest.ipa` y copias con version en el nombre, por ejemplo `AudioRecorder-iPhone-latest-v1.1-build-7.ipa`.
 
 Para vigilar y descargar el IPA desde Windows:
 
