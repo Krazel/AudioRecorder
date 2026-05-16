@@ -145,11 +145,9 @@ final class RecorderService: ObservableObject {
     private func shouldWriteBuffer(analysis: VoiceNoiseAnalysis) -> Bool {
         guard let settings else { return true }
         switch settings.mode {
-        case .everything, .separated:
+        case .everything:
             return true
-        case .voiceFocused:
-            return analysis.rms >= settings.recordingThresholdDB
-        case .noiseFocused:
+        case .soundActivated:
             return analysis.rms >= settings.recordingThresholdDB
         }
     }

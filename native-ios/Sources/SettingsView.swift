@@ -29,20 +29,20 @@ struct SettingsView: View {
 
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Text("Baremo")
+                            Text("Umbral")
                             Spacer()
-                            Text("\(Int(-settings.recordingThresholdDB)) dB")
+                            Text("\(Int(settings.recordingThresholdDB)) dBFS")
                                 .foregroundStyle(.secondary)
                         }
                         Slider(
                             value: Binding(
-                                get: { Double(-settings.recordingThresholdDB) },
-                                set: { settings.recordingThresholdDB = -Float($0) }
+                                get: { Double(settings.recordingThresholdDB) },
+                                set: { settings.recordingThresholdDB = Float($0) }
                             ),
-                            in: 10 ... 80,
+                            in: -80 ... -10,
                             step: 1
                         )
-                        Text("Mas alto = mas sensible. Solo afecta a Voces y Ruido.")
+                        Text("Es dBFS: 0 es el maximo digital, por eso el nivel normal aparece en negativo. Mas bajo = mas sensible.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -67,8 +67,8 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                Section("Modos") {
-                    Text("Ahora mismo Voces y Ruido usan el mismo baremo de volumen: guardan solo cuando hay sonido por encima del umbral. Separado todavia no separa voz y ruido en pistas distintas; guarda el audio original para procesarlo despues.")
+                Section("Modo por sonido") {
+                    Text("La app no identifica voz real todavia. El modo Por sonido guarda cualquier audio que supere el umbral dBFS y compacta los silencios.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }

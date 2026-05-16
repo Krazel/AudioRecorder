@@ -43,7 +43,7 @@ struct RecorderView: View {
                     DetailRow(title: "Modo", value: settings.mode.title)
                     DetailRow(title: "Calidad", value: settings.quality.title)
                     DetailRow(title: "Corte", value: "\(settings.segmentMinutes) min")
-                    DetailRow(title: "Umbral", value: "\(Int(settings.recordingThresholdDB)) dB")
+                    DetailRow(title: "Umbral", value: "\(Int(settings.recordingThresholdDB)) dBFS")
                     DetailRow(title: "Subida", value: settings.uploadAutomatically ? settings.cloudProvider.title : "No")
                 }
                 .padding()
@@ -66,12 +66,12 @@ struct RecorderView: View {
 
     private var statusText: String {
         if recorder.isRecording {
-            if settings.mode == .everything || settings.mode == .separated {
+            if settings.mode == .everything {
                 "Se crea un archivo nuevo cada \(settings.segmentMinutes) minutos"
             } else if recorder.isWritingAudio {
                 "Supera el umbral y se esta guardando audio"
             } else {
-                "Esperando a que el nivel supere \(Int(settings.recordingThresholdDB)) dB"
+                "Esperando a que el nivel supere \(Int(settings.recordingThresholdDB)) dBFS"
             }
         } else {
             "Toca el micrófono para empezar"
