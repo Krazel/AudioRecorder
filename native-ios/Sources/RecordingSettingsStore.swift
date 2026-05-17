@@ -56,7 +56,7 @@ final class RecordingSettingsStore: ObservableObject {
 
     var segmentDuration: TimeInterval {
         guard segmentMinutes > 0 else { return .infinity }
-        TimeInterval(segmentMinutes * 60)
+        return TimeInterval(segmentMinutes * 60)
     }
 
     var customUploadEndpointURL: URL? {
