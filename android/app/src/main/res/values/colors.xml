@@ -1,0 +1,7 @@
+<resources>
+    <color name="background">#F5F7FB</color>
+    <color name="primary">#1F6FEB</color>
+    <color name="danger">#D1242F</color>
+    <color name="text">#182233</color>
+    <color name="muted">#667085</color>
+</resources>

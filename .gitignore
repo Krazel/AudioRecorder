@@ -4,7 +4,12 @@ native-ios/*.xcodeproj/
 native-ios/*.xcworkspace/
 artifact/*.ipa
 artifact/*.zip
+artifact/*.apk
+artifact/*.aab
 artifact/old/
+android/.gradle/
+android/build/
+android/app/build/
 *.xcuserdata/
 *.xcuserstate
 .DS_Store
