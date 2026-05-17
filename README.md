@@ -58,6 +58,8 @@ Si el servidor responde con HTTP 2xx, la grabacion pasa a `Subido`. Si responde 
 
 Para iCloud Drive, elige `iCloud Drive / Archivos`. La app copia los audios a la carpeta `AudioRecorder` de iCloud Drive si iCloud esta disponible; si no, los deja accesibles en la app Archivos dentro de `En mi iPhone > AudioRecorder`.
 
+Para envio manual, abre `Archivos` y usa el boton de compartir de arriba para enviar todos los audios, o desliza una grabacion y pulsa `Enviar`. iOS mostrara la hoja nativa para guardar en Archivos, iCloud Drive, Google Drive, OneDrive, correo u otra app instalada.
+
 ## Pendiente antes de produccion
 
 - Conectar OAuth real para Google Drive y OneDrive.
