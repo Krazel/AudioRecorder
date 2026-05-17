@@ -93,7 +93,7 @@ struct SettingsView: View {
 
                 Section("Version") {
                     HStack {
-                        Text("Grabadora")
+                        Text("AudioRecorder")
                         Spacer()
                         Text(appVersionText)
                             .fontWeight(.semibold)

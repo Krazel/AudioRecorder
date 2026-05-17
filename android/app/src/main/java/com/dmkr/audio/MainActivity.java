@@ -58,7 +58,7 @@ public class MainActivity extends Activity {
         scroll.addView(root);
 
         TextView title = new TextView(this);
-        title.setText("Grabadora");
+        title.setText("AudioRecorder");
         title.setTextSize(34);
         title.setTextColor(0xFF182233);
         title.setGravity(Gravity.START);

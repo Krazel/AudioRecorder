@@ -21,7 +21,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.dmkr.audio
-        PRODUCT_NAME: Grabadora
+        PRODUCT_NAME: AudioRecorder
         MARKETING_VERSION: "1.8"
         CURRENT_PROJECT_VERSION: "1"
         INFOPLIST_FILE: Resources/Info.plist

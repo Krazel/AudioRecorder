@@ -60,7 +60,8 @@ struct RecorderView: View {
                 Spacer()
             }
             .padding()
-            .navigationTitle("Grabadora")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
         }
     }
 

@@ -1,4 +1,4 @@
-# Grabadora
+# AudioRecorder
 
 MVP nativo para grabar en iPhone y Android, segmentar por intervalos configurables y probar subida automatica a proveedores externos.
 
