@@ -8,6 +8,9 @@ struct RecordingsView: View {
     @State private var shareItem: ShareItem?
     @State private var renameItem: RecordingItem?
     @State private var renameText = ""
+    @State private var selection = Set<UUID>()
+    @State private var selectionMode = false
+    @State private var rowFrames: [UUID: CGRect] = [:]
 
     var body: some View {
         NavigationStack {
@@ -18,7 +21,11 @@ struct RecordingsView: View {
                     ForEach(library.items) { item in
                         RecordingRow(
                             item: item,
-                            onShare: { shareItem = ShareItem(url: item.fileURL) },
+                            selectionMode: selectionMode,
+                            isSelected: selection.contains(item.id),
+                            onSelect: { selection.insert(item.id) },
+                            onToggleSelection: { toggleSelection(item.id) },
+                            onShare: { shareItem = ShareItem(urls: [item.fileURL], recordingIDs: [item.id]) },
                             onRename: {
                                 renameItem = item
                                 renameText = item.title
@@ -34,21 +41,55 @@ struct RecordingsView: View {
                     }
                 }
             }
+            .coordinateSpace(name: "recordingList")
+            .onPreferenceChange(RecordingRowFramePreferenceKey.self) { frames in
+                rowFrames = frames
+            }
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 8, coordinateSpace: .named("recordingList"))
+                    .onChanged { value in
+                        guard selectionMode else { return }
+                        selectRow(at: value.location)
+                    }
+            )
             .navigationTitle("Archivos")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        Task {
-                            await uploadQueue.processNext(library: library)
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(selectionMode ? "OK" : "Seleccionar") {
+                        selectionMode.toggle()
+                        if !selectionMode {
+                            selection.removeAll()
                         }
-                    } label: {
-                        Image(systemName: "arrow.up.circle")
                     }
-                    .accessibilityLabel("Procesar subida")
+                    .disabled(library.items.isEmpty)
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button {
+                            sharePending()
+                        } label: {
+                            Label("Enviar pendientes", systemImage: "tray.and.arrow.up")
+                        }
+                        .disabled(pendingItems.isEmpty)
+
+                        Button {
+                            shareSelected()
+                        } label: {
+                            Label("Enviar seleccionados", systemImage: "checkmark.circle")
+                        }
+                        .disabled(selection.isEmpty)
+                    } label: {
+                        Label("Enviar", systemImage: "square.and.arrow.up")
+                    }
+                    .disabled(library.items.isEmpty)
                 }
             }
             .sheet(item: $shareItem) { item in
-                ShareSheet(url: item.url)
+                ShareSheet(urls: item.urls)
+                    .onDisappear {
+                        markShared(item.recordingIDs)
+                    }
             }
             .alert("Cambiar nombre", isPresented: renameBinding) {
                 TextField("Nombre", text: $renameText)
@@ -66,6 +107,46 @@ struct RecordingsView: View {
                 Text("Se renombrara tambien el archivo de audio.")
             }
         }
+    }
+
+    private var pendingItems: [RecordingItem] {
+        library.items.filter { $0.uploadState != .uploaded }
+    }
+
+    private func sharePending() {
+        let items = pendingItems
+        shareItem = ShareItem(urls: items.map(\.fileURL), recordingIDs: items.map(\.id))
+    }
+
+    private func shareSelected() {
+        let items = library.items.filter { selection.contains($0.id) }
+        shareItem = ShareItem(urls: items.map(\.fileURL), recordingIDs: items.map(\.id))
+    }
+
+    private func markShared(_ ids: [UUID]) {
+        guard !ids.isEmpty else { return }
+        Task {
+            for id in ids {
+                await library.updateUploadState(id: id, state: .uploaded)
+            }
+            selection.removeAll()
+            selectionMode = false
+        }
+    }
+
+    private func toggleSelection(_ id: UUID) {
+        if selection.contains(id) {
+            selection.remove(id)
+        } else {
+            selection.insert(id)
+        }
+    }
+
+    private func selectRow(at location: CGPoint) {
+        guard let id = rowFrames.first(where: { $0.value.contains(location) })?.key else {
+            return
+        }
+        selection.insert(id)
     }
 
     private var renameBinding: Binding<Bool> {
@@ -106,19 +187,39 @@ private struct RecordingRow: View {
     @EnvironmentObject private var playback: AudioPlaybackService
 
     let item: RecordingItem
+    let selectionMode: Bool
+    let isSelected: Bool
+    let onSelect: () -> Void
+    let onToggleSelection: () -> Void
     let onShare: () -> Void
     let onRename: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
+            if selectionMode {
+                Button {
+                    onToggleSelection()
+                } label: {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .font(.title2)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(isSelected ? "Quitar seleccion" : "Seleccionar")
+            }
+
             Button {
-                playback.toggle(item)
+                if selectionMode {
+                    onToggleSelection()
+                } else {
+                    playback.toggle(item)
+                }
             } label: {
                 Image(systemName: playback.playingID == item.id ? "stop.circle.fill" : "play.circle.fill")
                     .font(.title2)
             }
             .buttonStyle(.plain)
+            .disabled(selectionMode)
             .accessibilityLabel(playback.playingID == item.id ? "Parar audio" : "Escuchar audio")
 
             VStack(alignment: .leading, spacing: 6) {
@@ -168,6 +269,28 @@ private struct RecordingRow: View {
             }
         }
         .padding(.vertical, 6)
+        .background(
+            GeometryReader { proxy in
+                Color.clear.preference(
+                    key: RecordingRowFramePreferenceKey.self,
+                    value: [item.id: proxy.frame(in: .named("recordingList"))]
+                )
+            }
+        )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if selectionMode {
+                onToggleSelection()
+            }
+        }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 8, coordinateSpace: .named("recordingList"))
+                .onChanged { _ in
+                    if selectionMode {
+                        onSelect()
+                    }
+                }
+        )
         .swipeActions(edge: .trailing) {
             Button(role: .destructive) {
                 onDelete()
@@ -224,6 +347,14 @@ private struct RecordingRow: View {
         let minutes = Int(duration) / 60
         let seconds = Int(duration) % 60
         return String(format: "%02d:%02d", minutes, seconds)
+    }
+}
+
+private struct RecordingRowFramePreferenceKey: PreferenceKey {
+    static var defaultValue: [UUID: CGRect] = [:]
+
+    static func reduce(value: inout [UUID: CGRect], nextValue: () -> [UUID: CGRect]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
     }
 }
 

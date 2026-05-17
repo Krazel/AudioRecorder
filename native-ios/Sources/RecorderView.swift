@@ -43,11 +43,12 @@ struct RecorderView: View {
                 }
 
                 VStack(spacing: 12) {
-                    DetailRow(title: "Modo", value: settings.mode.title)
                     DetailRow(title: "Calidad", value: settings.quality.title)
                     DetailRow(title: "Corte", value: settings.segmentMinutes == 0 ? "No separar" : "\(settings.segmentMinutes) min")
-                    DetailRow(title: "Sensibilidad", value: "\(settings.sensitivityPercent)%")
-                    DetailRow(title: "Subida", value: settings.uploadAutomatically ? settings.cloudProvider.title : "No")
+                    DetailRow(title: "Modo", value: settings.mode.title)
+                    if settings.mode == .soundActivated {
+                        DetailRow(title: "Sensibilidad", value: "\(settings.sensitivityPercent)%")
+                    }
                 }
                 .padding()
                 .background(.thinMaterial)
