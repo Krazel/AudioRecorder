@@ -9,6 +9,7 @@ enum CloudUploadError: LocalizedError {
     case authenticationRequired(provider: CloudProvider)
     case missingEndpoint
     case invalidServerResponse(statusCode: Int)
+    case copyFailed(provider: CloudProvider)
 
     var errorDescription: String? {
         switch self {
@@ -20,6 +21,8 @@ enum CloudUploadError: LocalizedError {
             "Falta configurar la URL de subida del servidor propio."
         case .invalidServerResponse(let statusCode):
             "El servidor rechazo la subida con codigo \(statusCode)."
+        case .copyFailed(let provider):
+            "No se pudo guardar el archivo en \(provider.title)."
         }
     }
 }
@@ -41,6 +44,42 @@ struct OneDriveUploader: CloudUploading {
     func upload(fileURL: URL) async throws {
         // Connect MSAL and Microsoft Graph upload sessions here.
         throw CloudUploadError.authenticationRequired(provider: .oneDrive)
+    }
+}
+
+struct ICloudDriveUploader: CloudUploading {
+    func upload(fileURL: URL) async throws {
+        let destinationDirectory = try destinationDirectory()
+        let destinationURL = destinationDirectory.appendingPathComponent(fileURL.lastPathComponent)
+
+        do {
+            if FileManager.default.fileExists(atPath: destinationURL.path) {
+                try FileManager.default.removeItem(at: destinationURL)
+            }
+            try FileManager.default.copyItem(at: fileURL, to: destinationURL)
+        } catch {
+            throw CloudUploadError.copyFailed(provider: .iCloudDrive)
+        }
+    }
+
+    private func destinationDirectory() throws -> URL {
+        let fileManager = FileManager.default
+        if let iCloudDocuments = fileManager.url(forUbiquityContainerIdentifier: nil)?
+            .appendingPathComponent("Documents", isDirectory: true)
+            .appendingPathComponent("AudioRecorder", isDirectory: true) {
+            try fileManager.createDirectory(at: iCloudDocuments, withIntermediateDirectories: true)
+            return iCloudDocuments
+        }
+
+        let localDocuments = try fileManager.url(
+            for: .documentDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: true
+        )
+        let exports = localDocuments.appendingPathComponent("AudioRecorder", isDirectory: true)
+        try fileManager.createDirectory(at: exports, withIntermediateDirectories: true)
+        return exports
     }
 }
 
@@ -105,6 +144,8 @@ enum CloudUploaderFactory {
         switch job.provider {
         case .none:
             DisabledCloudUploader()
+        case .iCloudDrive:
+            ICloudDriveUploader()
         case .googleDrive:
             GoogleDriveUploader()
         case .oneDrive:

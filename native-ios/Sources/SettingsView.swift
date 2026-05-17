@@ -2,7 +2,6 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var settings: RecordingSettingsStore
-    @Environment(\.openURL) private var openURL
 
     @State private var setupProvider: CloudProvider?
 
@@ -70,7 +69,7 @@ struct SettingsView: View {
                     }
                     .disabled(!settings.uploadAutomatically)
                     .onChange(of: settings.cloudProvider) { provider in
-                        if provider != .none {
+                        if provider.requiresSetup {
                             setupProvider = provider
                         }
                     }
@@ -86,12 +85,18 @@ struct SettingsView: View {
                             .autocorrectionDisabled()
                     }
 
-                    if settings.uploadAutomatically && settings.cloudProvider != .none {
+                    if settings.uploadAutomatically && settings.cloudProvider.requiresSetup {
                         Button {
                             setupProvider = settings.cloudProvider
                         } label: {
                             Label(providerSetupButtonTitle, systemImage: "person.crop.circle.badge.checkmark")
                         }
+                    }
+
+                    if settings.uploadAutomatically && settings.cloudProvider == .iCloudDrive {
+                        Label("Usa la cuenta de iCloud del iPhone. Si iCloud Drive no esta disponible, se guarda en Archivos > En mi iPhone > AudioRecorder.", systemImage: "icloud")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
 
@@ -110,8 +115,7 @@ struct SettingsView: View {
                 UploadProviderSetupView(
                     provider: provider,
                     endpoint: $settings.customUploadEndpoint,
-                    token: $settings.customUploadToken,
-                    openURL: openURL
+                    token: $settings.customUploadToken
                 )
             }
         }
@@ -123,7 +127,7 @@ struct SettingsView: View {
             "Configurar acceso"
         case .googleDrive, .oneDrive:
             "Iniciar sesion"
-        case .none:
+        case .iCloudDrive, .none:
             "Configurar"
         }
     }
@@ -143,7 +147,6 @@ private struct UploadProviderSetupView: View {
     let provider: CloudProvider
     @Binding var endpoint: String
     @Binding var token: String
-    let openURL: OpenURLAction
 
     @Environment(\.dismiss) private var dismiss
 
@@ -151,6 +154,10 @@ private struct UploadProviderSetupView: View {
         NavigationStack {
             Form {
                 switch provider {
+                case .iCloudDrive:
+                    Section("iCloud Drive") {
+                        Label("No necesita login dentro de la app. Usa la cuenta de iCloud configurada en iOS.", systemImage: "icloud")
+                    }
                 case .customServer:
                     Section("Servidor propio") {
                         TextField("https://tu-servidor.com/upload", text: $endpoint)
@@ -163,19 +170,13 @@ private struct UploadProviderSetupView: View {
                     }
                 case .googleDrive:
                     Section("Google Drive") {
-                        Button {
-                            openURL(URL(string: "https://accounts.google.com/")!)
-                        } label: {
-                            Label("Abrir inicio de sesion", systemImage: "safari")
-                        }
+                        Label("Para guardar sesion aqui hace falta integrar Google Sign-In y la API de Drive con un Client ID de Google Cloud.", systemImage: "key")
+                            .foregroundStyle(.secondary)
                     }
                 case .oneDrive:
                     Section("OneDrive") {
-                        Button {
-                            openURL(URL(string: "https://login.microsoftonline.com/")!)
-                        } label: {
-                            Label("Abrir inicio de sesion", systemImage: "safari")
-                        }
+                        Label("Para guardar sesion aqui hace falta integrar MSAL y Microsoft Graph con un App ID de Azure.", systemImage: "key")
+                            .foregroundStyle(.secondary)
                     }
                 case .none:
                     EmptyView()
@@ -189,6 +190,17 @@ private struct UploadProviderSetupView: View {
                     }
                 }
             }
+        }
+    }
+}
+
+private extension CloudProvider {
+    var requiresSetup: Bool {
+        switch self {
+        case .customServer, .googleDrive, .oneDrive:
+            true
+        case .none, .iCloudDrive:
+            false
         }
     }
 }

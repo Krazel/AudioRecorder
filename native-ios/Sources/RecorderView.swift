@@ -9,6 +9,9 @@ struct RecorderView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 28) {
+                Spacer()
+                    .frame(height: 24)
+
                 VStack(spacing: 8) {
                     Text(recorder.isRecording ? "Grabando" : "Preparado")
                         .font(.largeTitle.weight(.semibold))

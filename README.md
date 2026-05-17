@@ -40,6 +40,7 @@ Para vigilar y descargar el IPA desde Windows:
 - Modos: todo y por sonido.
 - Indice local de grabaciones en JSON.
 - Cola persistente de subida.
+- Copia automatica a iCloud Drive / Archivos cuando iCloud esta disponible.
 - Subida real a servidor propio mediante `multipart/form-data`.
 - Abstraccion preparada para Google Drive y OneDrive.
 
@@ -54,6 +55,8 @@ La app hace un `POST multipart/form-data` con:
 - `provider`: `customServer`.
 
 Si el servidor responde con HTTP 2xx, la grabacion pasa a `Subido`. Si responde con error o falta URL valida, queda como `Fallido` para poder reintentarla desde `Archivos`.
+
+Para iCloud Drive, elige `iCloud Drive / Archivos`. La app copia los audios a la carpeta `AudioRecorder` de iCloud Drive si iCloud esta disponible; si no, los deja accesibles en la app Archivos dentro de `En mi iPhone > AudioRecorder`.
 
 ## Pendiente antes de produccion
 
