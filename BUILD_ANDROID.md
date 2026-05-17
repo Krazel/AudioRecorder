@@ -12,13 +12,14 @@ ID fijo:
 com.dmkr.audio
 ```
 
-La version Android actual es un MVP nativo Java:
+La version Android debe mantener paridad con iPhone:
 
-- permiso de microfono;
+- pantalla Grabar;
+- pantalla Archivos;
+- pantalla Ajustes;
 - grabacion `.m4a` con `MediaRecorder`;
-- boton iniciar/parar;
-- timer de grabacion;
-- listado local de grabaciones guardadas en almacenamiento privado de la app.
+- reproducir, compartir, renombrar y eliminar grabaciones;
+- ajustes de calidad, modo, corte, sensibilidad y subida automatica.
 
 Generar APK debug:
 
@@ -33,11 +34,13 @@ APK resultante:
 android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Objetivo para artifacts:
+Objetivo para artifacts locales:
 
 ```text
-artifact/AudioRecorder-Android-v1.0-build-N.apk
+artifact/AudioRecorder-Android-v1.0-local.apk
 artifact/old/
 ```
 
-Debe mantenerse la misma regla que iOS: una sola build visible por plataforma en `artifact/` y builds antiguas en `artifact/old/`.
+Android se compila localmente desde Windows. No crear GitHub Actions para Android.
+
+Debe mantenerse la misma regla: una sola build visible por plataforma en `artifact/` y builds antiguas en `artifact/old/`.
