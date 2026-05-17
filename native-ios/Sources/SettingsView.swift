@@ -66,10 +66,21 @@ struct SettingsView: View {
                         }
                     }
                     .disabled(!settings.uploadAutomatically)
+
+                    if settings.uploadAutomatically && settings.cloudProvider == .customServer {
+                        TextField("https://tu-servidor.com/upload", text: $settings.customUploadEndpoint)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .keyboardType(.URL)
+
+                        Text("La app enviara el archivo como multipart/form-data en el campo file. Tambien incluye recording_id y provider.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 Section("Notas") {
-                    Text("Google Drive y OneDrive quedan preparados como proveedores. Falta conectar OAuth y las APIs reales antes de publicar.")
+                    Text("Servidor propio ya permite probar subidas externas con un endpoint HTTPS. Google Drive y OneDrive siguen preparados para conectar OAuth y sus APIs reales antes de publicar.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -82,7 +93,7 @@ struct SettingsView: View {
 
                 Section("Version") {
                     HStack {
-                        Text("AudioRecorder")
+                        Text("Grabadora")
                         Spacer()
                         Text(appVersionText)
                             .fontWeight(.semibold)

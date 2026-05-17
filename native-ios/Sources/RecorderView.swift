@@ -60,7 +60,7 @@ struct RecorderView: View {
                 Spacer()
             }
             .padding()
-            .navigationTitle("Audio")
+            .navigationTitle("Grabadora")
         }
     }
 

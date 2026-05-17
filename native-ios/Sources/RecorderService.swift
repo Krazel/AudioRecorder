@@ -186,8 +186,12 @@ final class RecorderService: ObservableObject {
         library?.addImmediately(item)
         if settings.uploadAutomatically {
             Task {
-                await uploadQueue?.enqueue(recording: item, provider: settings.cloudProvider)
-                await uploadQueue?.processNext()
+                await uploadQueue?.enqueue(
+                    recording: item,
+                    provider: settings.cloudProvider,
+                    endpointURL: settings.customUploadEndpointURL
+                )
+                await uploadQueue?.processNext(library: library)
             }
         }
 

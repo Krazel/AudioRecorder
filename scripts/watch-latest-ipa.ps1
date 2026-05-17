@@ -2,7 +2,7 @@ param(
   [string]$Repo = "Krazel/AudioRecorder",
   [string]$WorkflowName = "Build unsigned iOS IPA",
   [string]$ArtifactName = "AudioRecorder-unsigned-ipa",
-  [string]$AppVersion = "1.7",
+  [string]$AppVersion = "1.8",
   [string]$Commit = "",
   [int]$IntervalSeconds = 60,
   [int]$MaxAttempts = 30
@@ -40,7 +40,7 @@ function Get-LatestRun {
 
 function Move-CurrentArtifacts {
   Get-ChildItem -LiteralPath $artifactDir |
-    Where-Object { $_.Name -ne "old" } |
+    Where-Object { $_.Name -ne "old" -and $_.Name -ne ".gitkeep" -and $_.Name -like "*iPhone*.ipa" } |
     ForEach-Object { Move-Item -LiteralPath $_.FullName -Destination $oldDir -Force }
 }
 
@@ -48,7 +48,7 @@ function Keep-OnlyCurrentArtifact {
   param([string]$CurrentPath)
 
   Get-ChildItem -LiteralPath $artifactDir |
-    Where-Object { $_.Name -ne "old" -and $_.FullName -ne $CurrentPath } |
+    Where-Object { $_.Name -ne "old" -and $_.Name -ne ".gitkeep" -and $_.Name -like "*iPhone*.ipa" -and $_.FullName -ne $CurrentPath } |
     ForEach-Object { Move-Item -LiteralPath $_.FullName -Destination $oldDir -Force }
 }
 

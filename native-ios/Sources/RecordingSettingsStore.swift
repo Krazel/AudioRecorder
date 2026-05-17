@@ -30,6 +30,10 @@ final class RecordingSettingsStore: ObservableObject {
         didSet { save() }
     }
 
+    @Published var customUploadEndpoint: String {
+        didSet { save() }
+    }
+
     private let defaults = UserDefaults.standard
 
     init() {
@@ -42,10 +46,21 @@ final class RecordingSettingsStore: ObservableObject {
         uploadAutomatically = defaults.object(forKey: "uploadAutomatically") as? Bool ?? false
         recordingThresholdDB = storedThreshold ?? -55
         startRecordingOnLaunch = defaults.object(forKey: "startRecordingOnLaunch") as? Bool ?? false
+        customUploadEndpoint = defaults.string(forKey: "customUploadEndpoint") ?? ""
     }
 
     var segmentDuration: TimeInterval {
         TimeInterval(segmentMinutes * 60)
+    }
+
+    var customUploadEndpointURL: URL? {
+        guard let components = URLComponents(string: customUploadEndpoint.trimmingCharacters(in: .whitespacesAndNewlines)),
+              let scheme = components.scheme?.lowercased(),
+              ["http", "https"].contains(scheme),
+              components.host != nil else {
+            return nil
+        }
+        return components.url
     }
 
     var sensitivityPercent: Int {
@@ -66,5 +81,6 @@ final class RecordingSettingsStore: ObservableObject {
         defaults.set(uploadAutomatically, forKey: "uploadAutomatically")
         defaults.set(recordingThresholdDB, forKey: "recordingThresholdDB")
         defaults.set(startRecordingOnLaunch, forKey: "startRecordingOnLaunch")
+        defaults.set(customUploadEndpoint, forKey: "customUploadEndpoint")
     }
 }

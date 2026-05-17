@@ -7,6 +7,8 @@ protocol CloudUploading {
 enum CloudUploadError: LocalizedError {
     case providerDisabled
     case authenticationRequired(provider: CloudProvider)
+    case missingEndpoint
+    case invalidServerResponse(statusCode: Int)
 
     var errorDescription: String? {
         switch self {
@@ -14,6 +16,10 @@ enum CloudUploadError: LocalizedError {
             "La subida automatica esta desactivada."
         case .authenticationRequired(let provider):
             "Falta iniciar sesion en \(provider.title)."
+        case .missingEndpoint:
+            "Falta configurar la URL de subida del servidor propio."
+        case .invalidServerResponse(let statusCode):
+            "El servidor rechazo la subida con codigo \(statusCode)."
         }
     }
 }
@@ -39,15 +45,60 @@ struct OneDriveUploader: CloudUploading {
 }
 
 struct CustomServerUploader: CloudUploading {
+    let endpoint: URL?
+    let recordingID: UUID
+
     func upload(fileURL: URL) async throws {
-        // Send the file to your own backend with URLSession multipart or resumable upload.
-        throw CloudUploadError.authenticationRequired(provider: .customServer)
+        guard let endpoint else {
+            throw CloudUploadError.missingEndpoint
+        }
+
+        let boundary = "Boundary-\(UUID().uuidString)"
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        let body = try multipartBody(
+            boundary: boundary,
+            fileURL: fileURL,
+            recordingID: recordingID
+        )
+        let (_, response) = try await URLSession.shared.upload(for: request, from: body)
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              200 ..< 300 ~= httpResponse.statusCode else {
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+            throw CloudUploadError.invalidServerResponse(statusCode: statusCode)
+        }
+    }
+
+    private func multipartBody(
+        boundary: String,
+        fileURL: URL,
+        recordingID: UUID
+    ) throws -> Data {
+        var data = Data()
+        appendField(name: "recording_id", value: recordingID.uuidString, boundary: boundary, to: &data)
+        appendField(name: "provider", value: CloudProvider.customServer.rawValue, boundary: boundary, to: &data)
+
+        data.append("--\(boundary)\r\n")
+        data.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileURL.lastPathComponent)\"\r\n")
+        data.append("Content-Type: audio/mp4\r\n\r\n")
+        data.append(try Data(contentsOf: fileURL))
+        data.append("\r\n--\(boundary)--\r\n")
+        return data
+    }
+
+    private func appendField(name: String, value: String, boundary: String, to data: inout Data) {
+        data.append("--\(boundary)\r\n")
+        data.append("Content-Disposition: form-data; name=\"\(name)\"\r\n\r\n")
+        data.append("\(value)\r\n")
     }
 }
 
 enum CloudUploaderFactory {
-    static func uploader(for provider: CloudProvider) -> CloudUploading {
-        switch provider {
+    static func uploader(for job: UploadJob) -> CloudUploading {
+        switch job.provider {
         case .none:
             DisabledCloudUploader()
         case .googleDrive:
@@ -55,7 +106,13 @@ enum CloudUploaderFactory {
         case .oneDrive:
             OneDriveUploader()
         case .customServer:
-            CustomServerUploader()
+            CustomServerUploader(endpoint: job.endpointURL, recordingID: job.recordingID)
         }
+    }
+}
+
+private extension Data {
+    mutating func append(_ string: String) {
+        append(Data(string.utf8))
     }
 }

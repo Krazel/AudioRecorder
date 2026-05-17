@@ -1,6 +1,6 @@
-# AudioRecorder iOS
+# Grabadora
 
-MVP nativo en SwiftUI para grabar audio en iPhone, segmentarlo por intervalos configurables y preparar subida automatica a proveedores externos.
+MVP nativo para grabar en iPhone y Android, segmentar por intervalos configurables y probar subida automatica a proveedores externos.
 
 ## Build en GitHub
 
@@ -40,7 +40,18 @@ Para vigilar y descargar el IPA desde Windows:
 - Modos: todo, voces, ruido y separado.
 - Indice local de grabaciones en JSON.
 - Cola persistente de subida.
-- Abstraccion para Google Drive, OneDrive y servidor propio.
+- Subida real a servidor propio mediante `multipart/form-data`.
+- Abstraccion preparada para Google Drive y OneDrive.
+
+## Probar subida externa
+
+En iOS, abre `Ajustes`, activa `Subir al terminar cada segmento`, elige `Servidor propio` y pega un endpoint HTTPS. La app hace un `POST multipart/form-data` con:
+
+- `file`: archivo `.m4a`.
+- `recording_id`: identificador de la grabacion.
+- `provider`: `customServer`.
+
+Si el servidor responde con HTTP 2xx, la grabacion pasa a `Subido`. Si responde con error o falta URL valida, queda como `Fallido` para poder reintentarla desde `Archivos`.
 
 ## Pendiente antes de produccion
 

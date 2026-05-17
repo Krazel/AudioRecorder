@@ -5,6 +5,7 @@ struct UploadJob: Identifiable, Codable, Equatable {
     let recordingID: UUID
     let fileURL: URL
     let provider: CloudProvider
+    let endpointURL: URL?
     var attempts: Int
     var state: UploadState
 }
@@ -31,13 +32,14 @@ final class CloudUploadQueue: ObservableObject {
         }
     }
 
-    func enqueue(recording: RecordingItem, provider: CloudProvider) async {
+    func enqueue(recording: RecordingItem, provider: CloudProvider, endpointURL: URL?) async {
         guard provider != .none else { return }
         let job = UploadJob(
             id: UUID(),
             recordingID: recording.id,
             fileURL: recording.fileURL,
             provider: provider,
+            endpointURL: endpointURL,
             attempts: 0,
             state: .queued
         )
@@ -45,21 +47,24 @@ final class CloudUploadQueue: ObservableObject {
         await save()
     }
 
-    func processNext() async {
+    func processNext(library: RecordingLibrary? = nil) async {
         guard let index = jobs.firstIndex(where: { $0.state == .queued || $0.state == .failed }) else {
             return
         }
 
         jobs[index].state = .uploading
+        await library?.updateUploadState(id: jobs[index].recordingID, state: .uploading)
         jobs[index].attempts += 1
         await save()
 
         do {
-            let uploader = CloudUploaderFactory.uploader(for: jobs[index].provider)
+            let uploader = CloudUploaderFactory.uploader(for: jobs[index])
             try await uploader.upload(fileURL: jobs[index].fileURL)
             jobs[index].state = .uploaded
+            await library?.updateUploadState(id: jobs[index].recordingID, state: .uploaded)
         } catch {
             jobs[index].state = .failed
+            await library?.updateUploadState(id: jobs[index].recordingID, state: .failed)
         }
         await save()
     }

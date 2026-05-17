@@ -39,7 +39,7 @@ struct RecordingsView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         Task {
-                            await uploadQueue.processNext()
+                            await uploadQueue.processNext(library: library)
                         }
                     } label: {
                         Image(systemName: "arrow.up.circle")
