@@ -46,6 +46,7 @@ struct OneDriveUploader: CloudUploading {
 
 struct CustomServerUploader: CloudUploading {
     let endpoint: URL?
+    let authToken: String?
     let recordingID: UUID
 
     func upload(fileURL: URL) async throws {
@@ -57,6 +58,9 @@ struct CustomServerUploader: CloudUploading {
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        if let authToken, !authToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        }
 
         let body = try multipartBody(
             boundary: boundary,
@@ -106,7 +110,7 @@ enum CloudUploaderFactory {
         case .oneDrive:
             OneDriveUploader()
         case .customServer:
-            CustomServerUploader(endpoint: job.endpointURL, recordingID: job.recordingID)
+            CustomServerUploader(endpoint: job.endpointURL, authToken: job.authToken, recordingID: job.recordingID)
         }
     }
 }

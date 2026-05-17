@@ -189,7 +189,8 @@ final class RecorderService: ObservableObject {
                 await uploadQueue?.enqueue(
                     recording: item,
                     provider: settings.cloudProvider,
-                    endpointURL: settings.customUploadEndpointURL
+                    endpointURL: settings.customUploadEndpointURL,
+                    authToken: settings.customUploadToken
                 )
                 await uploadQueue?.processNext(library: library)
             }

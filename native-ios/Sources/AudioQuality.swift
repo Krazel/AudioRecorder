@@ -2,6 +2,7 @@ import AVFoundation
 import Foundation
 
 enum AudioQuality: String, CaseIterable, Codable, Identifiable {
+    case veryLow
     case low
     case medium
     case high
@@ -10,14 +11,16 @@ enum AudioQuality: String, CaseIterable, Codable, Identifiable {
 
     var title: String {
         switch self {
+        case .veryLow: "Muy baja"
         case .low: "Baja"
         case .medium: "Media"
-        case .high: "Alta"
+        case .high: "Alta (maxima)"
         }
     }
 
     var sampleRate: Double {
         switch self {
+        case .veryLow: 8_000
         case .low: 16_000
         case .medium: 44_100
         case .high: 48_000
@@ -26,7 +29,7 @@ enum AudioQuality: String, CaseIterable, Codable, Identifiable {
 
     var channelCount: AVAudioChannelCount {
         switch self {
-        case .low: 1
+        case .veryLow, .low: 1
         case .medium: 1
         case .high: 2
         }
@@ -34,6 +37,7 @@ enum AudioQuality: String, CaseIterable, Codable, Identifiable {
 
     var bitRate: Int {
         switch self {
+        case .veryLow: 16_000
         case .low: 32_000
         case .medium: 96_000
         case .high: 192_000
@@ -42,14 +46,14 @@ enum AudioQuality: String, CaseIterable, Codable, Identifiable {
 
     var fileExtension: String {
         switch self {
-        case .low, .medium: "m4a"
+        case .veryLow, .low, .medium: "m4a"
         case .high: "caf"
         }
     }
 
     var commonFormat: AVAudioCommonFormat {
         switch self {
-        case .low, .medium: .pcmFormatInt16
+        case .veryLow, .low, .medium: .pcmFormatInt16
         case .high: .pcmFormatFloat32
         }
     }
@@ -59,7 +63,7 @@ enum AudioQuality: String, CaseIterable, Codable, Identifiable {
         let channels = Int(inputFormat.channelCount)
 
         switch self {
-        case .low, .medium:
+        case .veryLow, .low, .medium:
             let settings: [String: Any] = [
                 AVFormatIDKey: kAudioFormatMPEG4AAC,
                 AVSampleRateKey: sampleRate,

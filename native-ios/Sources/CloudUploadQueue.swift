@@ -6,6 +6,7 @@ struct UploadJob: Identifiable, Codable, Equatable {
     let fileURL: URL
     let provider: CloudProvider
     let endpointURL: URL?
+    let authToken: String?
     var attempts: Int
     var state: UploadState
 }
@@ -32,7 +33,7 @@ final class CloudUploadQueue: ObservableObject {
         }
     }
 
-    func enqueue(recording: RecordingItem, provider: CloudProvider, endpointURL: URL?) async {
+    func enqueue(recording: RecordingItem, provider: CloudProvider, endpointURL: URL?, authToken: String?) async {
         guard provider != .none else { return }
         let job = UploadJob(
             id: UUID(),
@@ -40,6 +41,7 @@ final class CloudUploadQueue: ObservableObject {
             fileURL: recording.fileURL,
             provider: provider,
             endpointURL: endpointURL,
+            authToken: authToken,
             attempts: 0,
             state: .queued
         )

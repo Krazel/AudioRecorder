@@ -34,22 +34,28 @@ final class RecordingSettingsStore: ObservableObject {
         didSet { save() }
     }
 
+    @Published var customUploadToken: String {
+        didSet { save() }
+    }
+
     private let defaults = UserDefaults.standard
 
     init() {
-        let storedSegmentMinutes = defaults.integer(forKey: "segmentMinutes")
+        let storedSegmentMinutes = defaults.object(forKey: "segmentMinutes") as? Int
         let storedThreshold = defaults.object(forKey: "recordingThresholdDB") as? Float
         quality = AudioQuality(rawValue: defaults.string(forKey: "quality") ?? "") ?? .medium
-        mode = RecordingMode(rawValue: defaults.string(forKey: "mode") ?? "") ?? .soundActivated
-        segmentMinutes = storedSegmentMinutes == 0 ? 30 : storedSegmentMinutes
+        mode = RecordingMode(rawValue: defaults.string(forKey: "mode") ?? "") ?? .everything
+        segmentMinutes = storedSegmentMinutes ?? 0
         cloudProvider = CloudProvider(rawValue: defaults.string(forKey: "cloudProvider") ?? "") ?? .none
         uploadAutomatically = defaults.object(forKey: "uploadAutomatically") as? Bool ?? false
         recordingThresholdDB = storedThreshold ?? -55
         startRecordingOnLaunch = defaults.object(forKey: "startRecordingOnLaunch") as? Bool ?? false
         customUploadEndpoint = defaults.string(forKey: "customUploadEndpoint") ?? ""
+        customUploadToken = defaults.string(forKey: "customUploadToken") ?? ""
     }
 
     var segmentDuration: TimeInterval {
+        guard segmentMinutes > 0 else { return .infinity }
         TimeInterval(segmentMinutes * 60)
     }
 
@@ -82,5 +88,6 @@ final class RecordingSettingsStore: ObservableObject {
         defaults.set(recordingThresholdDB, forKey: "recordingThresholdDB")
         defaults.set(startRecordingOnLaunch, forKey: "startRecordingOnLaunch")
         defaults.set(customUploadEndpoint, forKey: "customUploadEndpoint")
+        defaults.set(customUploadToken, forKey: "customUploadToken")
     }
 }

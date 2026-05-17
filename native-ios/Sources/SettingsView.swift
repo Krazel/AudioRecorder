@@ -2,8 +2,11 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var settings: RecordingSettingsStore
+    @Environment(\.openURL) private var openURL
 
-    private let segmentOptions = [5, 15, 30, 60, 120]
+    @State private var setupProvider: CloudProvider?
+
+    private let segmentOptions = [0, 5, 15, 30, 60, 120]
 
     var body: some View {
         NavigationStack {
@@ -23,7 +26,7 @@ struct SettingsView: View {
 
                     Picker("Separar cada", selection: $settings.segmentMinutes) {
                         ForEach(segmentOptions, id: \.self) { minutes in
-                            Text("\(minutes) minutos").tag(minutes)
+                            Text(segmentTitle(minutes)).tag(minutes)
                         }
                     }
 
@@ -66,6 +69,11 @@ struct SettingsView: View {
                         }
                     }
                     .disabled(!settings.uploadAutomatically)
+                    .onChange(of: settings.cloudProvider) { provider in
+                        if provider != .none {
+                            setupProvider = provider
+                        }
+                    }
 
                     if settings.uploadAutomatically && settings.cloudProvider == .customServer {
                         TextField("https://tu-servidor.com/upload", text: $settings.customUploadEndpoint)
@@ -73,22 +81,18 @@ struct SettingsView: View {
                             .autocorrectionDisabled()
                             .keyboardType(.URL)
 
-                        Text("La app enviara el archivo como multipart/form-data en el campo file. Tambien incluye recording_id y provider.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        SecureField("Token o API key opcional", text: $settings.customUploadToken)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
                     }
-                }
 
-                Section("Notas") {
-                    Text("Servidor propio ya permite probar subidas externas con un endpoint HTTPS. Google Drive y OneDrive siguen preparados para conectar OAuth y sus APIs reales antes de publicar.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-
-                Section("Modo por sonido") {
-                    Text("La app no identifica voz real todavia. El modo Por sonido guarda cualquier audio que supere el umbral dBFS y compacta los silencios.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                    if settings.uploadAutomatically && settings.cloudProvider != .none {
+                        Button {
+                            setupProvider = settings.cloudProvider
+                        } label: {
+                            Label(providerSetupButtonTitle, systemImage: "person.crop.circle.badge.checkmark")
+                        }
+                    }
                 }
 
                 Section("Version") {
@@ -102,12 +106,89 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Ajustes")
+            .sheet(item: $setupProvider) { provider in
+                UploadProviderSetupView(
+                    provider: provider,
+                    endpoint: $settings.customUploadEndpoint,
+                    token: $settings.customUploadToken,
+                    openURL: openURL
+                )
+            }
         }
+    }
+
+    private var providerSetupButtonTitle: String {
+        switch settings.cloudProvider {
+        case .customServer:
+            "Configurar acceso"
+        case .googleDrive, .oneDrive:
+            "Iniciar sesion"
+        case .none:
+            "Configurar"
+        }
+    }
+
+    private func segmentTitle(_ minutes: Int) -> String {
+        minutes == 0 ? "No separar" : "\(minutes) minutos"
     }
 
     private var appVersionText: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
         return "v\(version) build \(build)"
+    }
+}
+
+private struct UploadProviderSetupView: View {
+    let provider: CloudProvider
+    @Binding var endpoint: String
+    @Binding var token: String
+    let openURL: OpenURLAction
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                switch provider {
+                case .customServer:
+                    Section("Servidor propio") {
+                        TextField("https://tu-servidor.com/upload", text: $endpoint)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .keyboardType(.URL)
+                        SecureField("Token o API key opcional", text: $token)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                    }
+                case .googleDrive:
+                    Section("Google Drive") {
+                        Button {
+                            openURL(URL(string: "https://accounts.google.com/")!)
+                        } label: {
+                            Label("Abrir inicio de sesion", systemImage: "safari")
+                        }
+                    }
+                case .oneDrive:
+                    Section("OneDrive") {
+                        Button {
+                            openURL(URL(string: "https://login.microsoftonline.com/")!)
+                        } label: {
+                            Label("Abrir inicio de sesion", systemImage: "safari")
+                        }
+                    }
+                case .none:
+                    EmptyView()
+                }
+            }
+            .navigationTitle(provider.title)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("OK") {
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }

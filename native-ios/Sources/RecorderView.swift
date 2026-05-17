@@ -42,7 +42,7 @@ struct RecorderView: View {
                 VStack(spacing: 12) {
                     DetailRow(title: "Modo", value: settings.mode.title)
                     DetailRow(title: "Calidad", value: settings.quality.title)
-                    DetailRow(title: "Corte", value: "\(settings.segmentMinutes) min")
+                    DetailRow(title: "Corte", value: settings.segmentMinutes == 0 ? "No separar" : "\(settings.segmentMinutes) min")
                     DetailRow(title: "Sensibilidad", value: "\(settings.sensitivityPercent)%")
                     DetailRow(title: "Subida", value: settings.uploadAutomatically ? settings.cloudProvider.title : "No")
                 }
@@ -68,7 +68,7 @@ struct RecorderView: View {
     private var statusText: String {
         if recorder.isRecording {
             if settings.mode == .everything {
-                "Se crea un archivo nuevo cada \(settings.segmentMinutes) minutos"
+                settings.segmentMinutes == 0 ? "Se guarda todo en un solo archivo" : "Se crea un archivo nuevo cada \(settings.segmentMinutes) minutos"
             } else if recorder.isWritingAudio {
                 "Supera el umbral y se esta guardando audio"
             } else {

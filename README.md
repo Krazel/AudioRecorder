@@ -35,9 +35,9 @@ Para vigilar y descargar el IPA desde Windows:
 - Grabacion mediante `AVAudioEngine`.
 - Permiso de microfono en `Info.plist`.
 - `UIBackgroundModes = audio` para continuar grabando en segundo plano.
-- Segmentacion configurable: 5, 15, 30, 60 y 120 minutos.
-- Calidad baja/media/alta con ajustes de bitrate/formato.
-- Modos: todo, voces, ruido y separado.
+- Segmentacion configurable: no separar, 5, 15, 30, 60 y 120 minutos.
+- Calidad muy baja/baja/media/alta con ajustes de bitrate/formato.
+- Modos: todo y por sonido.
 - Indice local de grabaciones en JSON.
 - Cola persistente de subida.
 - Subida real a servidor propio mediante `multipart/form-data`.
@@ -45,7 +45,9 @@ Para vigilar y descargar el IPA desde Windows:
 
 ## Probar subida externa
 
-En iOS, abre `Ajustes`, activa `Subir al terminar cada segmento`, elige `Servidor propio` y pega un endpoint HTTPS. La app hace un `POST multipart/form-data` con:
+En iOS, abre `Ajustes`, activa `Subir al terminar cada segmento`, elige `Servidor propio` y pega un endpoint HTTPS. Si el servidor necesita autenticacion, guarda un token/API key y la app lo enviara como `Authorization: Bearer`.
+
+La app hace un `POST multipart/form-data` con:
 
 - `file`: archivo `.m4a`.
 - `recording_id`: identificador de la grabacion.
