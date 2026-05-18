@@ -70,6 +70,10 @@ struct RecorderView: View {
     }
 
     private var statusText: String {
+        if recorder.isInterrupted {
+            return "Pausado por otro audio. Se reanudara automaticamente"
+        }
+
         if recorder.isRecording {
             if settings.mode == .everything {
                 settings.segmentMinutes == 0 ? "Se guarda todo en un solo archivo" : "Se crea un archivo nuevo cada \(settings.segmentMinutes) minutos"

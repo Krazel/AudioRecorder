@@ -10,6 +10,7 @@ final class RecorderService: ObservableObject {
     @Published private(set) var lastError: String?
     @Published private(set) var currentLevel: Float = -120
     @Published private(set) var isWritingAudio = false
+    @Published private(set) var isInterrupted = false
 
     private let engine = AVAudioEngine()
     private let analyzer = VoiceNoiseAnalyzer()
@@ -21,6 +22,7 @@ final class RecorderService: ObservableObject {
     private var settings: RecordingSettingsStore?
     private var library: RecordingLibrary?
     private var uploadQueue: CloudUploadQueue?
+    private var shouldResumeAfterInterruption = false
 
     func start(
         settings: RecordingSettingsStore,
@@ -47,6 +49,8 @@ final class RecorderService: ObservableObject {
     }
 
     func stop() {
+        shouldResumeAfterInterruption = false
+        isInterrupted = false
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
         completeCurrentSegment()
@@ -76,7 +80,7 @@ final class RecorderService: ObservableObject {
 
     private func configureAudioSession() throws {
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playAndRecord, mode: .default, options: [.allowBluetooth, .defaultToSpeaker])
+        try session.setCategory(.playAndRecord, mode: .default, options: [.allowBluetooth, .defaultToSpeaker, .mixWithOthers])
         try session.setActive(true)
     }
 
@@ -84,6 +88,7 @@ final class RecorderService: ObservableObject {
         let input = engine.inputNode
         let inputFormat = input.outputFormat(forBus: 0)
 
+        input.removeTap(onBus: 0)
         input.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { [weak self] buffer, _ in
             Task { @MainActor in
                 self?.handle(buffer)
@@ -221,18 +226,65 @@ final class RecorderService: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] notification in
-            guard let rawType = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
-                  AVAudioSession.InterruptionType(rawValue: rawType) == .began else {
-                return
-            }
             Task { @MainActor in
-                self?.emergencyStopAndSave()
+                self?.handleAudioInterruption(notification)
             }
+        }
+    }
+
+    private func handleAudioInterruption(_ notification: Notification) {
+        guard let rawType = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+              let type = AVAudioSession.InterruptionType(rawValue: rawType) else {
+            return
+        }
+
+        switch type {
+        case .began:
+            pauseForAudioInterruption()
+        case .ended:
+            Task {
+                await resumeAfterAudioInterruption()
+            }
+        @unknown default:
+            break
+        }
+    }
+
+    private func pauseForAudioInterruption() {
+        guard isRecording else { return }
+        shouldResumeAfterInterruption = true
+        isInterrupted = true
+        isWritingAudio = false
+        engine.inputNode.removeTap(onBus: 0)
+        engine.stop()
+        completeCurrentSegment()
+        lastError = "Grabacion pausada por otra app. Se reanudara sola."
+    }
+
+    private func resumeAfterAudioInterruption() async {
+        guard shouldResumeAfterInterruption, let settings else { return }
+        shouldResumeAfterInterruption = false
+
+        do {
+            try configureAudioSession()
+            try startNewSegment()
+            try startEngine()
+            isRecording = true
+            isInterrupted = false
+            lastError = nil
+        } catch {
+            isInterrupted = false
+            isRecording = false
+            isWritingAudio = false
+            lastError = "No se pudo reanudar la grabacion: \(error.localizedDescription)"
+            self.settings = settings
         }
     }
 
     private func emergencyStopAndSave() {
         guard isRecording else { return }
+        shouldResumeAfterInterruption = false
+        isInterrupted = false
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
         completeCurrentSegment()
