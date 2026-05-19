@@ -76,14 +76,14 @@ struct RecorderView: View {
 
         if recorder.isRecording {
             if settings.mode == .everything {
-                settings.segmentMinutes == 0 ? "Se guarda todo en un solo archivo" : "Se crea un archivo nuevo cada \(settings.segmentMinutes) minutos"
+                return settings.segmentMinutes == 0 ? "Se guarda todo en un solo archivo" : "Se crea un archivo nuevo cada \(settings.segmentMinutes) minutos"
             } else if recorder.isWritingAudio {
-                "Supera el umbral y se esta guardando audio"
+                return "Supera el umbral y se esta guardando audio"
             } else {
-                "Esperando sonido suficiente (\(settings.sensitivityPercent)% sensibilidad)"
+                return "Esperando sonido suficiente (\(settings.sensitivityPercent)% sensibilidad)"
             }
         } else {
-            "Toca el micrófono para empezar"
+            return "Toca el micrófono para empezar"
         }
     }
 
