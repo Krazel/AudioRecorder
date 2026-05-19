@@ -48,6 +48,8 @@ En iOS, abre `Archivos` y usa `Enviar > Enviar pendientes` para compartir solo l
 
 iOS mostrara la hoja nativa para guardar en Archivos, iCloud Drive, Google Drive, OneDrive, correo u otra app instalada. Cuando se cierra la hoja de compartir, esas grabaciones se marcan como `Subido` para que no vuelvan a entrar en pendientes.
 
+Para envio manual, abre `Archivos` y usa el boton de compartir de arriba para enviar todos los audios, o desliza una grabacion y pulsa `Enviar`. iOS mostrara la hoja nativa para guardar en Archivos, iCloud Drive, Google Drive, OneDrive, correo u otra app instalada.
+
 ## Pendiente antes de produccion
 
 - Sustituir la separacion simple voz/ruido por un modelo Core ML si se necesita separacion avanzada.
