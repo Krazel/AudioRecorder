@@ -23,7 +23,7 @@ final class AudioPlaybackService: NSObject, ObservableObject, AVAudioPlayerDeleg
         do {
             stop()
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .default)
+            try session.setCategory(.playAndRecord, mode: .default, options: [.allowBluetooth, .defaultToSpeaker, .mixWithOthers])
             try session.setActive(true)
 
             let player = try AVAudioPlayer(contentsOf: item.fileURL)
