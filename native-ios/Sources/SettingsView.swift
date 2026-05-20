@@ -7,6 +7,7 @@ struct SettingsView: View {
     @Environment(\.openURL) private var openURL
 
     @State private var supportExpanded = false
+    @State private var unlockCodeVisible = false
 
     private let segmentOptions = [0, 5, 15, 30, 60, 120]
 
@@ -128,11 +129,17 @@ struct SettingsView: View {
                         .font(.title3.weight(.bold))
                         .foregroundStyle(monetization.adsRemoved ? .green : .accentColor)
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(monetization.adsRemoved ? "Sin anuncios activo" : "Con anuncio discreto abajo")
+                        Text(monetization.adsRemoved ? "Sin anuncios activo" : "Apoyar la app")
                             .font(.subheadline.weight(.semibold))
                         Text("Con una aportacion mensual ayudas a mantener la app. Mientras este activa, se quitan los anuncios.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                    }
+                }
+                .contentShape(Rectangle())
+                .onLongPressGesture(minimumDuration: 1.1) {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        unlockCodeVisible.toggle()
                     }
                 }
 
@@ -167,18 +174,21 @@ struct SettingsView: View {
                     Label("Restaurar compras", systemImage: "arrow.clockwise")
                 }
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Codigo para quitar anuncios")
-                        .font(.subheadline.weight(.semibold))
+                if unlockCodeVisible {
                     HStack {
-                        TextField("Codigo", text: $monetization.unlockCode)
+                        SecureField("", text: $monetization.unlockCode, prompt: Text(""))
                             .textInputAutocapitalization(.characters)
                             .autocorrectionDisabled()
-                        Button("Aplicar") {
+                        Button {
                             _ = monetization.applyUnlockCode()
+                            unlockCodeVisible = false
+                        } label: {
+                            Image(systemName: "checkmark.circle.fill")
                         }
+                        .buttonStyle(.borderless)
                         .disabled(monetization.unlockCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
+                    .transition(.opacity)
                 }
             }
         } header: {

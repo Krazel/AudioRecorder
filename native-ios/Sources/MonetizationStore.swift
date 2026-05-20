@@ -3,7 +3,7 @@ import StoreKit
 
 enum AppMonetizationConfig {
     static let adsEnabled = true
-    static let supportEmail = "krazelpausalinter@email.com"
+    static let supportEmail = "coderappskrazel@gmail.com"
     static let monthlySupportProductIDs = [
         "com.dmkr.audio.support.monthly.099",
         "com.dmkr.audio.support.monthly.299",

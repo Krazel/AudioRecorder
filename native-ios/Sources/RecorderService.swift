@@ -23,6 +23,8 @@ final class RecorderService: ObservableObject {
     private var library: RecordingLibrary?
     private var uploadQueue: CloudUploadQueue?
     private var shouldResumeAfterInterruption = false
+    private var lastLevelPublishAt: TimeInterval = 0
+    private var lastElapsedPublishAt: TimeInterval = 0
 
     func start(
         settings: RecordingSettingsStore,
@@ -112,6 +114,8 @@ final class RecorderService: ObservableObject {
         writtenDuration = 0
         didWriteCurrentSegment = false
         elapsed = 0
+        lastLevelPublishAt = 0
+        lastElapsedPublishAt = 0
     }
 
     private func rotateSegment() {
@@ -125,10 +129,10 @@ final class RecorderService: ObservableObject {
 
     private func handle(_ buffer: AVAudioPCMBuffer) {
         let analysis = analyzer.analyze(buffer)
-        currentLevel = analysis.rms
+        publishLevelIfNeeded(analysis.rms)
 
         guard shouldWriteBuffer(analysis: analysis) else {
-            isWritingAudio = false
+            setWritingAudio(false)
             return
         }
 
@@ -136,15 +140,34 @@ final class RecorderService: ObservableObject {
             try currentFile?.write(from: buffer)
             let bufferDuration = Double(buffer.frameLength) / buffer.format.sampleRate
             writtenDuration += bufferDuration
-            elapsed = writtenDuration
+            publishElapsedIfNeeded(writtenDuration)
             didWriteCurrentSegment = true
-            isWritingAudio = true
+            setWritingAudio(true)
             if let settings, writtenDuration >= settings.segmentDuration {
                 rotateSegment()
             }
         } catch {
             lastError = error.localizedDescription
         }
+    }
+
+    private func publishLevelIfNeeded(_ level: Float) {
+        let now = Date.timeIntervalSinceReferenceDate
+        guard now - lastLevelPublishAt >= 0.20 || abs(level - currentLevel) >= 8 else { return }
+        currentLevel = level
+        lastLevelPublishAt = now
+    }
+
+    private func publishElapsedIfNeeded(_ duration: TimeInterval) {
+        let now = Date.timeIntervalSinceReferenceDate
+        guard now - lastElapsedPublishAt >= 0.50 else { return }
+        elapsed = duration
+        lastElapsedPublishAt = now
+    }
+
+    private func setWritingAudio(_ value: Bool) {
+        guard isWritingAudio != value else { return }
+        isWritingAudio = value
     }
 
     private func shouldWriteBuffer(analysis: VoiceNoiseAnalysis) -> Bool {
