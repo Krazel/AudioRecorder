@@ -17,7 +17,6 @@ targets:
         buildPhase: resources
         excludes:
           - Info.plist
-          - AudioRecorderApp.entitlements
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.dmkr.audio
@@ -25,7 +24,6 @@ targets:
         MARKETING_VERSION: "1.9"
         CURRENT_PROJECT_VERSION: "1"
         INFOPLIST_FILE: Resources/Info.plist
-        CODE_SIGN_ENTITLEMENTS: Resources/AudioRecorderApp.entitlements
         CODE_SIGN_STYLE: Manual
         DEVELOPMENT_TEAM: ""
         ASSETCATALOG_COMPILER_APPICON_NAME: ""
