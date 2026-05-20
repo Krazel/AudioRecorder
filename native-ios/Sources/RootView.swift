@@ -1,13 +1,7 @@
 import SwiftUI
 
 struct RootView: View {
-    @EnvironmentObject private var recorder: RecorderService
-    @EnvironmentObject private var settings: RecordingSettingsStore
-    @EnvironmentObject private var library: RecordingLibrary
-    @EnvironmentObject private var uploadQueue: CloudUploadQueue
     @EnvironmentObject private var monetization: MonetizationStore
-
-    @State private var attemptedAutoStart = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -38,12 +32,29 @@ struct RootView: View {
                 .allowsHitTesting(false)
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
+
+            AutoStartRecorderView()
+                .frame(width: 0, height: 0)
+                .allowsHitTesting(false)
         }
-        .task {
-            guard settings.startRecordingOnLaunch, !attemptedAutoStart else { return }
-            attemptedAutoStart = true
-            await recorder.start(settings: settings, library: library, uploadQueue: uploadQueue)
-        }
+    }
+}
+
+private struct AutoStartRecorderView: View {
+    @EnvironmentObject private var recorder: RecorderService
+    @EnvironmentObject private var settings: RecordingSettingsStore
+    @EnvironmentObject private var library: RecordingLibrary
+    @EnvironmentObject private var uploadQueue: CloudUploadQueue
+
+    @State private var attemptedAutoStart = false
+
+    var body: some View {
+        Color.clear
+            .task {
+                guard settings.startRecordingOnLaunch, !attemptedAutoStart else { return }
+                attemptedAutoStart = true
+                await recorder.start(settings: settings, library: library, uploadQueue: uploadQueue)
+            }
     }
 }
 

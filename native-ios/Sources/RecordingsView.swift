@@ -25,6 +25,7 @@ struct RecordingsView: View {
                             selectionMode: selectionMode,
                             isSelected: selection.contains(item.id),
                             onToggleSelection: { toggleSelection(item.id) },
+                            onDragSelection: { selectRow(atGlobalLocation: $0) },
                             onShare: { shareItem = ShareItem(urls: [item.fileURL], recordingIDs: [item.id]) },
                             onRename: {
                                 renameItem = item
@@ -42,22 +43,8 @@ struct RecordingsView: View {
                     }
                 }
             }
-            .coordinateSpace(name: "recordingList")
             .onPreferenceChange(RecordingRowFramePreferenceKey.self) { frames in
                 rowFrames = frames
-            }
-            .overlay(alignment: .leading) {
-                if selectionMode {
-                    Color.clear
-                        .frame(width: 56)
-                        .contentShape(Rectangle())
-                        .gesture(
-                            DragGesture(minimumDistance: 0, coordinateSpace: .named("recordingList"))
-                                .onChanged { value in
-                                    selectRow(at: value.location)
-                                }
-                        )
-                }
             }
             .navigationTitle("Archivos")
             .toolbar {
@@ -210,7 +197,7 @@ struct RecordingsView: View {
         }
     }
 
-    private func selectRow(at location: CGPoint) {
+    private func selectRow(atGlobalLocation location: CGPoint) {
         guard let id = rowFrames.first(where: { $0.value.contains(location) })?.key else {
             return
         }
@@ -260,6 +247,7 @@ private struct RecordingRow: View {
     let selectionMode: Bool
     let isSelected: Bool
     let onToggleSelection: () -> Void
+    let onDragSelection: (CGPoint) -> Void
     let onShare: () -> Void
     let onRename: () -> Void
     let onToggleFavorite: () -> Void
@@ -268,13 +256,20 @@ private struct RecordingRow: View {
     var body: some View {
         HStack(spacing: 12) {
             if selectionMode {
-                Button {
-                    onToggleSelection()
-                } label: {
-                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                        .font(.title2)
-                }
-                .buttonStyle(.plain)
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.title2)
+                    .foregroundStyle(isSelected ? .accentColor : .secondary)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        onToggleSelection()
+                    }
+                    .simultaneousGesture(
+                        DragGesture(minimumDistance: 0, coordinateSpace: .global)
+                            .onChanged { value in
+                                onDragSelection(value.location)
+                            }
+                    )
                 .accessibilityLabel(isSelected ? "Quitar seleccion" : "Seleccionar")
             }
 
@@ -361,7 +356,7 @@ private struct RecordingRow: View {
             GeometryReader { proxy in
                 Color.clear.preference(
                     key: RecordingRowFramePreferenceKey.self,
-                    value: [item.id: proxy.frame(in: .named("recordingList"))]
+                    value: [item.id: proxy.frame(in: .global)]
                 )
             }
         )
