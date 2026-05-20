@@ -11,19 +11,21 @@ struct RecordingsView: View {
     @State private var selection = Set<UUID>()
     @State private var selectionMode = false
     @State private var rowFrames: [UUID: CGRect] = [:]
+    @State private var showFavoritesOnly = false
 
     var body: some View {
         NavigationStack {
             List {
-                if library.items.isEmpty {
-                    EmptyRecordingsView()
+                if displayedItems.isEmpty {
+                    EmptyRecordingsView(showingFavoritesOnly: showFavoritesOnly)
                 } else {
-                    ForEach(library.items) { item in
+                    ForEach(displayedItems) { item in
                         RecordingRow(
                             item: item,
                             selectionMode: selectionMode,
                             isSelected: selection.contains(item.id),
                             onToggleSelection: { toggleSelection(item.id) },
+                            onToggleFavorite: { toggleFavorite(item) },
                             onShare: { shareItem = ShareItem(urls: [item.fileURL], recordingIDs: [item.id]) },
                             onRename: {
                                 renameItem = item
@@ -35,7 +37,7 @@ struct RecordingsView: View {
                     }
                     .onDelete { offsets in
                         for index in offsets {
-                            delete(library.items[index])
+                            delete(displayedItems[index])
                         }
                     }
                 }
@@ -71,6 +73,15 @@ struct RecordingsView: View {
 
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
+                        Button {
+                            showFavoritesOnly.toggle()
+                            if showFavoritesOnly {
+                                selection = selection.intersection(Set(displayedItems.map(\.id)))
+                            }
+                        } label: {
+                            Label(showFavoritesOnly ? "Mostrar todos" : "Solo favoritos", systemImage: showFavoritesOnly ? "tray.full" : "star.fill")
+                        }
+
                         Button {
                             sharePending()
                         } label: {
@@ -136,6 +147,10 @@ struct RecordingsView: View {
         }
     }
 
+    private var displayedItems: [RecordingItem] {
+        showFavoritesOnly ? library.items.filter(\.isFavorite) : library.items
+    }
+
     private var pendingItems: [RecordingItem] {
         library.items.filter { $0.uploadState != .uploaded }
     }
@@ -165,6 +180,12 @@ struct RecordingsView: View {
         let ids = selection
         Task {
             await library.setFavorite(ids: ids, isFavorite: isFavorite)
+        }
+    }
+
+    private func toggleFavorite(_ item: RecordingItem) {
+        Task {
+            await library.setFavorite(ids: [item.id], isFavorite: !item.isFavorite)
         }
     }
 
@@ -213,14 +234,16 @@ struct RecordingsView: View {
 }
 
 private struct EmptyRecordingsView: View {
+    let showingFavoritesOnly: Bool
+
     var body: some View {
         VStack(spacing: 12) {
-            Image(systemName: "waveform.slash")
+            Image(systemName: showingFavoritesOnly ? "star.slash" : "waveform.slash")
                 .font(.system(size: 42))
                 .foregroundStyle(.secondary)
-            Text("Sin grabaciones")
+            Text(showingFavoritesOnly ? "Sin favoritos" : "Sin grabaciones")
                 .font(.headline)
-            Text("Los segmentos apareceran aqui cuando termines de grabar.")
+            Text(showingFavoritesOnly ? "Toca la estrella de una grabacion para guardarla aqui." : "Los segmentos apareceran aqui cuando termines de grabar.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -237,6 +260,7 @@ private struct RecordingRow: View {
     let selectionMode: Bool
     let isSelected: Bool
     let onToggleSelection: () -> Void
+    let onToggleFavorite: () -> Void
     let onShare: () -> Void
     let onRename: () -> Void
     let onDelete: () -> Void
@@ -252,6 +276,18 @@ private struct RecordingRow: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(isSelected ? "Quitar seleccion" : "Seleccionar")
+            } else {
+                Button {
+                    onToggleFavorite()
+                } label: {
+                    Image(systemName: item.isFavorite ? "star.fill" : "star")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(item.isFavorite ? .yellow : .secondary)
+                        .frame(width: 30, height: 30)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(item.isFavorite ? "Quitar de favoritos" : "Marcar como favorito")
             }
 
             Button {
@@ -270,16 +306,9 @@ private struct RecordingRow: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    HStack(spacing: 4) {
-                        if item.isFavorite {
-                            Image(systemName: "star.fill")
-                                .font(.caption)
-                                .foregroundStyle(.yellow)
-                        }
-                        Text(item.title)
-                            .font(.headline)
-                            .lineLimit(1)
-                    }
+                    Text(item.title)
+                        .font(.headline)
+                        .lineLimit(1)
                     Spacer()
                     Text(item.uploadState.title)
                         .font(.caption)
