@@ -41,6 +41,14 @@ final class RecordingLibrary: ObservableObject {
         await save()
     }
 
+    func setFavorite(ids: Set<UUID>, isFavorite: Bool) async {
+        guard !ids.isEmpty else { return }
+        for index in items.indices where ids.contains(items[index].id) {
+            items[index].isFavorite = isFavorite
+        }
+        await save()
+    }
+
     func delete(_ item: RecordingItem) async {
         playbackSafeDelete(fileURL: item.fileURL)
         items.removeAll { $0.id == item.id }

@@ -19,9 +19,14 @@ struct ShareItem: Identifiable {
 
 struct ShareSheet: UIViewControllerRepresentable {
     let urls: [URL]
+    let onComplete: (Bool) -> Void
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: urls, applicationActivities: nil)
+        let controller = UIActivityViewController(activityItems: urls, applicationActivities: nil)
+        controller.completionWithItemsHandler = { _, completed, _, _ in
+            onComplete(completed)
+        }
+        return controller
     }
 
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}

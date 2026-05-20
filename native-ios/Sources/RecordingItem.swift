@@ -9,6 +9,7 @@ struct RecordingItem: Identifiable, Codable, Equatable {
     let quality: AudioQuality
     var uploadState: UploadState
     var customName: String?
+    var isFavorite: Bool
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -19,6 +20,7 @@ struct RecordingItem: Identifiable, Codable, Equatable {
         case quality
         case uploadState
         case customName
+        case isFavorite
     }
 
     init(
@@ -29,7 +31,8 @@ struct RecordingItem: Identifiable, Codable, Equatable {
         mode: RecordingMode,
         quality: AudioQuality,
         uploadState: UploadState,
-        customName: String?
+        customName: String?,
+        isFavorite: Bool = false
     ) {
         self.id = id
         self.createdAt = createdAt
@@ -39,6 +42,7 @@ struct RecordingItem: Identifiable, Codable, Equatable {
         self.quality = quality
         self.uploadState = uploadState
         self.customName = customName
+        self.isFavorite = isFavorite
     }
 
     init(from decoder: Decoder) throws {
@@ -51,6 +55,7 @@ struct RecordingItem: Identifiable, Codable, Equatable {
         quality = try container.decode(AudioQuality.self, forKey: .quality)
         uploadState = try container.decode(UploadState.self, forKey: .uploadState)
         customName = try container.decodeIfPresent(String.self, forKey: .customName)
+        isFavorite = try container.decodeIfPresent(Bool.self, forKey: .isFavorite) ?? false
     }
 
     var title: String {

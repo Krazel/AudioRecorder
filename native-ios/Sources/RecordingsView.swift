@@ -23,7 +23,6 @@ struct RecordingsView: View {
                             item: item,
                             selectionMode: selectionMode,
                             isSelected: selection.contains(item.id),
-                            onSelect: { selection.insert(item.id) },
                             onToggleSelection: { toggleSelection(item.id) },
                             onShare: { shareItem = ShareItem(urls: [item.fileURL], recordingIDs: [item.id]) },
                             onRename: {
@@ -45,13 +44,19 @@ struct RecordingsView: View {
             .onPreferenceChange(RecordingRowFramePreferenceKey.self) { frames in
                 rowFrames = frames
             }
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 8, coordinateSpace: .named("recordingList"))
-                    .onChanged { value in
-                        guard selectionMode else { return }
-                        selectRow(at: value.location)
-                    }
-            )
+            .overlay(alignment: .leading) {
+                if selectionMode {
+                    Color.clear
+                        .frame(width: 56)
+                        .contentShape(Rectangle())
+                        .gesture(
+                            DragGesture(minimumDistance: 0, coordinateSpace: .named("recordingList"))
+                                .onChanged { value in
+                                    selectRow(at: value.location)
+                                }
+                        )
+                }
+            }
             .navigationTitle("Archivos")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -79,17 +84,39 @@ struct RecordingsView: View {
                             Label("Enviar seleccionados", systemImage: "checkmark.circle")
                         }
                         .disabled(selection.isEmpty)
+
+                        Button {
+                            markSelectedFavorite(true)
+                        } label: {
+                            Label("Marcar favoritos", systemImage: "star")
+                        }
+                        .disabled(selection.isEmpty)
+
+                        Button {
+                            markSelectedFavorite(false)
+                        } label: {
+                            Label("Quitar favoritos", systemImage: "star.slash")
+                        }
+                        .disabled(selection.isEmpty)
+
+                        Button(role: .destructive) {
+                            deleteSelected()
+                        } label: {
+                            Label("Eliminar seleccionados", systemImage: "trash")
+                        }
+                        .disabled(selection.isEmpty)
                     } label: {
-                        Label("Enviar", systemImage: "square.and.arrow.up")
+                        Label("Acciones", systemImage: "ellipsis.circle")
                     }
                     .disabled(library.items.isEmpty)
                 }
             }
             .sheet(item: $shareItem) { item in
-                ShareSheet(urls: item.urls)
-                    .onDisappear {
+                ShareSheet(urls: item.urls) { completed in
+                    if completed {
                         markShared(item.recordingIDs)
                     }
+                }
             }
             .alert("Cambiar nombre", isPresented: renameBinding) {
                 TextField("Nombre", text: $renameText)
@@ -128,6 +155,26 @@ struct RecordingsView: View {
         Task {
             for id in ids {
                 await library.updateUploadState(id: id, state: .uploaded)
+            }
+            selection.removeAll()
+            selectionMode = false
+        }
+    }
+
+    private func markSelectedFavorite(_ isFavorite: Bool) {
+        let ids = selection
+        Task {
+            await library.setFavorite(ids: ids, isFavorite: isFavorite)
+        }
+    }
+
+    private func deleteSelected() {
+        let items = library.items.filter { selection.contains($0.id) }
+        playback.stop()
+        Task {
+            for item in items {
+                await uploadQueue.removeJobs(recordingID: item.id)
+                await library.delete(item)
             }
             selection.removeAll()
             selectionMode = false
@@ -189,7 +236,6 @@ private struct RecordingRow: View {
     let item: RecordingItem
     let selectionMode: Bool
     let isSelected: Bool
-    let onSelect: () -> Void
     let onToggleSelection: () -> Void
     let onShare: () -> Void
     let onRename: () -> Void
@@ -224,9 +270,16 @@ private struct RecordingRow: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text(item.title)
-                        .font(.headline)
-                        .lineLimit(1)
+                    HStack(spacing: 4) {
+                        if item.isFavorite {
+                            Image(systemName: "star.fill")
+                                .font(.caption)
+                                .foregroundStyle(.yellow)
+                        }
+                        Text(item.title)
+                            .font(.headline)
+                            .lineLimit(1)
+                    }
                     Spacer()
                     Text(item.uploadState.title)
                         .font(.caption)
@@ -278,19 +331,6 @@ private struct RecordingRow: View {
             }
         )
         .contentShape(Rectangle())
-        .onTapGesture {
-            if selectionMode {
-                onToggleSelection()
-            }
-        }
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 8, coordinateSpace: .named("recordingList"))
-                .onChanged { _ in
-                    if selectionMode {
-                        onSelect()
-                    }
-                }
-        )
         .swipeActions(edge: .trailing) {
             Button(role: .destructive) {
                 onDelete()
