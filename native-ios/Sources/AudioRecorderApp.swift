@@ -7,6 +7,7 @@ struct AudioRecorderApp: App {
     @StateObject private var library = RecordingLibrary()
     @StateObject private var uploadQueue = CloudUploadQueue()
     @StateObject private var playback = AudioPlaybackService()
+    @StateObject private var monetization = MonetizationStore()
 
     var body: some Scene {
         WindowGroup {
@@ -16,6 +17,7 @@ struct AudioRecorderApp: App {
                 .environmentObject(library)
                 .environmentObject(uploadQueue)
                 .environmentObject(playback)
+                .environmentObject(monetization)
                 .task {
                     await library.load()
                     await uploadQueue.load()
