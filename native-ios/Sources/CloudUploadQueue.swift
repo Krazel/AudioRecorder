@@ -76,6 +76,11 @@ final class CloudUploadQueue: ObservableObject {
         await save()
     }
 
+    func removeAllJobs() async {
+        jobs.removeAll()
+        await save()
+    }
+
     private func save() async {
         do {
             try RecordingStorage.ensureDirectories()

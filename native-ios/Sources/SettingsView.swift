@@ -4,10 +4,14 @@ import StoreKit
 struct SettingsView: View {
     @EnvironmentObject private var settings: RecordingSettingsStore
     @EnvironmentObject private var monetization: MonetizationStore
+    @EnvironmentObject private var library: RecordingLibrary
+    @EnvironmentObject private var uploadQueue: CloudUploadQueue
+    @EnvironmentObject private var playback: AudioPlaybackService
     @Environment(\.openURL) private var openURL
 
     @State private var supportExpanded = false
     @State private var unlockCodeVisible = false
+    @State private var confirmingDeleteAllFiles = false
 
     private let segmentOptions = [0, 5, 15, 30, 60, 120]
 
@@ -65,6 +69,15 @@ struct SettingsView: View {
                     Toggle("Grabar al abrir la app", isOn: $settings.startRecordingOnLaunch)
                 }
 
+                Section("Archivos") {
+                    Button(role: .destructive) {
+                        confirmingDeleteAllFiles = true
+                    } label: {
+                        Label("Eliminar todos los archivos", systemImage: "trash")
+                    }
+                    .disabled(library.items.isEmpty)
+                }
+
                 if monetization.monetizationEnabled {
                     supportSection
                 }
@@ -99,6 +112,14 @@ struct SettingsView: View {
                 }
             } message: {
                 Text(monetization.purchaseMessage ?? "")
+            }
+            .alert("Eliminar todos los archivos", isPresented: $confirmingDeleteAllFiles) {
+                Button("Eliminar todo", role: .destructive) {
+                    deleteAllFiles()
+                }
+                Button("Cancelar", role: .cancel) {}
+            } message: {
+                Text("Se borraran todas las grabaciones guardadas en este iPhone. Esta accion no se puede deshacer.")
             }
         }
     }
@@ -208,6 +229,14 @@ struct SettingsView: View {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
         return "v\(version) build \(build)"
+    }
+
+    private func deleteAllFiles() {
+        playback.stop()
+        Task {
+            await uploadQueue.removeAllJobs()
+            await library.deleteAll()
+        }
     }
 
     private var messageBinding: Binding<Bool> {

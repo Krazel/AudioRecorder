@@ -55,6 +55,14 @@ final class RecordingLibrary: ObservableObject {
         await save()
     }
 
+    func deleteAll() async {
+        for item in items {
+            playbackSafeDelete(fileURL: item.fileURL)
+        }
+        items.removeAll()
+        await save()
+    }
+
     func rename(_ item: RecordingItem, to rawName: String) async {
         guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
         let cleanName = sanitizedFileName(rawName)
