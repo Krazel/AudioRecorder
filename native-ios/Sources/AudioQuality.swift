@@ -84,4 +84,26 @@ enum AudioQuality: String, CaseIterable, Codable, Identifiable {
             return settings
         }
     }
+
+    var recorderSettings: [String: Any] {
+        switch self {
+        case .veryLow, .low, .medium:
+            return [
+                AVFormatIDKey: kAudioFormatMPEG4AAC,
+                AVSampleRateKey: sampleRate,
+                AVNumberOfChannelsKey: Int(channelCount),
+                AVEncoderBitRateKey: bitRate,
+                AVEncoderAudioQualityKey: AVAudioQuality.medium.rawValue
+            ]
+        case .high:
+            return [
+                AVFormatIDKey: kAudioFormatLinearPCM,
+                AVSampleRateKey: sampleRate,
+                AVNumberOfChannelsKey: Int(channelCount),
+                AVLinearPCMBitDepthKey: 32,
+                AVLinearPCMIsFloatKey: true,
+                AVLinearPCMIsBigEndianKey: false
+            ]
+        }
+    }
 }

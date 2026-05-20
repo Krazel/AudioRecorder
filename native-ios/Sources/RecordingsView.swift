@@ -25,12 +25,12 @@ struct RecordingsView: View {
                             selectionMode: selectionMode,
                             isSelected: selection.contains(item.id),
                             onToggleSelection: { toggleSelection(item.id) },
-                            onToggleFavorite: { toggleFavorite(item) },
                             onShare: { shareItem = ShareItem(urls: [item.fileURL], recordingIDs: [item.id]) },
                             onRename: {
                                 renameItem = item
                                 renameText = item.title
                             },
+                            onToggleFavorite: { toggleFavorite(item) },
                             onDelete: { delete(item) }
                         )
                             .environmentObject(playback)
@@ -260,9 +260,9 @@ private struct RecordingRow: View {
     let selectionMode: Bool
     let isSelected: Bool
     let onToggleSelection: () -> Void
-    let onToggleFavorite: () -> Void
     let onShare: () -> Void
     let onRename: () -> Void
+    let onToggleFavorite: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
@@ -276,18 +276,6 @@ private struct RecordingRow: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(isSelected ? "Quitar seleccion" : "Seleccionar")
-            } else {
-                Button {
-                    onToggleFavorite()
-                } label: {
-                    Image(systemName: item.isFavorite ? "star.fill" : "star")
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(item.isFavorite ? .yellow : .secondary)
-                        .frame(width: 30, height: 30)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(item.isFavorite ? "Quitar de favoritos" : "Marcar como favorito")
             }
 
             Button {
@@ -313,6 +301,20 @@ private struct RecordingRow: View {
                     Text(item.uploadState.title)
                         .font(.caption)
                         .foregroundStyle(color)
+
+                    if !selectionMode {
+                        Button {
+                            onToggleFavorite()
+                        } label: {
+                            Image(systemName: item.isFavorite ? "star.fill" : "star")
+                                .font(.title3.weight(.semibold))
+                                .foregroundStyle(item.isFavorite ? .yellow : .secondary)
+                                .frame(width: 32, height: 32)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(item.isFavorite ? "Quitar de favoritos" : "Marcar como favorito")
+                    }
                 }
 
                 HStack(spacing: 10) {
