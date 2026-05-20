@@ -19,10 +19,20 @@ enum RecordingStorage {
     static func nextSegmentURL(mode: RecordingMode, quality: AudioQuality, date: Date = Date()) throws -> URL {
         try ensureDirectories()
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
-        let name = "\(formatter.string(from: date))_\(mode.rawValue).\(quality.fileExtension)"
-        return rootDirectory
+        formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss-SSS"
+        let directory = rootDirectory
             .appendingPathComponent(mode.folderName, isDirectory: true)
-            .appendingPathComponent(name)
+        let baseName = "\(formatter.string(from: date))_\(mode.rawValue)_\(UUID().uuidString.prefix(8))"
+        var url = directory.appendingPathComponent(baseName).appendingPathExtension(quality.fileExtension)
+        var attempt = 1
+
+        while FileManager.default.fileExists(atPath: url.path) {
+            url = directory
+                .appendingPathComponent("\(baseName)-\(attempt)")
+                .appendingPathExtension(quality.fileExtension)
+            attempt += 1
+        }
+
+        return url
     }
 }

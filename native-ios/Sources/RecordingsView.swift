@@ -281,16 +281,17 @@ private struct RecordingRow: View {
             Button {
                 if selectionMode {
                     onToggleSelection()
-                } else {
+                } else if item.isPlayable {
                     playback.toggle(item)
                 }
             } label: {
                 Image(systemName: playback.playingID == item.id ? "stop.circle.fill" : "play.circle.fill")
                     .font(.title2)
+                    .foregroundStyle(item.isPlayable ? .primary : .tertiary)
             }
             .buttonStyle(.plain)
-            .disabled(selectionMode)
-            .accessibilityLabel(playback.playingID == item.id ? "Parar audio" : "Escuchar audio")
+            .disabled(selectionMode || !item.isPlayable)
+            .accessibilityLabel(item.isPlayable ? (playback.playingID == item.id ? "Parar audio" : "Escuchar audio") : "Archivo no disponible")
 
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
@@ -325,6 +326,9 @@ private struct RecordingRow: View {
                 HStack(spacing: 10) {
                     MetadataPill(text: item.mode.title, icon: "slider.horizontal.2.square")
                     MetadataPill(text: item.quality.title, icon: "speaker.wave.2")
+                    if !item.isPlayable {
+                        MetadataPill(text: "No disponible", icon: "exclamationmark.triangle")
+                    }
                 }
 
                 Text(item.fileURL.lastPathComponent)
@@ -418,6 +422,12 @@ private struct RecordingRow: View {
         let minutes = Int(duration) / 60
         let seconds = Int(duration) % 60
         return String(format: "%02d:%02d", minutes, seconds)
+    }
+}
+
+private extension RecordingItem {
+    var isPlayable: Bool {
+        fileSizeBytes > 0 && FileManager.default.fileExists(atPath: fileURL.path)
     }
 }
 
