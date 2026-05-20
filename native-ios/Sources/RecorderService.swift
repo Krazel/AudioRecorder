@@ -22,6 +22,7 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
     private var uploadQueue: CloudUploadQueue?
     private var shouldResumeAfterInterruption = false
     private var detectedSoundInCurrentSegment = false
+    private var lastVisibleMeterUpdate: TimeInterval = 0
 
     func start(
         settings: RecordingSettingsStore,
@@ -98,6 +99,7 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         currentSegmentStartedAt = Date()
         elapsed = 0
         currentLevel = -120
+        lastVisibleMeterUpdate = 0
         detectedSoundInCurrentSegment = currentSettings.mode == .everything
         isWritingAudio = currentSettings.mode == .everything
     }
@@ -133,21 +135,31 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         recorder.updateMeters()
 
         let level = recorder.averagePower(forChannel: 0)
-        currentLevel = level
-        elapsed = recorder.currentTime
+        let currentTime = recorder.currentTime
 
         switch currentSettings.mode {
         case .everything:
-            isWritingAudio = true
+            setWritingAudio(true)
         case .soundActivated:
             let detected = level >= currentSettings.thresholdDB
             detectedSoundInCurrentSegment = detectedSoundInCurrentSegment || detected
-            isWritingAudio = detected
+            setWritingAudio(detected)
         }
 
-        if recorder.currentTime >= currentSettings.segmentDuration {
+        if currentTime - lastVisibleMeterUpdate >= 0.5 || currentTime >= currentSettings.segmentDuration {
+            currentLevel = level
+            elapsed = currentTime
+            lastVisibleMeterUpdate = currentTime
+        }
+
+        if currentTime >= currentSettings.segmentDuration {
             rotateSegment()
         }
+    }
+
+    private func setWritingAudio(_ value: Bool) {
+        guard isWritingAudio != value else { return }
+        isWritingAudio = value
     }
 
     private func completeCurrentSegment() {

@@ -256,20 +256,22 @@ private struct RecordingRow: View {
     var body: some View {
         HStack(spacing: 12) {
             if selectionMode {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.title2)
-                    .foregroundStyle(isSelected ? .accentColor : .secondary)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        onToggleSelection()
-                    }
-                    .simultaneousGesture(
-                        DragGesture(minimumDistance: 0, coordinateSpace: .global)
-                            .onChanged { value in
-                                onDragSelection(value.location)
-                            }
-                    )
+                Button {
+                    onToggleSelection()
+                } label: {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .font(.title2)
+                        .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 8, coordinateSpace: .global)
+                        .onChanged { value in
+                            onDragSelection(value.location)
+                        }
+                )
                 .accessibilityLabel(isSelected ? "Quitar seleccion" : "Seleccionar")
             }
 
