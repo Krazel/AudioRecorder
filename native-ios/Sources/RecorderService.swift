@@ -13,18 +13,12 @@ final class RecorderService: ObservableObject {
     @Published private(set) var isInterrupted = false
 
     private let engine = AVAudioEngine()
-    private let analyzer = VoiceNoiseAnalyzer()
-    private var currentFile: AVAudioFile?
-    private var currentURL: URL?
-    private var writtenDuration: TimeInterval = 0
-    private var didWriteCurrentSegment = false
+    private var pipeline: AudioRecordingPipeline?
     private var installedObservers = false
     private var settings: RecordingSettingsStore?
     private var library: RecordingLibrary?
     private var uploadQueue: CloudUploadQueue?
     private var shouldResumeAfterInterruption = false
-    private var lastLevelPublishAt: TimeInterval = 0
-    private var lastElapsedPublishAt: TimeInterval = 0
 
     func start(
         settings: RecordingSettingsStore,
@@ -40,8 +34,9 @@ final class RecorderService: ObservableObject {
         do {
             try await requestMicrophonePermission()
             try configureAudioSession()
-            try startNewSegment()
-            try startEngine()
+            let pipeline = try makePipeline(settings: settings)
+            self.pipeline = pipeline
+            try startEngine(pipeline: pipeline)
             isRecording = true
             lastError = nil
         } catch {
@@ -55,7 +50,7 @@ final class RecorderService: ObservableObject {
         isInterrupted = false
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
-        completeCurrentSegment()
+        finishPipeline()
         try? AVAudioSession.sharedInstance().setActive(false)
         isRecording = false
         isWritingAudio = false
@@ -86,148 +81,83 @@ final class RecorderService: ObservableObject {
         try session.setActive(true)
     }
 
-    private func startEngine() throws {
+    private func startEngine(pipeline: AudioRecordingPipeline) throws {
         let input = engine.inputNode
         let inputFormat = input.outputFormat(forBus: 0)
 
         input.removeTap(onBus: 0)
-        input.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { [weak self] buffer, _ in
-            Task { @MainActor in
-                self?.handle(buffer)
+        input.installTap(onBus: 0, bufferSize: 8192, format: inputFormat) { buffer, _ in
+            guard let copy = buffer.deepCopy() else {
+                return
             }
+            pipeline.process(copy)
         }
 
         engine.prepare()
         try engine.start()
     }
 
-    private func startNewSegment() throws {
-        guard let settings else { throw RecorderError.missingSettings }
-        completeCurrentSegment()
-
-        let url = try RecordingStorage.nextSegmentURL(mode: settings.mode, quality: settings.quality)
+    private func makePipeline(settings: RecordingSettingsStore) throws -> AudioRecordingPipeline {
         let inputFormat = engine.inputNode.outputFormat(forBus: 0)
-        let file = try AVAudioFile(forWriting: url, settings: settings.quality.recordingSettings(matching: inputFormat))
-        currentFile = file
-        currentURL = url
         currentSegmentStartedAt = Date()
-        writtenDuration = 0
-        didWriteCurrentSegment = false
         elapsed = 0
-        lastLevelPublishAt = 0
-        lastElapsedPublishAt = 0
-    }
-
-    private func rotateSegment() {
-        do {
-            try startNewSegment()
-        } catch {
-            lastError = error.localizedDescription
-            stop()
-        }
-    }
-
-    private func handle(_ buffer: AVAudioPCMBuffer) {
-        let analysis = analyzer.analyze(buffer)
-        publishLevelIfNeeded(analysis.rms)
-
-        guard shouldWriteBuffer(analysis: analysis) else {
-            setWritingAudio(false)
-            return
-        }
-
-        do {
-            try currentFile?.write(from: buffer)
-            let bufferDuration = Double(buffer.frameLength) / buffer.format.sampleRate
-            writtenDuration += bufferDuration
-            publishElapsedIfNeeded(writtenDuration)
-            didWriteCurrentSegment = true
-            setWritingAudio(true)
-            if let settings, writtenDuration >= settings.segmentDuration {
-                rotateSegment()
+        currentLevel = -120
+        isWritingAudio = false
+        return try AudioRecordingPipeline(
+            settings: RecordingPipelineSettings(settings),
+            inputFormat: inputFormat,
+            onMetrics: { [weak self] metrics in
+                Task { @MainActor in
+                    self?.apply(metrics)
+                }
+            },
+            onSegment: { [weak self] item in
+                Task { @MainActor in
+                    self?.addCompletedSegment(item)
+                }
+            },
+            onSegmentStarted: { [weak self] date in
+                Task { @MainActor in
+                    self?.currentSegmentStartedAt = date
+                    self?.elapsed = 0
+                }
+            },
+            onError: { [weak self] message in
+                Task { @MainActor in
+                    self?.lastError = message
+                    self?.stop()
+                }
             }
-        } catch {
-            lastError = error.localizedDescription
-        }
-    }
-
-    private func publishLevelIfNeeded(_ level: Float) {
-        let now = Date.timeIntervalSinceReferenceDate
-        guard now - lastLevelPublishAt >= 0.20 || abs(level - currentLevel) >= 8 else { return }
-        currentLevel = level
-        lastLevelPublishAt = now
-    }
-
-    private func publishElapsedIfNeeded(_ duration: TimeInterval) {
-        let now = Date.timeIntervalSinceReferenceDate
-        guard now - lastElapsedPublishAt >= 0.50 else { return }
-        elapsed = duration
-        lastElapsedPublishAt = now
-    }
-
-    private func setWritingAudio(_ value: Bool) {
-        guard isWritingAudio != value else { return }
-        isWritingAudio = value
-    }
-
-    private func shouldWriteBuffer(analysis: VoiceNoiseAnalysis) -> Bool {
-        guard let settings else { return true }
-        switch settings.mode {
-        case .everything:
-            return true
-        case .soundActivated:
-            return analysis.rms >= settings.recordingThresholdDB
-        }
-    }
-
-    private func completeCurrentSegment() {
-        guard let url = currentURL, let startedAt = currentSegmentStartedAt else {
-            currentFile = nil
-            currentURL = nil
-            return
-        }
-
-        currentFile = nil
-        let duration = writtenDuration
-        guard didWriteCurrentSegment, duration > 0.02, let settings else {
-            if FileManager.default.fileExists(atPath: url.path) {
-                try? FileManager.default.removeItem(at: url)
-            }
-            currentURL = nil
-            writtenDuration = 0
-            didWriteCurrentSegment = false
-            elapsed = 0
-            return
-        }
-
-        let item = RecordingItem(
-            id: UUID(),
-            createdAt: startedAt,
-            duration: duration,
-            fileURL: url,
-            mode: settings.mode,
-            quality: settings.quality,
-            uploadState: settings.uploadAutomatically && settings.cloudProvider != .none ? .queued : .localOnly,
-            customName: nil
         )
+    }
 
+    private func apply(_ metrics: RecordingMetrics) {
+        currentLevel = metrics.level
+        elapsed = metrics.elapsed
+        if isWritingAudio != metrics.isWriting {
+            isWritingAudio = metrics.isWriting
+        }
+    }
+
+    private func addCompletedSegment(_ item: RecordingItem) {
         library?.addImmediately(item)
-        if settings.uploadAutomatically {
+        if settings?.uploadAutomatically == true {
             Task {
                 await uploadQueue?.enqueue(
                     recording: item,
-                    provider: settings.cloudProvider,
-                    endpointURL: settings.cloudProvider == .customServer ? settings.customUploadEndpointURL : nil,
-                    authToken: settings.customUploadToken
+                    provider: settings?.cloudProvider ?? .none,
+                    endpointURL: settings?.cloudProvider == .customServer ? settings?.customUploadEndpointURL : nil,
+                    authToken: settings?.customUploadToken ?? ""
                 )
                 await uploadQueue?.processNext(library: library)
             }
         }
+    }
 
-        currentFile = nil
-        currentURL = nil
-        writtenDuration = 0
-        didWriteCurrentSegment = false
+    private func finishPipeline() {
+        let pipeline = pipeline
+        self.pipeline = nil
+        pipeline?.stop()
     }
 
     private func installEmergencySaveObserversIfNeeded() {
@@ -280,7 +210,7 @@ final class RecorderService: ObservableObject {
         isWritingAudio = false
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
-        completeCurrentSegment()
+        finishPipeline()
         lastError = "Grabacion pausada por otra app. Se reanudara sola."
     }
 
@@ -290,8 +220,9 @@ final class RecorderService: ObservableObject {
 
         do {
             try configureAudioSession()
-            try startNewSegment()
-            try startEngine()
+            let pipeline = try makePipeline(settings: settings)
+            self.pipeline = pipeline
+            try startEngine(pipeline: pipeline)
             isRecording = true
             isInterrupted = false
             lastError = nil
@@ -310,9 +241,198 @@ final class RecorderService: ObservableObject {
         isInterrupted = false
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
-        completeCurrentSegment()
+        finishPipeline()
         isRecording = false
         isWritingAudio = false
+    }
+}
+
+private struct RecordingPipelineSettings {
+    let mode: RecordingMode
+    let quality: AudioQuality
+    let segmentDuration: TimeInterval
+    let uploadState: UploadState
+    let thresholdDB: Float
+
+    init(_ settings: RecordingSettingsStore) {
+        mode = settings.mode
+        quality = settings.quality
+        segmentDuration = settings.segmentDuration
+        uploadState = settings.uploadAutomatically && settings.cloudProvider != .none ? .queued : .localOnly
+        thresholdDB = settings.recordingThresholdDB
+    }
+}
+
+private struct RecordingMetrics {
+    let level: Float
+    let elapsed: TimeInterval
+    let isWriting: Bool
+}
+
+private final class AudioRecordingPipeline {
+    private let queue = DispatchQueue(label: "com.dmkr.audio.recording.pipeline", qos: .userInitiated)
+    private let analyzer = VoiceNoiseAnalyzer()
+    private let settings: RecordingPipelineSettings
+    private let inputFormat: AVAudioFormat
+    private let onMetrics: (RecordingMetrics) -> Void
+    private let onSegment: (RecordingItem) -> Void
+    private let onSegmentStarted: (Date) -> Void
+    private let onError: (String) -> Void
+
+    private var currentFile: AVAudioFile?
+    private var currentURL: URL?
+    private var currentSegmentStartedAt: Date?
+    private var writtenDuration: TimeInterval = 0
+    private var didWriteCurrentSegment = false
+    private var lastLevel: Float = -120
+    private var lastMetricsPublishAt: TimeInterval = 0
+    private var isWriting = false
+    private var stopped = false
+
+    init(
+        settings: RecordingPipelineSettings,
+        inputFormat: AVAudioFormat,
+        onMetrics: @escaping (RecordingMetrics) -> Void,
+        onSegment: @escaping (RecordingItem) -> Void,
+        onSegmentStarted: @escaping (Date) -> Void,
+        onError: @escaping (String) -> Void
+    ) throws {
+        self.settings = settings
+        self.inputFormat = inputFormat
+        self.onMetrics = onMetrics
+        self.onSegment = onSegment
+        self.onSegmentStarted = onSegmentStarted
+        self.onError = onError
+        try startNewSegment()
+    }
+
+    func process(_ buffer: AVAudioPCMBuffer) {
+        queue.async { [weak self] in
+            self?.processOnQueue(buffer)
+        }
+    }
+
+    func stop() {
+        queue.sync {
+            stopped = true
+            completeCurrentSegment()
+        }
+    }
+
+    private func processOnQueue(_ buffer: AVAudioPCMBuffer) {
+        guard !stopped else { return }
+        let analysis = analyzer.analyze(buffer)
+        lastLevel = analysis.rms
+
+        guard shouldWriteBuffer(analysis: analysis) else {
+            publishMetricsIfNeeded(force: isWriting, isWriting: false)
+            isWriting = false
+            return
+        }
+
+        do {
+            try currentFile?.write(from: buffer)
+            let bufferDuration = Double(buffer.frameLength) / buffer.format.sampleRate
+            writtenDuration += bufferDuration
+            didWriteCurrentSegment = true
+            isWriting = true
+            publishMetricsIfNeeded(isWriting: true)
+
+            if writtenDuration >= settings.segmentDuration {
+                try rotateSegment()
+            }
+        } catch {
+            onError(error.localizedDescription)
+        }
+    }
+
+    private func startNewSegment() throws {
+        let url = try RecordingStorage.nextSegmentURL(mode: settings.mode, quality: settings.quality)
+        currentFile = try AVAudioFile(forWriting: url, settings: settings.quality.recordingSettings(matching: inputFormat))
+        currentURL = url
+        let startedAt = Date()
+        currentSegmentStartedAt = startedAt
+        writtenDuration = 0
+        didWriteCurrentSegment = false
+        lastMetricsPublishAt = 0
+        isWriting = false
+        onSegmentStarted(startedAt)
+    }
+
+    private func rotateSegment() throws {
+        completeCurrentSegment()
+        try startNewSegment()
+    }
+
+    private func completeCurrentSegment() {
+        guard let url = currentURL, let startedAt = currentSegmentStartedAt else {
+            currentFile = nil
+            currentURL = nil
+            return
+        }
+
+        currentFile = nil
+        let duration = writtenDuration
+        guard didWriteCurrentSegment, duration > 0.02 else {
+            if FileManager.default.fileExists(atPath: url.path) {
+                try? FileManager.default.removeItem(at: url)
+            }
+            currentURL = nil
+            writtenDuration = 0
+            didWriteCurrentSegment = false
+            return
+        }
+
+        onSegment(RecordingItem(
+            id: UUID(),
+            createdAt: startedAt,
+            duration: duration,
+            fileURL: url,
+            mode: settings.mode,
+            quality: settings.quality,
+            uploadState: settings.uploadState,
+            customName: nil
+        ))
+
+        currentURL = nil
+        writtenDuration = 0
+        didWriteCurrentSegment = false
+    }
+
+    private func shouldWriteBuffer(analysis: VoiceNoiseAnalysis) -> Bool {
+        switch settings.mode {
+        case .everything:
+            return true
+        case .soundActivated:
+            return analysis.rms >= settings.thresholdDB
+        }
+    }
+
+    private func publishMetricsIfNeeded(force: Bool = false, isWriting: Bool) {
+        let now = Date.timeIntervalSinceReferenceDate
+        guard force || now - lastMetricsPublishAt >= 0.25 else { return }
+        lastMetricsPublishAt = now
+        onMetrics(RecordingMetrics(level: lastLevel, elapsed: writtenDuration, isWriting: isWriting))
+    }
+}
+
+private extension AVAudioPCMBuffer {
+    func deepCopy() -> AVAudioPCMBuffer? {
+        guard let copy = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameLength) else {
+            return nil
+        }
+        copy.frameLength = frameLength
+
+        let sourceBuffers = UnsafeAudioBufferListPointer(audioBufferList)
+        let targetBuffers = UnsafeMutableAudioBufferListPointer(copy.mutableAudioBufferList)
+        for index in 0..<sourceBuffers.count {
+            guard let sourceData = sourceBuffers[index].mData,
+                  let targetData = targetBuffers[index].mData else {
+                continue
+            }
+            memcpy(targetData, sourceData, Int(sourceBuffers[index].mDataByteSize))
+        }
+        return copy
     }
 }
 
