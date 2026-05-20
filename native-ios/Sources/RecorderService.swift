@@ -254,6 +254,7 @@ private struct RecordingPipelineSettings {
     let uploadState: UploadState
     let thresholdDB: Float
 
+    @MainActor
     init(_ settings: RecordingSettingsStore) {
         mode = settings.mode
         quality = settings.quality
@@ -423,7 +424,7 @@ private extension AVAudioPCMBuffer {
         }
         copy.frameLength = frameLength
 
-        let sourceBuffers = UnsafeAudioBufferListPointer(audioBufferList)
+        let sourceBuffers = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: audioBufferList))
         let targetBuffers = UnsafeMutableAudioBufferListPointer(copy.mutableAudioBufferList)
         for index in 0..<sourceBuffers.count {
             guard let sourceData = sourceBuffers[index].mData,
