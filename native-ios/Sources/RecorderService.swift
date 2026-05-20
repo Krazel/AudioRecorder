@@ -298,6 +298,7 @@ private struct RecordingSnapshot {
     let uploadState: UploadState
     let thresholdDB: Float
 
+    @MainActor
     init(_ settings: RecordingSettingsStore) {
         mode = settings.mode
         quality = settings.quality
