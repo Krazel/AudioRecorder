@@ -23,6 +23,11 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
     private var shouldResumeAfterInterruption = false
     private var detectedSoundInCurrentSegment = false
     private var lastVisibleMeterUpdate: TimeInterval = 0
+    private var currentSegmentShouldBeSaved = false
+    private var silenceStartedAt: TimeInterval?
+
+    private let soundReleaseGrace: TimeInterval = 1.0
+    private let listeningClipMaxDuration: TimeInterval = 30
 
     func start(
         settings: RecordingSettingsStore,
@@ -87,7 +92,24 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
     private func startNewSegment() throws {
         guard let currentSettings else { throw RecorderError.missingSettings }
 
-        let url = try RecordingStorage.nextSegmentURL(mode: currentSettings.mode, quality: currentSettings.quality)
+        switch currentSettings.mode {
+        case .everything:
+            try startRecorder(shouldSave: true)
+        case .soundActivated:
+            try startRecorder(shouldSave: false)
+        }
+    }
+
+    private func startActiveSoundSegment() throws {
+        try startRecorder(shouldSave: true)
+        detectedSoundInCurrentSegment = true
+        setWritingAudio(true)
+    }
+
+    private func startRecorder(shouldSave: Bool) throws {
+        guard let currentSettings else { throw RecorderError.missingSettings }
+
+        let url = try nextRecorderURL(shouldSave: shouldSave, settings: currentSettings)
         let recorder = try AVAudioRecorder(url: url, settings: currentSettings.quality.recorderSettings)
         recorder.delegate = self
         recorder.isMeteringEnabled = true
@@ -100,8 +122,23 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         elapsed = 0
         currentLevel = -120
         lastVisibleMeterUpdate = 0
-        detectedSoundInCurrentSegment = currentSettings.mode == .everything
-        isWritingAudio = currentSettings.mode == .everything
+        currentSegmentShouldBeSaved = shouldSave
+        silenceStartedAt = nil
+        detectedSoundInCurrentSegment = shouldSave && currentSettings.mode == .everything
+        setWritingAudio(shouldSave)
+    }
+
+    private func nextRecorderURL(shouldSave: Bool, settings: RecordingSnapshot) throws -> URL {
+        if shouldSave {
+            return try RecordingStorage.nextSegmentURL(mode: settings.mode, quality: settings.quality)
+        }
+
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("AudioRecorderListening", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension(settings.quality.fileExtension)
     }
 
     private func rotateSegment() {
@@ -142,8 +179,9 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
             setWritingAudio(true)
         case .soundActivated:
             let detected = level >= currentSettings.thresholdDB
-            detectedSoundInCurrentSegment = detectedSoundInCurrentSegment || detected
-            setWritingAudio(detected)
+            if handleSoundActivatedTick(detected: detected, currentTime: currentTime) {
+                return
+            }
         }
 
         if currentTime - lastVisibleMeterUpdate >= 0.5 || currentTime >= currentSettings.segmentDuration {
@@ -152,9 +190,48 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
             lastVisibleMeterUpdate = currentTime
         }
 
-        if currentTime >= currentSettings.segmentDuration {
+        if currentSegmentShouldBeSaved, currentTime >= currentSettings.segmentDuration {
+            rotateSegment()
+        } else if !currentSegmentShouldBeSaved, currentTime >= listeningClipMaxDuration {
             rotateSegment()
         }
+    }
+
+    private func handleSoundActivatedTick(detected: Bool, currentTime: TimeInterval) -> Bool {
+        if currentSegmentShouldBeSaved {
+            detectedSoundInCurrentSegment = detectedSoundInCurrentSegment || detected
+            setWritingAudio(true)
+
+            if detected {
+                silenceStartedAt = nil
+            } else if silenceStartedAt == nil {
+                silenceStartedAt = currentTime
+            } else if let silenceStartedAt, currentTime - silenceStartedAt >= soundReleaseGrace {
+                completeCurrentSegment()
+                do {
+                    try startNewSegment()
+                    return true
+                } catch {
+                    lastError = error.localizedDescription
+                    stop()
+                    return true
+                }
+            }
+        } else if detected {
+            completeCurrentSegment()
+            do {
+                try startActiveSoundSegment()
+                return true
+            } catch {
+                lastError = error.localizedDescription
+                stop()
+                return true
+            }
+        } else {
+            setWritingAudio(false)
+        }
+
+        return false
     }
 
     private func setWritingAudio(_ value: Bool) {
@@ -173,12 +250,14 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         recorder.stop()
         self.recorder = nil
 
-        guard duration > 0.02, detectedSoundInCurrentSegment else {
+        guard currentSegmentShouldBeSaved, duration > 0.02, detectedSoundInCurrentSegment else {
             deleteFileIfNeeded(url)
             currentURL = nil
             currentSegmentStartedAt = nil
             elapsed = 0
             detectedSoundInCurrentSegment = false
+            currentSegmentShouldBeSaved = false
+            silenceStartedAt = nil
             return
         }
 
@@ -197,6 +276,8 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         currentURL = nil
         currentSegmentStartedAt = nil
         detectedSoundInCurrentSegment = false
+        currentSegmentShouldBeSaved = false
+        silenceStartedAt = nil
     }
 
     private func addCompletedSegment(_ item: RecordingItem) {
