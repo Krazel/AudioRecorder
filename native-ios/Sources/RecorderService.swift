@@ -3,7 +3,7 @@ import Foundation
 import UIKit
 
 @MainActor
-final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate {
+final class RecorderService: ObservableObject {
     @Published private(set) var isRecording = false
     @Published private(set) var currentSegmentStartedAt: Date?
     @Published private(set) var elapsed: TimeInterval = 0
@@ -12,17 +12,19 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
     @Published private(set) var isWritingAudio = false
     @Published private(set) var isInterrupted = false
 
-    private var recorder: AVAudioRecorder?
+    private let engine = AVAudioEngine()
+    private let analyzer = VoiceNoiseAnalyzer()
+    private var currentFile: AVAudioFile?
     private var currentURL: URL?
     private var currentSettings: RecordingSnapshot?
-    private var meterTimer: Timer?
+    private var writtenDuration: TimeInterval = 0
+    private var didWriteCurrentSegment = false
     private var installedObservers = false
     private var settingsStore: RecordingSettingsStore?
     private var library: RecordingLibrary?
     private var uploadQueue: CloudUploadQueue?
     private var shouldResumeAfterInterruption = false
-    private var detectedSoundInCurrentSegment = false
-    private var lastVisibleMeterUpdate: TimeInterval = 0
+    private var lastVisibleMeterUpdate = Date.distantPast
 
     func start(
         settings: RecordingSettingsStore,
@@ -40,8 +42,9 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
             try await requestMicrophonePermission()
             try configureAudioSession()
             try startNewSegment()
-            startMetering()
+            try startEngine()
             isRecording = true
+            isInterrupted = false
             lastError = nil
         } catch {
             stop()
@@ -52,7 +55,7 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
     func stop() {
         shouldResumeAfterInterruption = false
         isInterrupted = false
-        stopMetering()
+        stopEngine()
         completeCurrentSegment()
         try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
         isRecording = false
@@ -84,28 +87,42 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         try session.setActive(true)
     }
 
+    private func startEngine() throws {
+        let input = engine.inputNode
+        let inputFormat = input.outputFormat(forBus: 0)
+        input.removeTap(onBus: 0)
+        input.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { [weak self] buffer, _ in
+            Task { @MainActor in
+                self?.handle(buffer)
+            }
+        }
+
+        engine.prepare()
+        try engine.start()
+    }
+
+    private func stopEngine() {
+        engine.inputNode.removeTap(onBus: 0)
+        engine.stop()
+    }
+
     private func startNewSegment() throws {
         guard let currentSettings else { throw RecorderError.missingSettings }
+        completeCurrentSegment()
 
         let url = try RecordingStorage.nextSegmentURL(mode: currentSettings.mode, quality: currentSettings.quality)
-        let recorder = try AVAudioRecorder(url: url, settings: currentSettings.quality.recorderSettings)
-        recorder.delegate = self
-        recorder.isMeteringEnabled = true
-        recorder.prepareToRecord()
-        recorder.record()
-
-        self.recorder = recorder
+        let inputFormat = engine.inputNode.outputFormat(forBus: 0)
+        let file = try AVAudioFile(forWriting: url, settings: currentSettings.quality.recordingSettings(matching: inputFormat))
+        currentFile = file
         currentURL = url
         currentSegmentStartedAt = Date()
+        writtenDuration = 0
+        didWriteCurrentSegment = false
         elapsed = 0
-        currentLevel = -120
-        lastVisibleMeterUpdate = 0
-        detectedSoundInCurrentSegment = currentSettings.mode == .everything
         isWritingAudio = currentSettings.mode == .everything
     }
 
     private func rotateSegment() {
-        completeCurrentSegment()
         do {
             try startNewSegment()
         } catch {
@@ -114,46 +131,45 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         }
     }
 
-    private func startMetering() {
-        meterTimer?.invalidate()
-        let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.tickMeter()
-            }
+    private func handle(_ buffer: AVAudioPCMBuffer) {
+        guard let currentSettings else { return }
+        let analysis = analyzer.analyze(buffer)
+        publishLevelIfNeeded(analysis.rms)
+
+        guard shouldWriteBuffer(analysis: analysis, settings: currentSettings) else {
+            setWritingAudio(false)
+            return
         }
-        RunLoop.main.add(timer, forMode: .common)
-        meterTimer = timer
-    }
 
-    private func stopMetering() {
-        meterTimer?.invalidate()
-        meterTimer = nil
-    }
-
-    private func tickMeter() {
-        guard let recorder, let currentSettings else { return }
-        recorder.updateMeters()
-
-        let level = recorder.averagePower(forChannel: 0)
-        let currentTime = recorder.currentTime
-
-        switch currentSettings.mode {
-        case .everything:
+        do {
+            try currentFile?.write(from: buffer)
+            let bufferDuration = Double(buffer.frameLength) / buffer.format.sampleRate
+            writtenDuration += bufferDuration
+            elapsed = writtenDuration
+            didWriteCurrentSegment = true
             setWritingAudio(true)
+
+            if writtenDuration >= currentSettings.segmentDuration {
+                rotateSegment()
+            }
+        } catch {
+            lastError = error.localizedDescription
+        }
+    }
+
+    private func publishLevelIfNeeded(_ level: Float) {
+        let now = Date()
+        guard now.timeIntervalSince(lastVisibleMeterUpdate) >= 0.25 else { return }
+        currentLevel = level
+        lastVisibleMeterUpdate = now
+    }
+
+    private func shouldWriteBuffer(analysis: VoiceNoiseAnalysis, settings: RecordingSnapshot) -> Bool {
+        switch settings.mode {
+        case .everything:
+            return true
         case .soundActivated:
-            let detected = level >= currentSettings.thresholdDB
-            detectedSoundInCurrentSegment = detectedSoundInCurrentSegment || detected
-            setWritingAudio(detected)
-        }
-
-        if currentTime - lastVisibleMeterUpdate >= 0.5 || currentTime >= currentSettings.segmentDuration {
-            currentLevel = level
-            elapsed = currentTime
-            lastVisibleMeterUpdate = currentTime
-        }
-
-        if currentTime >= currentSettings.segmentDuration {
-            rotateSegment()
+            return analysis.rms >= settings.thresholdDB
         }
     }
 
@@ -163,22 +179,21 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
     }
 
     private func completeCurrentSegment() {
-        guard let recorder, let url = currentURL, let startedAt = currentSegmentStartedAt, let currentSettings else {
-            self.recorder = nil
+        guard let url = currentURL, let startedAt = currentSegmentStartedAt, let currentSettings else {
+            currentFile = nil
             currentURL = nil
             return
         }
 
-        let duration = recorder.currentTime
-        recorder.stop()
-        self.recorder = nil
-
-        guard duration > 0.02, detectedSoundInCurrentSegment else {
+        currentFile = nil
+        let duration = writtenDuration
+        guard didWriteCurrentSegment, duration > 0.02 else {
             deleteFileIfNeeded(url)
             currentURL = nil
             currentSegmentStartedAt = nil
+            writtenDuration = 0
+            didWriteCurrentSegment = false
             elapsed = 0
-            detectedSoundInCurrentSegment = false
             return
         }
 
@@ -196,7 +211,8 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         addCompletedSegment(item)
         currentURL = nil
         currentSegmentStartedAt = nil
-        detectedSoundInCurrentSegment = false
+        writtenDuration = 0
+        didWriteCurrentSegment = false
     }
 
     private func addCompletedSegment(_ item: RecordingItem) {
@@ -267,8 +283,8 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         guard isRecording else { return }
         shouldResumeAfterInterruption = true
         isInterrupted = true
-        isWritingAudio = false
-        stopMetering()
+        setWritingAudio(false)
+        stopEngine()
         completeCurrentSegment()
         lastError = "Grabacion pausada por otra app. Se reanudara sola."
     }
@@ -280,14 +296,14 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         do {
             try configureAudioSession()
             try startNewSegment()
-            startMetering()
+            try startEngine()
             isRecording = true
             isInterrupted = false
             lastError = nil
         } catch {
             isInterrupted = false
             isRecording = false
-            isWritingAudio = false
+            setWritingAudio(false)
             lastError = "No se pudo reanudar la grabacion: \(error.localizedDescription)"
         }
     }
@@ -296,10 +312,10 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         guard isRecording else { return }
         shouldResumeAfterInterruption = false
         isInterrupted = false
-        stopMetering()
+        stopEngine()
         completeCurrentSegment()
         isRecording = false
-        isWritingAudio = false
+        setWritingAudio(false)
     }
 }
 
