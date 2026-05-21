@@ -4,16 +4,22 @@ import StoreKit
 enum AppMonetizationConfig {
     static let adsEnabled = true
     static let supportEmail = "coderappskrazel@gmail.com"
+    static let activeManualUnlockGeneration = 1
     static let monthlySupportProductIDs = [
         "com.dmkr.audio.support.monthly.099",
         "com.dmkr.audio.support.monthly.299",
         "com.dmkr.audio.support.monthly.499"
     ]
-    static let manualUnlockCodes = [
-        "AUDIO-SIN-ANUNCIOS",
-        "KRAZEL-AUDIO",
-        "AUDIO-2026"
+    static let manualUnlockCodes: [ManualUnlockCode] = [
+        ManualUnlockCode(value: "AUDIO-PRO-2026", generation: 1),
+        ManualUnlockCode(value: "KRAZEL-2026-AUDIO", generation: 1),
+        ManualUnlockCode(value: "DMKR-AUDIO-LIFETIME", generation: 1)
     ]
+}
+
+struct ManualUnlockCode {
+    let value: String
+    let generation: Int
 }
 
 @MainActor
@@ -28,6 +34,8 @@ final class MonetizationStore: ObservableObject {
 
     private let defaults = UserDefaults.standard
     private let adsRemovedKey = "audio.native.adsRemoved.v1"
+    private let adsRemovedSourceKey = "audio.native.adsRemovedSource.v1"
+    private let manualUnlockGenerationKey = "audio.native.manualUnlockGeneration.v1"
     private var transactionUpdatesTask: Task<Void, Never>?
 
     var monetizationEnabled: Bool {
@@ -40,6 +48,7 @@ final class MonetizationStore: ObservableObject {
 
     init() {
         adsRemoved = defaults.object(forKey: adsRemovedKey) as? Bool ?? false
+        validateManualUnlockGeneration()
         transactionUpdatesTask = listenForTransactions()
     }
 
@@ -67,6 +76,7 @@ final class MonetizationStore: ObservableObject {
             case .success(let verification):
                 let transaction = try checkVerified(verification)
                 adsRemoved = true
+                defaults.set(AdsRemovedSource.subscription.rawValue, forKey: adsRemovedSourceKey)
                 purchaseMessage = "Gracias. Los anuncios se han quitado."
                 await transaction.finish()
             case .pending:
@@ -95,11 +105,14 @@ final class MonetizationStore: ObservableObject {
         let normalized = unlockCode
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .uppercased()
-        guard AppMonetizationConfig.manualUnlockCodes.contains(normalized) else {
+        guard let code = AppMonetizationConfig.manualUnlockCodes.first(where: { $0.value == normalized }),
+              code.generation == AppMonetizationConfig.activeManualUnlockGeneration else {
             purchaseMessage = "Codigo no valido."
             return false
         }
         adsRemoved = true
+        defaults.set(AdsRemovedSource.manual.rawValue, forKey: adsRemovedSourceKey)
+        defaults.set(code.generation, forKey: manualUnlockGenerationKey)
         unlockCode = ""
         purchaseMessage = "Codigo aplicado. Los anuncios se han quitado."
         return true
@@ -138,7 +151,12 @@ final class MonetizationStore: ObservableObject {
         }
         if hasActiveSupport {
             adsRemoved = true
+            defaults.set(AdsRemovedSource.subscription.rawValue, forKey: adsRemovedSourceKey)
+        } else if defaults.string(forKey: adsRemovedSourceKey) == AdsRemovedSource.subscription.rawValue {
+            adsRemoved = false
+            defaults.removeObject(forKey: adsRemovedSourceKey)
         }
+        validateManualUnlockGeneration()
     }
 
     private func listenForTransactions() -> Task<Void, Never> {
@@ -148,10 +166,24 @@ final class MonetizationStore: ObservableObject {
                 guard let transaction = try? self.checkVerified(result) else { continue }
                 if AppMonetizationConfig.monthlySupportProductIDs.contains(transaction.productID) {
                     self.adsRemoved = transaction.revocationDate == nil
+                    if self.adsRemoved {
+                        self.defaults.set(AdsRemovedSource.subscription.rawValue, forKey: self.adsRemovedSourceKey)
+                    } else if self.defaults.string(forKey: self.adsRemovedSourceKey) == AdsRemovedSource.subscription.rawValue {
+                        self.defaults.removeObject(forKey: self.adsRemovedSourceKey)
+                    }
                 }
                 await transaction.finish()
             }
         }
+    }
+
+    private func validateManualUnlockGeneration() {
+        guard defaults.string(forKey: adsRemovedSourceKey) == AdsRemovedSource.manual.rawValue else { return }
+        let generation = defaults.integer(forKey: manualUnlockGenerationKey)
+        guard generation != AppMonetizationConfig.activeManualUnlockGeneration else { return }
+        adsRemoved = false
+        defaults.removeObject(forKey: adsRemovedSourceKey)
+        defaults.removeObject(forKey: manualUnlockGenerationKey)
     }
 
     private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
@@ -166,4 +198,9 @@ final class MonetizationStore: ObservableObject {
 
 private enum StoreError: Error {
     case failedVerification
+}
+
+private enum AdsRemovedSource: String {
+    case manual
+    case subscription
 }
