@@ -1,4 +1,5 @@
 import SwiftUI
+import GoogleMobileAds
 
 @main
 struct AudioRecorderApp: App {
@@ -8,6 +9,10 @@ struct AudioRecorderApp: App {
     @StateObject private var uploadQueue = CloudUploadQueue()
     @StateObject private var playback = AudioPlaybackService()
     @StateObject private var monetization = MonetizationStore()
+
+    init() {
+        MobileAds.shared.start()
+    }
 
     var body: some Scene {
         WindowGroup {

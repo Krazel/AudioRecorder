@@ -23,6 +23,11 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.MobileAds;
+
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -44,6 +49,7 @@ public class MainActivity extends Activity {
     private TextView levelText;
     private TextView stateText;
     private SharedPreferences prefs;
+    private static final String TEST_BANNER_AD_UNIT_ID = "ca-app-pub-3940256099942544/9214589741";
 
     private final Runnable timerTick = new Runnable() {
         @Override
@@ -61,6 +67,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder().build());
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        MobileAds.initialize(this, initializationStatus -> {});
         ensureDefaults();
         if (prefs.getBoolean("startOnLaunch", false)) {
             timerText = new TextView(this);
@@ -119,6 +126,7 @@ public class MainActivity extends Activity {
         details.addView(detail("Sensibilidad", prefs.getInt("sensitivity", 62) + "%"));
         details.addView(detail("Subida", prefs.getBoolean("uploadAuto", false) ? prefs.getString("provider", "No") : "No"));
         root.addView(details);
+        root.addView(adBanner());
         root.addView(nav());
         setContentView(scroll);
     }
@@ -140,6 +148,7 @@ public class MainActivity extends Activity {
         }
         Button upload = primary("Procesar subida", v -> Toast.makeText(this, "Cola de subida revisada.", Toast.LENGTH_SHORT).show());
         root.addView(upload);
+        root.addView(adBanner());
         root.addView(nav());
         setContentView(scroll);
     }
@@ -191,6 +200,7 @@ public class MainActivity extends Activity {
         root.addView(text("Servidor propio envia multipart/form-data con el archivo. Google Drive y OneDrive quedan preparados para conectar OAuth antes de publicar.", 14, 0xFF667085, false));
         root.addView(section("Version"));
         root.addView(detail("AudioRecorder", "v1.0 build 1"));
+        root.addView(adBanner());
         root.addView(nav());
         setContentView(scroll);
     }
@@ -425,6 +435,15 @@ public class MainActivity extends Activity {
         nav.addView(navButton("Archivos", 1));
         nav.addView(navButton("Ajustes", 2));
         return nav;
+    }
+
+    private View adBanner() {
+        AdView adView = new AdView(this);
+        adView.setAdUnitId(TEST_BANNER_AD_UNIT_ID);
+        adView.setAdSize(AdSize.BANNER);
+        adView.loadAd(new AdRequest.Builder().build());
+        adView.setLayoutParams(size(-1, dp(50), 0, 12, 0, 0));
+        return adView;
     }
 
     private Button navButton(String label, int index) {

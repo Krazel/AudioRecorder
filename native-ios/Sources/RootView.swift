@@ -25,11 +25,10 @@ struct RootView: View {
             if monetization.shouldShowAds {
                 VStack(spacing: 0) {
                     Spacer(minLength: 0)
-                    BottomAdBanner()
+                    AdMobBannerView()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .ignoresSafeArea(.container, edges: .bottom)
-                .allowsHitTesting(false)
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
 
@@ -55,21 +54,5 @@ private struct AutoStartRecorderView: View {
                 attemptedAutoStart = true
                 await recorder.start(settings: settings, library: library, uploadQueue: uploadQueue)
             }
-    }
-}
-
-private struct BottomAdBanner: View {
-    var body: some View {
-        Text("AD")
-            .font(.system(size: 13, weight: .black))
-            .foregroundStyle(Color.primary.opacity(0.72))
-            .padding(.horizontal, 10)
-            .frame(height: 28)
-            .background(.thinMaterial)
-            .clipShape(Capsule())
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 24)
-            .frame(height: 40)
-            .accessibilityLabel("Anuncio")
     }
 }

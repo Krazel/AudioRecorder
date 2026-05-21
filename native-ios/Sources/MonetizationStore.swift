@@ -5,6 +5,7 @@ enum AppMonetizationConfig {
     static let adsEnabled = true
     static let supportEmail = "coderappskrazel@gmail.com"
     static let activeManualUnlockGeneration = 1
+    static let adMobIOSBannerUnitID = "ca-app-pub-3940256099942544/2435281174"
     static let monthlySupportProductIDs = [
         "com.dmkr.audio.support.monthly.099",
         "com.dmkr.audio.support.monthly.299",
