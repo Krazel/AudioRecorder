@@ -24,9 +24,7 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
     private var detectedSoundInCurrentSegment = false
     private var lastVisibleMeterUpdate: TimeInterval = 0
     private var currentSegmentShouldBeSaved = false
-    private var silenceStartedAt: TimeInterval?
 
-    private let soundReleaseGrace: TimeInterval = 1.0
     private let listeningClipMaxDuration: TimeInterval = 30
 
     func start(
@@ -123,7 +121,6 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         currentLevel = -120
         lastVisibleMeterUpdate = 0
         currentSegmentShouldBeSaved = shouldSave
-        silenceStartedAt = nil
         detectedSoundInCurrentSegment = shouldSave && currentSettings.mode == .everything
         setWritingAudio(shouldSave)
     }
@@ -179,14 +176,14 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
             setWritingAudio(true)
         case .soundActivated:
             let detected = level >= currentSettings.thresholdDB
-            if handleSoundActivatedTick(detected: detected, currentTime: currentTime) {
+            if handleSoundActivatedTick(detected: detected) {
                 return
             }
         }
 
         if currentTime - lastVisibleMeterUpdate >= 0.5 || currentTime >= currentSettings.segmentDuration {
             currentLevel = level
-            elapsed = currentTime
+            elapsed = currentSegmentShouldBeSaved ? currentTime : 0
             lastVisibleMeterUpdate = currentTime
         }
 
@@ -197,16 +194,13 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         }
     }
 
-    private func handleSoundActivatedTick(detected: Bool, currentTime: TimeInterval) -> Bool {
+    private func handleSoundActivatedTick(detected: Bool) -> Bool {
         if currentSegmentShouldBeSaved {
             detectedSoundInCurrentSegment = detectedSoundInCurrentSegment || detected
-            setWritingAudio(true)
 
             if detected {
-                silenceStartedAt = nil
-            } else if silenceStartedAt == nil {
-                silenceStartedAt = currentTime
-            } else if let silenceStartedAt, currentTime - silenceStartedAt >= soundReleaseGrace {
+                setWritingAudio(true)
+            } else {
                 completeCurrentSegment()
                 do {
                     try startNewSegment()
@@ -257,7 +251,6 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
             elapsed = 0
             detectedSoundInCurrentSegment = false
             currentSegmentShouldBeSaved = false
-            silenceStartedAt = nil
             return
         }
 
@@ -277,7 +270,6 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         currentSegmentStartedAt = nil
         detectedSoundInCurrentSegment = false
         currentSegmentShouldBeSaved = false
-        silenceStartedAt = nil
     }
 
     private func addCompletedSegment(_ item: RecordingItem) {
