@@ -42,7 +42,7 @@ struct SettingsView: View {
                             HStack {
                                 Text("Sensibilidad")
                                 Spacer()
-                                Text("\(visibleThresholdDB) dB")
+                                Text("\(settings.sensitivityPercent)%")
                                     .foregroundStyle(.secondary)
                             }
                             Slider(
@@ -60,7 +60,7 @@ struct SettingsView: View {
                             }
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
-                            Text("La grabacion por sonido empieza cuando el nivel visible supera \(visibleThresholdDB) dB.")
+                            Text("Umbral tecnico: \(Int(settings.recordingThresholdDB)) dBFS. dBFS es nivel digital: 0 es el maximo y los niveles normales son negativos.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -219,10 +219,6 @@ struct SettingsView: View {
 
     private func segmentTitle(_ minutes: Int) -> String {
         minutes == 0 ? "No separar" : "\(minutes) minutos"
-    }
-
-    private var visibleThresholdDB: Int {
-        Int(round(min(max(settings.recordingThresholdDB + 80, 0), 70)))
     }
 
     private var appVersionText: String {

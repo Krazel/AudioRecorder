@@ -38,7 +38,7 @@ struct RecorderView: View {
 
                 HStack(spacing: 16) {
                     MetricView(title: "Segmento", value: formatTime(recorder.elapsed))
-                    MetricView(title: "Nivel", value: "\(visibleLevelDB) dB")
+                    MetricView(title: "Nivel", value: "\(Int(recorder.currentLevel)) dB")
                     MetricView(title: "Estado", value: recorder.isWritingAudio ? "Guarda" : "Espera")
                 }
 
@@ -47,7 +47,7 @@ struct RecorderView: View {
                     DetailRow(title: "Corte", value: settings.segmentMinutes == 0 ? "No separar" : "\(settings.segmentMinutes) min")
                     DetailRow(title: "Modo", value: settings.mode.title)
                     if settings.mode == .soundActivated {
-                        DetailRow(title: "Umbral", value: "\(visibleThresholdDB) dB")
+                        DetailRow(title: "Sensibilidad", value: "\(settings.sensitivityPercent)%")
                     }
                 }
                 .padding()
@@ -78,25 +78,13 @@ struct RecorderView: View {
             if settings.mode == .everything {
                 return settings.segmentMinutes == 0 ? "Se guarda todo en un solo archivo" : "Se crea un archivo nuevo cada \(settings.segmentMinutes) minutos"
             } else if recorder.isWritingAudio {
-                return "Supera \(visibleThresholdDB) dB y se esta guardando audio"
+                return "Supera el umbral y se esta guardando audio"
             } else {
-                return "Esperando sonido suficiente (\(visibleThresholdDB) dB)"
+                return "Esperando sonido suficiente (\(settings.sensitivityPercent)% sensibilidad)"
             }
         } else {
             return "Toca el micrófono para empezar"
         }
-    }
-
-    private var visibleLevelDB: Int {
-        normalizedDB(recorder.currentLevel)
-    }
-
-    private var visibleThresholdDB: Int {
-        normalizedDB(settings.recordingThresholdDB)
-    }
-
-    private func normalizedDB(_ dbFS: Float) -> Int {
-        Int(round(min(max(dbFS + 80, 0), 70)))
     }
 
     private func toggleRecording() {
