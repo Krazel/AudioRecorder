@@ -16,8 +16,13 @@ final class RecordingLibrary: ObservableObject {
                 return
             }
             let data = try Data(contentsOf: indexURL)
-            items = try JSONDecoder().decode([RecordingItem].self, from: data)
+            let decodedItems = try JSONDecoder().decode([RecordingItem].self, from: data)
+            items = decodedItems
+                .map(repairFileURLIfNeeded)
                 .sorted { $0.createdAt > $1.createdAt }
+            if items != decodedItems {
+                saveImmediately()
+            }
         } catch {
             items = []
         }
@@ -106,6 +111,34 @@ final class RecordingLibrary: ObservableObject {
     private func playbackSafeDelete(fileURL: URL) {
         guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
         try? FileManager.default.removeItem(at: fileURL)
+    }
+
+    private func repairFileURLIfNeeded(_ item: RecordingItem) -> RecordingItem {
+        guard !FileManager.default.fileExists(atPath: item.fileURL.path) else { return item }
+
+        let fileName = item.fileURL.lastPathComponent
+        let preferredURL = RecordingStorage.rootDirectory
+            .appendingPathComponent(item.mode.folderName, isDirectory: true)
+            .appendingPathComponent(fileName)
+
+        if FileManager.default.fileExists(atPath: preferredURL.path) {
+            var repairedItem = item
+            repairedItem.fileURL = preferredURL
+            return repairedItem
+        }
+
+        for mode in RecordingMode.allCases {
+            let candidateURL = RecordingStorage.rootDirectory
+                .appendingPathComponent(mode.folderName, isDirectory: true)
+                .appendingPathComponent(fileName)
+            if FileManager.default.fileExists(atPath: candidateURL.path) {
+                var repairedItem = item
+                repairedItem.fileURL = candidateURL
+                return repairedItem
+            }
+        }
+
+        return item
     }
 
     private func sanitizedFileName(_ name: String) -> String {

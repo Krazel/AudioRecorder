@@ -107,19 +107,20 @@ final class RecorderService: ObservableObject {
     }
 
     private func startNewSegment() throws {
-        guard let currentSettings else { throw RecorderError.missingSettings }
+        guard let settings = activeSettings else { throw RecorderError.missingSettings }
         completeCurrentSegment()
 
-        let url = try RecordingStorage.nextSegmentURL(mode: currentSettings.mode, quality: currentSettings.quality)
+        currentSettings = settings
+        let url = try RecordingStorage.nextSegmentURL(mode: settings.mode, quality: settings.quality)
         let inputFormat = engine.inputNode.outputFormat(forBus: 0)
-        let file = try AVAudioFile(forWriting: url, settings: currentSettings.quality.recordingSettings(matching: inputFormat))
+        let file = try AVAudioFile(forWriting: url, settings: settings.quality.recordingSettings(matching: inputFormat))
         currentFile = file
         currentURL = url
         currentSegmentStartedAt = Date()
         writtenDuration = 0
         didWriteCurrentSegment = false
         elapsed = 0
-        isWritingAudio = currentSettings.mode == .everything
+        isWritingAudio = settings.mode == .everything
     }
 
     private func rotateSegment() {
@@ -132,11 +133,11 @@ final class RecorderService: ObservableObject {
     }
 
     private func handle(_ buffer: AVAudioPCMBuffer) {
-        guard let currentSettings else { return }
+        guard let settings = activeSettings else { return }
         let analysis = analyzer.analyze(buffer)
         publishLevelIfNeeded(analysis.rms)
 
-        guard shouldWriteBuffer(analysis: analysis, settings: currentSettings) else {
+        guard shouldWriteBuffer(analysis: analysis, settings: settings) else {
             setWritingAudio(false)
             return
         }
@@ -149,12 +150,19 @@ final class RecorderService: ObservableObject {
             didWriteCurrentSegment = true
             setWritingAudio(true)
 
-            if writtenDuration >= currentSettings.segmentDuration {
+            if writtenDuration >= settings.segmentDuration {
                 rotateSegment()
             }
         } catch {
             lastError = error.localizedDescription
         }
+    }
+
+    private var activeSettings: RecordingSnapshot? {
+        if let settingsStore {
+            return RecordingSnapshot(settingsStore)
+        }
+        return currentSettings
     }
 
     private func publishLevelIfNeeded(_ level: Float) {
