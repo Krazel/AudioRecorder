@@ -40,19 +40,27 @@ struct RootView: View {
 }
 
 private struct AutoStartRecorderView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var recorder: RecorderService
     @EnvironmentObject private var settings: RecordingSettingsStore
     @EnvironmentObject private var library: RecordingLibrary
     @EnvironmentObject private var uploadQueue: CloudUploadQueue
 
-    @State private var attemptedAutoStart = false
-
     var body: some View {
         Color.clear
             .task {
-                guard settings.startRecordingOnLaunch, !attemptedAutoStart else { return }
-                attemptedAutoStart = true
-                await recorder.start(settings: settings, library: library, uploadQueue: uploadQueue)
+                await startIfNeeded()
             }
+            .onChange(of: scenePhase) { phase in
+                guard phase == .active else { return }
+                Task {
+                    await startIfNeeded()
+                }
+            }
+    }
+
+    private func startIfNeeded() async {
+        guard settings.startRecordingOnLaunch, !recorder.isRecording else { return }
+        await recorder.start(settings: settings, library: library, uploadQueue: uploadQueue)
     }
 }

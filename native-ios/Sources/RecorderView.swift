@@ -48,6 +48,7 @@ struct RecorderView: View {
                     DetailRow(title: "Modo", value: settings.mode.title)
                     if settings.mode == .soundActivated {
                         DetailRow(title: "Umbral", value: "\(visibleThresholdDB) dB")
+                        DetailRow(title: "Extra", value: soundTailTitle(settings.soundTailSeconds))
                     }
                 }
                 .padding()
@@ -113,6 +114,10 @@ struct RecorderView: View {
         let minutes = Int(time) / 60
         let seconds = Int(time) % 60
         return String(format: "%02d:%02d", minutes, seconds)
+    }
+
+    private func soundTailTitle(_ seconds: Double) -> String {
+        seconds == 0 ? "No" : String(format: "%.1f s", seconds)
     }
 }
 

@@ -25,6 +25,7 @@ final class RecorderService: ObservableObject {
     private var uploadQueue: CloudUploadQueue?
     private var shouldResumeAfterInterruption = false
     private var lastVisibleMeterUpdate = Date.distantPast
+    private var lastSoundAboveThresholdAt: Date?
 
     func start(
         settings: RecordingSettingsStore,
@@ -119,6 +120,7 @@ final class RecorderService: ObservableObject {
         currentSegmentStartedAt = Date()
         writtenDuration = 0
         didWriteCurrentSegment = false
+        lastSoundAboveThresholdAt = nil
         elapsed = 0
         isWritingAudio = settings.mode == .everything
     }
@@ -177,7 +179,18 @@ final class RecorderService: ObservableObject {
         case .everything:
             return true
         case .soundActivated:
-            return analysis.rms >= settings.thresholdDB
+            let now = Date()
+            if analysis.rms >= settings.thresholdDB {
+                lastSoundAboveThresholdAt = now
+                return true
+            }
+
+            guard settings.soundTailDuration > 0,
+                  let lastSoundAboveThresholdAt else {
+                return false
+            }
+
+            return now.timeIntervalSince(lastSoundAboveThresholdAt) <= settings.soundTailDuration
         }
     }
 
@@ -333,6 +346,7 @@ private struct RecordingSnapshot {
     let segmentDuration: TimeInterval
     let uploadState: UploadState
     let thresholdDB: Float
+    let soundTailDuration: TimeInterval
 
     @MainActor
     init(_ settings: RecordingSettingsStore) {
@@ -341,6 +355,7 @@ private struct RecordingSnapshot {
         segmentDuration = settings.segmentDuration
         uploadState = settings.uploadAutomatically && settings.cloudProvider != .none ? .queued : .localOnly
         thresholdDB = settings.recordingThresholdDB
+        soundTailDuration = settings.soundTailSeconds
     }
 }
 

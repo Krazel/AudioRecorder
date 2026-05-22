@@ -14,6 +14,7 @@ struct SettingsView: View {
     @State private var confirmingDeleteAllFiles = false
 
     private let segmentOptions = [0, 5, 15, 30, 60, 120]
+    private let soundTailOptions = [0.0, 0.5, 1.0, 2.0, 3.0, 5.0]
 
     var body: some View {
         NavigationStack {
@@ -63,6 +64,12 @@ struct SettingsView: View {
                             Text("La grabacion por sonido empieza cuando el nivel visible supera \(visibleThresholdDB) dB.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
+                        }
+
+                        Picker("Grabar un poco mas", selection: $settings.soundTailSeconds) {
+                            ForEach(soundTailOptions, id: \.self) { seconds in
+                                Text(soundTailTitle(seconds)).tag(seconds)
+                            }
                         }
                     }
 
@@ -223,6 +230,10 @@ struct SettingsView: View {
 
     private var visibleThresholdDB: Int {
         Int(round(min(max(settings.recordingThresholdDB + 80, 0), 70)))
+    }
+
+    private func soundTailTitle(_ seconds: Double) -> String {
+        seconds == 0 ? "No" : String(format: "%.1f segundos", seconds)
     }
 
     private var appVersionText: String {

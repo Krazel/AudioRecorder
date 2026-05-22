@@ -26,6 +26,10 @@ final class RecordingSettingsStore: ObservableObject {
         didSet { save() }
     }
 
+    @Published var soundTailSeconds: Double {
+        didSet { save() }
+    }
+
     @Published var startRecordingOnLaunch: Bool {
         didSet { save() }
     }
@@ -43,12 +47,14 @@ final class RecordingSettingsStore: ObservableObject {
     init() {
         let storedSegmentMinutes = defaults.object(forKey: "segmentMinutes") as? Int
         let storedThreshold = defaults.object(forKey: "recordingThresholdDB") as? Float
+        let storedSoundTailSeconds = defaults.object(forKey: "soundTailSeconds") as? Double
         quality = AudioQuality(rawValue: defaults.string(forKey: "quality") ?? "") ?? .medium
         mode = RecordingMode(rawValue: defaults.string(forKey: "mode") ?? "") ?? .everything
         segmentMinutes = storedSegmentMinutes ?? 0
         cloudProvider = CloudProvider(rawValue: defaults.string(forKey: "cloudProvider") ?? "") ?? .none
         uploadAutomatically = false
         recordingThresholdDB = storedThreshold ?? -55
+        soundTailSeconds = storedSoundTailSeconds ?? 1.0
         startRecordingOnLaunch = defaults.object(forKey: "startRecordingOnLaunch") as? Bool ?? false
         customUploadEndpoint = defaults.string(forKey: "customUploadEndpoint") ?? ""
         customUploadToken = defaults.string(forKey: "customUploadToken") ?? ""
@@ -86,6 +92,7 @@ final class RecordingSettingsStore: ObservableObject {
         defaults.set(cloudProvider.rawValue, forKey: "cloudProvider")
         defaults.set(uploadAutomatically, forKey: "uploadAutomatically")
         defaults.set(recordingThresholdDB, forKey: "recordingThresholdDB")
+        defaults.set(soundTailSeconds, forKey: "soundTailSeconds")
         defaults.set(startRecordingOnLaunch, forKey: "startRecordingOnLaunch")
         defaults.set(customUploadEndpoint, forKey: "customUploadEndpoint")
         defaults.set(customUploadToken, forKey: "customUploadToken")
