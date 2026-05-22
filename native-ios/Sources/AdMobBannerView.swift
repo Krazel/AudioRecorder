@@ -2,7 +2,7 @@ import SwiftUI
 import GoogleMobileAds
 
 struct AdMobBannerView: View {
-    private let adSize = largeAnchoredAdaptiveBanner(width: 375)
+    private let adSize = currentOrientationAnchoredAdaptiveBanner(width: 375)
 
     var body: some View {
         AdMobBannerContainer(adSize: adSize)
