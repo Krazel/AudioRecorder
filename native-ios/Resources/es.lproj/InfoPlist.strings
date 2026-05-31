@@ -1,0 +1,3 @@
+CFBundleDisplayName = "Grabadora de Voz Pro - Audio K";
+CFBundleName = "GrabadoraVozPro";
+NSMicrophoneUsageDescription = "La app necesita usar el microfono para grabar audio y crear segmentos.";

@@ -11,7 +11,9 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>AudioRecorder</string>
+	<string>VoiceRecorderPro</string>
+	<key>CFBundleDisplayName</key>
+	<string>Voice Recorder Pro - Audio K</string>
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>

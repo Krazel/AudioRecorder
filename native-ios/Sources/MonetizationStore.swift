@@ -128,7 +128,7 @@ final class MonetizationStore: ObservableObject {
         components.scheme = "mailto"
         components.path = AppMonetizationConfig.supportEmail
         components.queryItems = [
-            URLQueryItem(name: "subject", value: "AudioRecorder - bugs o feedback"),
+            URLQueryItem(name: "subject", value: "Voice Recorder Pro - Audio K - bugs o feedback"),
             URLQueryItem(name: "body", value: feedbackBody)
         ]
         return components.url
@@ -137,7 +137,7 @@ final class MonetizationStore: ObservableObject {
     private var feedbackBody: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
-        return "\n\n---\nAudioRecorder v\(version) build \(build)"
+        return "\n\n---\nVoice Recorder Pro - Audio K v\(version) build \(build)"
     }
 
     private func refreshEntitlements() async {

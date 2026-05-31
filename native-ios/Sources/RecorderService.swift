@@ -26,6 +26,11 @@ final class RecorderService: ObservableObject {
     private var shouldResumeAfterInterruption = false
     private var lastVisibleMeterUpdate = Date.distantPast
     private var lastSoundAboveThresholdAt: Date?
+    private let persistedRecordingIntentKey = "RecorderService.persistedRecordingIntent"
+
+    var shouldResumePersistedRecording: Bool {
+        UserDefaults.standard.bool(forKey: persistedRecordingIntentKey)
+    }
 
     func start(
         settings: RecordingSettingsStore,
@@ -46,6 +51,7 @@ final class RecorderService: ObservableObject {
             try startEngine()
             isRecording = true
             isInterrupted = false
+            persistRecordingIntent(true)
             lastError = nil
         } catch {
             stop()
@@ -56,11 +62,35 @@ final class RecorderService: ObservableObject {
     func stop() {
         shouldResumeAfterInterruption = false
         isInterrupted = false
+        persistRecordingIntent(false)
         stopEngine()
         completeCurrentSegment()
         try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
         isRecording = false
         isWritingAudio = false
+    }
+
+    func recoverActiveRecordingIfNeeded() async {
+        guard isRecording else { return }
+
+        if shouldResumeAfterInterruption {
+            await resumeAfterAudioInterruption()
+            return
+        }
+
+        guard !engine.isRunning else { return }
+
+        do {
+            try configureAudioSession()
+            if currentFile == nil {
+                try startNewSegment()
+            }
+            try startEngine()
+            isInterrupted = false
+            lastError = nil
+        } catch {
+            lastError = "No se pudo reactivar la grabacion: \(error.localizedDescription)"
+        }
     }
 
     private func requestMicrophonePermission() async throws {
@@ -199,6 +229,10 @@ final class RecorderService: ObservableObject {
         isWritingAudio = value
     }
 
+    private func persistRecordingIntent(_ value: Bool) {
+        UserDefaults.standard.set(value, forKey: persistedRecordingIntentKey)
+    }
+
     private func completeCurrentSegment() {
         guard let url = currentURL, let startedAt = currentSegmentStartedAt, let currentSettings else {
             currentFile = nil
@@ -272,6 +306,16 @@ final class RecorderService: ObservableObject {
         }
 
         NotificationCenter.default.addObserver(
+            forName: UIApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                await self?.recoverActiveRecordingIfNeeded()
+            }
+        }
+
+        NotificationCenter.default.addObserver(
             forName: AVAudioSession.interruptionNotification,
             object: nil,
             queue: .main
@@ -279,6 +323,37 @@ final class RecorderService: ObservableObject {
             Task { @MainActor in
                 self?.handleAudioInterruption(notification)
             }
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: AVAudioSession.mediaServicesWereResetNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                await self?.recoverAfterMediaServicesReset()
+            }
+        }
+    }
+
+    private func recoverAfterMediaServicesReset() async {
+        guard isRecording else { return }
+        stopEngine()
+        completeCurrentSegment()
+        currentFile = nil
+        currentURL = nil
+        currentSegmentStartedAt = nil
+
+        do {
+            try configureAudioSession()
+            try startNewSegment()
+            try startEngine()
+            isInterrupted = false
+            lastError = nil
+        } catch {
+            isRecording = false
+            setWritingAudio(false)
+            lastError = "No se pudo recuperar el audio del sistema: \(error.localizedDescription)"
         }
     }
 

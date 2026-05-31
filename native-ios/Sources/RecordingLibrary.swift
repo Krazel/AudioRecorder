@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 
 @MainActor
@@ -12,19 +13,29 @@ final class RecordingLibrary: ObservableObject {
         do {
             try RecordingStorage.ensureDirectories()
             guard FileManager.default.fileExists(atPath: indexURL.path) else {
-                items = []
+                items = await recoverUnindexedRecordings(from: [])
+                    .sorted { $0.createdAt > $1.createdAt }
+                if !items.isEmpty {
+                    saveImmediately()
+                }
                 return
             }
             let data = try Data(contentsOf: indexURL)
             let decodedItems = try JSONDecoder().decode([RecordingItem].self, from: data)
-            items = decodedItems
+            let repairedItems = decodedItems
                 .map(repairFileURLIfNeeded)
+                .sorted { $0.createdAt > $1.createdAt }
+            items = await recoverUnindexedRecordings(from: repairedItems)
                 .sorted { $0.createdAt > $1.createdAt }
             if items != decodedItems {
                 saveImmediately()
             }
         } catch {
-            items = []
+            items = await recoverUnindexedRecordings(from: [])
+                .sorted { $0.createdAt > $1.createdAt }
+            if !items.isEmpty {
+                saveImmediately()
+            }
         }
     }
 
@@ -139,6 +150,79 @@ final class RecordingLibrary: ObservableObject {
         }
 
         return item
+    }
+
+    private func recoverUnindexedRecordings(from loadedItems: [RecordingItem]) async -> [RecordingItem] {
+        var recoveredItems = loadedItems
+        var knownPaths = Set(loadedItems.map { $0.fileURL.standardizedFileURL.path })
+
+        for mode in RecordingMode.allCases {
+            let directory = RecordingStorage.rootDirectory.appendingPathComponent(mode.folderName, isDirectory: true)
+            guard let fileURLs = try? FileManager.default.contentsOfDirectory(
+                at: directory,
+                includingPropertiesForKeys: [.creationDateKey, .isRegularFileKey],
+                options: [.skipsHiddenFiles]
+            ) else {
+                continue
+            }
+
+            for fileURL in fileURLs {
+                let standardizedPath = fileURL.standardizedFileURL.path
+                guard !knownPaths.contains(standardizedPath),
+                      isRecoverableAudioFile(fileURL),
+                      isRegularFile(fileURL) else {
+                    continue
+                }
+
+                let duration = await mediaDuration(for: fileURL)
+                guard duration > 0.02 else { continue }
+
+                recoveredItems.append(
+                    RecordingItem(
+                        id: UUID(),
+                        createdAt: creationDate(for: fileURL),
+                        duration: duration,
+                        fileURL: fileURL,
+                        mode: mode,
+                        quality: recoveredQuality(for: fileURL),
+                        uploadState: .localOnly,
+                        customName: nil
+                    )
+                )
+                knownPaths.insert(standardizedPath)
+            }
+        }
+
+        return recoveredItems
+    }
+
+    private func isRecoverableAudioFile(_ url: URL) -> Bool {
+        ["m4a", "caf"].contains(url.pathExtension.lowercased())
+    }
+
+    private func isRegularFile(_ url: URL) -> Bool {
+        let values = try? url.resourceValues(forKeys: [.isRegularFileKey])
+        return values?.isRegularFile == true
+    }
+
+    private func mediaDuration(for url: URL) async -> TimeInterval {
+        let asset = AVURLAsset(url: url)
+        do {
+            let duration = try await asset.load(.duration)
+            let seconds = duration.seconds
+            return seconds.isFinite ? seconds : 0
+        } catch {
+            return 0
+        }
+    }
+
+    private func creationDate(for url: URL) -> Date {
+        let values = try? url.resourceValues(forKeys: [.creationDateKey])
+        return values?.creationDate ?? Date()
+    }
+
+    private func recoveredQuality(for url: URL) -> AudioQuality {
+        url.pathExtension.lowercased() == "caf" ? .high : .medium
     }
 
     private func sanitizedFileName(_ name: String) -> String {

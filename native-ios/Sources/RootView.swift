@@ -54,13 +54,17 @@ private struct AutoStartRecorderView: View {
             .onChange(of: scenePhase) { phase in
                 guard phase == .active else { return }
                 Task {
+                    await recorder.recoverActiveRecordingIfNeeded()
                     await startIfNeeded()
                 }
             }
     }
 
     private func startIfNeeded() async {
-        guard settings.startRecordingOnLaunch, !recorder.isRecording else { return }
+        guard (settings.startRecordingOnLaunch || recorder.shouldResumePersistedRecording),
+              !recorder.isRecording else {
+            return
+        }
         await recorder.start(settings: settings, library: library, uploadQueue: uploadQueue)
     }
 }

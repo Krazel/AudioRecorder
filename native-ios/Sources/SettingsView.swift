@@ -13,7 +13,7 @@ struct SettingsView: View {
     @State private var unlockCodeVisible = false
     @State private var confirmingDeleteAllFiles = false
 
-    private let segmentOptions = [0, 5, 15, 30, 60, 120]
+    private let segmentOptions = [5, 15, 30, 60, 120]
     private let soundTailOptions = [0.0, 0.5, 1.0, 2.0, 3.0, 5.0]
 
     var body: some View {
@@ -101,7 +101,7 @@ struct SettingsView: View {
 
                 Section("Version") {
                     HStack {
-                        Text("AudioRecorder")
+                        Text("Voice Recorder Pro - Audio K")
                         Spacer()
                         Text(appVersionText)
                             .fontWeight(.semibold)
@@ -113,7 +113,7 @@ struct SettingsView: View {
             .task {
                 await monetization.loadProductsIfNeeded()
             }
-            .alert("AudioRecorder", isPresented: messageBinding) {
+            .alert("Voice Recorder Pro - Audio K", isPresented: messageBinding) {
                 Button("OK", role: .cancel) {
                     monetization.clearMessage()
                 }
@@ -225,7 +225,7 @@ struct SettingsView: View {
     }
 
     private func segmentTitle(_ minutes: Int) -> String {
-        minutes == 0 ? "No separar" : "\(minutes) minutos"
+        "\(minutes) minutos"
     }
 
     private var visibleThresholdDB: Int {

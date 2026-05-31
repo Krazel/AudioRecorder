@@ -1,0 +1,51 @@
+{
+  "app": {
+    "name": "Voice Recorder Pro - Audio K",
+    "iosBundleId": "com.dmkr.audio",
+    "androidPackageName": "com.coderk.audio"
+  },
+  "ios": {
+    "platform": "IOS",
+    "versionString": "1.0",
+    "locales": {
+      "es-ES": {
+        "name": "Grabadora de Voz Pro - Audio K",
+        "subtitle": "Grabadora gratis",
+        "promotionalText": "Graba, organiza y comparte audio. Todas las funciones de grabación son gratis.",
+        "description": "AudioRecorder es una grabadora sencilla para guardar notas de voz, reuniones, ideas y audio del día a día.\n\nTodas las funciones principales son gratis: grabar audio, elegir calidad, separar archivos por intervalos, usar grabación por sonido, reproducir grabaciones, marcar favoritos, renombrar archivos, eliminar grabaciones y compartirlas manualmente con otras apps.\n\nFunciones principales:\n\n- Grabación de audio desde el micrófono.\n- Segmentación configurable: 5, 15, 30, 60 o 120 minutos.\n- Calidad muy baja, baja, media o alta.\n- Modo todo o modo por sonido.\n- Sensibilidad ajustable para grabación por sonido.\n- Biblioteca local de grabaciones.\n- Reproducción integrada.\n- Favoritos y selección múltiple.\n- Renombrar, eliminar y compartir archivos.\n- Opción de grabar al abrir la app.\n- Contacto directo para bugs o feedback.\n\nLa app guarda las grabaciones en el dispositivo y permite compartirlas manualmente mediante la hoja nativa del sistema.",
+        "keywords": "grabadora,audio,voz,notas,reuniones,micrófono",
+        "supportUrl": "",
+        "marketingUrl": "",
+        "whatsNew": "Primera preparacion de ficha de tienda.",
+        "screenshots": {}
+      }
+    }
+  },
+  "android": {
+    "track": "qa",
+    "releaseName": "1.0",
+    "locales": {
+      "es-ES": {
+        "title": "Grabadora de Voz Pro - Audio K",
+        "shortDescription": "Grabadora gratis con cortes, modo por sonido y envío manual.",
+        "fullDescription": "AudioRecorder es una grabadora sencilla para guardar notas de voz, reuniones, ideas y audio del día a día.\n\nTodas las funciones principales son gratis: grabar audio, elegir calidad, separar archivos por intervalos, usar grabación por sonido, reproducir grabaciones, marcar favoritos, renombrar archivos, eliminar grabaciones y compartirlas manualmente con otras apps.\n\nFunciones principales:\n\n- Grabación de audio desde el micrófono.\n- Segmentación configurable: 5, 15, 30, 60 o 120 minutos.\n- Calidad muy baja, baja, media o alta.\n- Modo todo o modo por sonido.\n- Sensibilidad ajustable para grabación por sonido.\n- Biblioteca local de grabaciones.\n- Reproducción integrada.\n- Favoritos y selección múltiple.\n- Renombrar, eliminar y compartir archivos.\n- Opción de grabar al abrir la app.\n- Contacto directo para bugs o feedback.\n\nLa app guarda las grabaciones en el dispositivo y permite compartirlas manualmente mediante la hoja nativa del sistema.",
+        "releaseNotes": "Primera versión preparada para pruebas internas.",
+        "video": "",
+        "images": {
+          "icon": [
+            "google-play/es-ES/icon.png"
+          ],
+          "phoneScreenshots": [
+            "google-play/es-ES/phone/01-grabacion-gratis.png",
+            "google-play/es-ES/phone/02-todas-funciones-gratis.png",
+            "google-play/es-ES/phone/03-archivos-controlados.png",
+            "google-play/es-ES/phone/04-modo-por-sonido.png"
+          ],
+          "featureGraphic": [
+            "google-play/es-ES/feature-graphic.png"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -9,7 +9,7 @@ android/
 ID fijo:
 
 ```text
-com.dmkr.audio
+com.coderk.audio
 ```
 
 La version Android debe mantener paridad con iPhone:

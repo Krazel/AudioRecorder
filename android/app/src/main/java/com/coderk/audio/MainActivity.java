@@ -1,4 +1,4 @@
-package com.dmkr.audio;
+package com.coderk.audio;
 
 import android.Manifest;
 import android.app.Activity;
@@ -88,11 +88,13 @@ public class MainActivity extends Activity {
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         MobileAds.initialize(this, initializationStatus -> {});
         ensureDefaults();
-        if (prefs.getBoolean("startOnLaunch", false)
-            && checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-            startRecording();
-        }
         showRecorder();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        startRecordingOnOpenIfNeeded();
     }
 
     private void ensureDefaults() {
@@ -102,6 +104,7 @@ public class MainActivity extends Activity {
                 .putString("mode", "Por sonido")
                 .putInt("segment", 15)
                 .putInt("sensitivity", 62)
+                .putInt("soundTailTenths", 10)
                 .putBoolean("startOnLaunch", false)
                 .putBoolean("adsRemoved", false)
                 .putStringSet("favorites", new HashSet<>())
@@ -140,6 +143,7 @@ public class MainActivity extends Activity {
         details.addView(detailRow("Modo", modeTitle()));
         if (isSoundMode()) {
             details.addView(detailRow("Umbral", visibleThresholdDB() + " dB"));
+            details.addView(detailRow("Extra", soundTailTitle()));
         }
         content.addView(details, size(-1, -2, 0, 18, 0, 0));
 
@@ -244,6 +248,8 @@ public class MainActivity extends Activity {
             TextView help = body("La grabacion por sonido empieza cuando el nivel visible supera " + visibleThresholdDB() + " dB.", 13, COLOR_SECONDARY, false);
             sensitivity.addView(help);
             content.addView(sensitivity, size(-1, -2, 0, 8, 0, 0));
+
+            content.addView(choiceRow("Grabar un poco mas", new String[]{"No", "0.5 segundos", "1.0 segundos", "2.0 segundos", "3.0 segundos", "5.0 segundos"}, "soundTailTenths"));
         }
 
         CheckBox start = checkbox("Grabar al abrir la app", prefs.getBoolean("startOnLaunch", false));
@@ -604,6 +610,16 @@ public class MainActivity extends Activity {
         showRecorder();
     }
 
+    private void startRecordingOnOpenIfNeeded() {
+        if (!prefs.getBoolean("startOnLaunch", false) || recording) return;
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_RECORD_AUDIO);
+            return;
+        }
+        startRecording();
+        showRecorder();
+    }
+
     private void startRecording() {
         File dir = recordingsDir();
         String stamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss-SSS", Locale.US).format(new Date());
@@ -829,8 +845,15 @@ public class MainActivity extends Activity {
         return minutes == 0 ? "No separar" : minutes + " min";
     }
 
+    private String soundTailTitle() {
+        int tenths = prefs.getInt("soundTailTenths", 10);
+        if (tenths == 0) return "No";
+        return String.format(Locale.US, "%.1f s", tenths / 10.0);
+    }
+
     private String currentChoiceValue(String key) {
         if ("segment".equals(key)) return segmentTitle();
+        if ("soundTailTenths".equals(key)) return soundTailTitle();
         return prefs.getString(key, "");
     }
 
@@ -839,6 +862,9 @@ public class MainActivity extends Activity {
         if ("segment".equals(key)) {
             int minutes = value.startsWith("No") ? 0 : Integer.parseInt(value.split(" ")[0]);
             editor.putInt(key, minutes);
+        } else if ("soundTailTenths".equals(key)) {
+            int tenths = value.startsWith("No") ? 0 : (int) Math.round(Double.parseDouble(value.split(" ")[0]) * 10);
+            editor.putInt(key, tenths);
         } else {
             editor.putString(key, value);
         }

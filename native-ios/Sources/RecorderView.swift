@@ -44,7 +44,7 @@ struct RecorderView: View {
 
                 VStack(spacing: 12) {
                     DetailRow(title: "Calidad", value: settings.quality.title)
-                    DetailRow(title: "Corte", value: settings.segmentMinutes == 0 ? "No separar" : "\(settings.segmentMinutes) min")
+                    DetailRow(title: "Corte", value: "\(settings.segmentMinutes) min")
                     DetailRow(title: "Modo", value: settings.mode.title)
                     if settings.mode == .soundActivated {
                         DetailRow(title: "Umbral", value: "\(visibleThresholdDB) dB")
@@ -77,7 +77,7 @@ struct RecorderView: View {
 
         if recorder.isRecording {
             if settings.mode == .everything {
-                return settings.segmentMinutes == 0 ? "Se guarda todo en un solo archivo" : "Se crea un archivo nuevo cada \(settings.segmentMinutes) minutos"
+                return "Se crea un archivo nuevo cada \(settings.segmentMinutes) minutos"
             } else if recorder.isWritingAudio {
                 return "Supera \(visibleThresholdDB) dB y se esta guardando audio"
             } else {

@@ -50,7 +50,7 @@ final class RecordingSettingsStore: ObservableObject {
         let storedSoundTailSeconds = defaults.object(forKey: "soundTailSeconds") as? Double
         quality = AudioQuality(rawValue: defaults.string(forKey: "quality") ?? "") ?? .medium
         mode = RecordingMode(rawValue: defaults.string(forKey: "mode") ?? "") ?? .everything
-        segmentMinutes = storedSegmentMinutes ?? 0
+        segmentMinutes = storedSegmentMinutes == 0 ? 15 : (storedSegmentMinutes ?? 15)
         cloudProvider = CloudProvider(rawValue: defaults.string(forKey: "cloudProvider") ?? "") ?? .none
         uploadAutomatically = false
         recordingThresholdDB = storedThreshold ?? -55
@@ -61,7 +61,7 @@ final class RecordingSettingsStore: ObservableObject {
     }
 
     var segmentDuration: TimeInterval {
-        guard segmentMinutes > 0 else { return .infinity }
+        guard segmentMinutes > 0 else { return TimeInterval(15 * 60) }
         return TimeInterval(segmentMinutes * 60)
     }
 
