@@ -14,6 +14,8 @@ final class RecorderService: ObservableObject {
 
     private let engine = AVAudioEngine()
     private let analyzer = VoiceNoiseAnalyzer()
+    private var audioRecorder: AVAudioRecorder?
+    private var recorderTimer: Timer?
     private var currentFile: AVAudioFile?
     private var currentURL: URL?
     private var currentSettings: RecordingSnapshot?
@@ -48,7 +50,7 @@ final class RecorderService: ObservableObject {
             try await requestMicrophonePermission()
             try configureAudioSession()
             try startNewSegment()
-            try startEngine()
+            try startRecordingBackend()
             isRecording = true
             isInterrupted = false
             persistRecordingIntent(true)
@@ -63,6 +65,7 @@ final class RecorderService: ObservableObject {
         shouldResumeAfterInterruption = false
         isInterrupted = false
         persistRecordingIntent(false)
+        stopSystemRecorder(finalize: true)
         stopEngine()
         completeCurrentSegment()
         try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
@@ -75,6 +78,23 @@ final class RecorderService: ObservableObject {
 
         if shouldResumeAfterInterruption {
             await resumeAfterAudioInterruption()
+            return
+        }
+
+        if currentSettings?.mode == .everything || activeSettings?.mode == .everything {
+            guard audioRecorder?.isRecording != true else { return }
+
+            do {
+                stopSystemRecorder(finalize: true)
+                completeCurrentSegment()
+                try configureAudioSession()
+                try startNewSegment()
+                try startSystemRecorder()
+                isInterrupted = false
+                lastError = nil
+            } catch {
+                lastError = "No se pudo reactivar la grabacion: \(error.localizedDescription)"
+            }
             return
         }
 
@@ -118,6 +138,82 @@ final class RecorderService: ObservableObject {
         try session.setActive(true)
     }
 
+    private func startRecordingBackend() throws {
+        guard let settings = currentSettings else { throw RecorderError.missingSettings }
+        switch settings.mode {
+        case .everything:
+            try startSystemRecorder()
+        case .soundActivated:
+            try startEngine()
+        }
+    }
+
+    private func startSystemRecorder() throws {
+        guard let url = currentURL, let settings = currentSettings else {
+            throw RecorderError.missingSettings
+        }
+
+        let recorder = try AVAudioRecorder(url: url, settings: settings.quality.recorderSettings)
+        recorder.isMeteringEnabled = true
+        recorder.prepareToRecord()
+        guard recorder.record() else {
+            throw RecorderError.recorderStartFailed
+        }
+
+        audioRecorder = recorder
+        isWritingAudio = true
+        startSystemRecorderTimer()
+    }
+
+    private func startSystemRecorderTimer() {
+        recorderTimer?.invalidate()
+        let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.updateSystemRecorderProgress()
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        recorderTimer = timer
+    }
+
+    private func updateSystemRecorderProgress() {
+        guard let recorder = audioRecorder else { return }
+
+        guard recorder.isRecording else {
+            Task {
+                await recoverActiveRecordingIfNeeded()
+            }
+            return
+        }
+
+        recorder.updateMeters()
+        currentLevel = recorder.averagePower(forChannel: 0)
+        writtenDuration = recorder.currentTime
+        elapsed = writtenDuration
+        didWriteCurrentSegment = writtenDuration > 0.02
+        setWritingAudio(true)
+
+        guard let settings = currentSettings,
+              writtenDuration >= settings.segmentDuration else {
+            return
+        }
+        rotateSegment()
+    }
+
+    private func stopSystemRecorder(finalize: Bool) {
+        recorderTimer?.invalidate()
+        recorderTimer = nil
+
+        guard let recorder = audioRecorder else { return }
+        let duration = recorder.currentTime
+        recorder.stop()
+        audioRecorder = nil
+
+        guard finalize else { return }
+        writtenDuration = max(writtenDuration, duration)
+        didWriteCurrentSegment = didWriteCurrentSegment || writtenDuration > 0.02
+    }
+
     private func startEngine() throws {
         let input = engine.inputNode
         let inputFormat = input.outputFormat(forBus: 0)
@@ -143,9 +239,13 @@ final class RecorderService: ObservableObject {
 
         currentSettings = settings
         let url = try RecordingStorage.nextSegmentURL(mode: settings.mode, quality: settings.quality)
-        let inputFormat = engine.inputNode.outputFormat(forBus: 0)
-        let file = try AVAudioFile(forWriting: url, settings: settings.quality.recordingSettings(matching: inputFormat))
-        currentFile = file
+        if settings.mode == .soundActivated {
+            let inputFormat = engine.inputNode.outputFormat(forBus: 0)
+            let file = try AVAudioFile(forWriting: url, settings: settings.quality.recordingSettings(matching: inputFormat))
+            currentFile = file
+        } else {
+            currentFile = nil
+        }
         currentURL = url
         currentSegmentStartedAt = Date()
         writtenDuration = 0
@@ -157,7 +257,13 @@ final class RecorderService: ObservableObject {
 
     private func rotateSegment() {
         do {
+            if currentSettings?.mode == .everything {
+                stopSystemRecorder(finalize: true)
+            }
             try startNewSegment()
+            if currentSettings?.mode == .everything {
+                try startSystemRecorder()
+            }
         } catch {
             lastError = error.localizedDescription
             stop()
@@ -338,6 +444,7 @@ final class RecorderService: ObservableObject {
 
     private func recoverAfterMediaServicesReset() async {
         guard isRecording else { return }
+        stopSystemRecorder(finalize: true)
         stopEngine()
         completeCurrentSegment()
         currentFile = nil
@@ -347,7 +454,7 @@ final class RecorderService: ObservableObject {
         do {
             try configureAudioSession()
             try startNewSegment()
-            try startEngine()
+            try startRecordingBackend()
             isInterrupted = false
             lastError = nil
         } catch {
@@ -380,6 +487,7 @@ final class RecorderService: ObservableObject {
         shouldResumeAfterInterruption = true
         isInterrupted = true
         setWritingAudio(false)
+        stopSystemRecorder(finalize: true)
         stopEngine()
         completeCurrentSegment()
         lastError = "Grabacion pausada por otra app. Se reanudara sola."
@@ -392,7 +500,7 @@ final class RecorderService: ObservableObject {
         do {
             try configureAudioSession()
             try startNewSegment()
-            try startEngine()
+            try startRecordingBackend()
             isRecording = true
             isInterrupted = false
             lastError = nil
@@ -408,6 +516,7 @@ final class RecorderService: ObservableObject {
         guard isRecording else { return }
         shouldResumeAfterInterruption = false
         isInterrupted = false
+        stopSystemRecorder(finalize: true)
         stopEngine()
         completeCurrentSegment()
         isRecording = false
@@ -437,6 +546,7 @@ private struct RecordingSnapshot {
 enum RecorderError: LocalizedError {
     case microphoneDenied
     case missingSettings
+    case recorderStartFailed
 
     var errorDescription: String? {
         switch self {
@@ -444,6 +554,8 @@ enum RecorderError: LocalizedError {
             "No hay permiso para usar el microfono."
         case .missingSettings:
             "Faltan ajustes de grabacion."
+        case .recorderStartFailed:
+            "No se pudo iniciar la grabacion."
         }
     }
 }
