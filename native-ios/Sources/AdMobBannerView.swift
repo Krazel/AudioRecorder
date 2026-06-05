@@ -7,7 +7,9 @@ struct AdMobBannerView: View {
     var body: some View {
         AdMobBannerContainer(adSize: adSize)
             .frame(width: adSize.size.width, height: adSize.size.height)
+            .frame(height: 50)
             .frame(maxWidth: .infinity)
+            .clipped()
             .background(Color(.systemBackground))
             .accessibilityLabel("Anuncio")
     }
