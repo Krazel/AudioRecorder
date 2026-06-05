@@ -1,7 +1,7 @@
 # App Store Connect Setup
 
 App: Voice Recorder Pro - Audio K
-Bundle ID: com.dmkr.audio
+Bundle ID: com.dmkr.audio.B2X6D3A9J9
 App Store Connect App ID: 6772278149
 Version: 1.0
 Primary locale preparada: es-ES
@@ -14,6 +14,9 @@ Primary locale preparada: es-ES
 - Product IDs de StoreKit documentados en `store-manifest.json`.
 - Metadata `es-ES` de la version 1.0 subida por App Store Connect API.
 - Grupo de suscripciones y productos creados por App Store Connect API.
+- Precios configurados en 175 territorios por producto.
+- Disponibilidad configurada en 175 territorios por producto.
+- Captura de revision de suscripciones subida y procesada.
 
 ## Capturas Ios
 
@@ -42,6 +45,14 @@ Crear estos productos dentro del grupo:
 | `com.dmkr.audio.support.monthly.299` | `6777118297` | `Audio K Support Monthly 2.99` | 1 mes | 2.99 |
 | `com.dmkr.audio.support.monthly.499` | `6777118235` | `Audio K Support Monthly 4.99` | 1 mes | 4.99 |
 
+Estado verificado:
+
+| Product ID | Estado | Precios | Territorios | Review screenshot |
+| --- | --- | --- | --- | --- |
+| `com.dmkr.audio.support.monthly.099` | `READY_TO_SUBMIT` | 175 | 175 | `d1acda25-b487-438a-a461-b4f52ecb2845` |
+| `com.dmkr.audio.support.monthly.299` | `READY_TO_SUBMIT` | 175 | 175 | `dc7d7113-6dc8-45e2-b47d-34e3687e7ca4` |
+| `com.dmkr.audio.support.monthly.499` | `READY_TO_SUBMIT` | 175 | 175 | `4d4779bf-152e-4b20-87f2-2458c2d6ef04` |
+
 Localizacion inicial:
 
 | Product ID | es-ES nombre | es-ES descripcion | en-US name | en-US description |
@@ -54,7 +65,6 @@ Localizacion inicial:
 
 - Configurar App Information pendiente no cubierta por el script: categoria, edad, privacidad y soporte.
 - Aceptar Paid Apps Agreement y completar banking/tax si las suscripciones no permiten precio o venta.
-- Configurar precios/price points de los tres productos si Apple los muestra como metadata pendiente.
 - Subir la build a TestFlight/App Store Connect.
 - Asociar las suscripciones a la version antes de enviarla a review.
 - Completar App Privacy, Content Rights, Ads Identifier y review notes.
@@ -75,3 +85,22 @@ Luego ejecutar:
 node tools\store-publishing\scripts\appstoreconnect-check.mjs Audio\store\store-manifest.json
 node tools\store-publishing\scripts\appstoreconnect-metadata.mjs Audio\store\store-manifest.json --upload
 ```
+
+## GitHub Actions App Store Build
+
+Workflow creado:
+
+```text
+.github/workflows/upload-ios-appstore.yml
+```
+
+Secrets necesarios para ejecutarlo:
+
+```text
+APPLE_TEAM_ID=B2X6D3A9J9
+ASC_KEY_ID=<Key ID de APIs/IOS/Key ID.txt>
+ASC_ISSUER_ID=<Issuer ID de APIs/IOS/Issuer ID.txt>
+ASC_PRIVATE_KEY_BASE64=<Coder Metadata App Manager.p8 codificado en base64>
+```
+
+El `gh` local tiene el token caducado, asi que estos secrets no se han podido cargar automaticamente desde esta sesion.
