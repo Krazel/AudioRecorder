@@ -16,11 +16,6 @@ enum AppMonetizationConfig {
         ManualUnlockCode(value: "KZ-AUDIOK-B2X6-D3A9-J9", generation: 2),
         ManualUnlockCode(value: "VRP-5M9T-Q2LC-74XH-2026", generation: 2)
     ]
-    static let manualResetCodes: [ManualUnlockCode] = [
-        ManualUnlockCode(value: "RESET", generation: 2),
-        ManualUnlockCode(value: "ADS", generation: 2),
-        ManualUnlockCode(value: "ON", generation: 2)
-    ]
 }
 
 struct ManualUnlockCode {
@@ -50,6 +45,10 @@ final class MonetizationStore: ObservableObject {
 
     var shouldShowAds: Bool {
         monetizationEnabled && !adsRemoved
+    }
+
+    var isManualUnlockActive: Bool {
+        adsRemoved && defaults.string(forKey: adsRemovedSourceKey) == AdsRemovedSource.manual.rawValue
     }
 
     init() {
@@ -112,16 +111,6 @@ final class MonetizationStore: ObservableObject {
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .uppercased()
 
-        if let resetCode = AppMonetizationConfig.manualResetCodes.first(where: { $0.value == normalized }),
-           resetCode.generation == AppMonetizationConfig.activeManualUnlockGeneration {
-            adsRemoved = false
-            defaults.removeObject(forKey: adsRemovedSourceKey)
-            defaults.removeObject(forKey: manualUnlockGenerationKey)
-            unlockCode = ""
-            purchaseMessage = "Codigo aplicado. Los anuncios vuelven a estar activos."
-            return true
-        }
-
         guard let code = AppMonetizationConfig.manualUnlockCodes.first(where: { $0.value == normalized }),
               code.generation == AppMonetizationConfig.activeManualUnlockGeneration else {
             purchaseMessage = "Codigo no valido."
@@ -133,6 +122,15 @@ final class MonetizationStore: ObservableObject {
         unlockCode = ""
         purchaseMessage = "Codigo aplicado. Los anuncios se han quitado."
         return true
+    }
+
+    func disableManualUnlock() {
+        guard isManualUnlockActive else { return }
+        adsRemoved = false
+        defaults.removeObject(forKey: adsRemovedSourceKey)
+        defaults.removeObject(forKey: manualUnlockGenerationKey)
+        unlockCode = ""
+        purchaseMessage = "Los anuncios vuelven a estar activos."
     }
 
     func clearMessage() {

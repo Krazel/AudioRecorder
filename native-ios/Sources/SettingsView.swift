@@ -202,6 +202,14 @@ struct SettingsView: View {
                     Label("Restaurar compras", systemImage: "arrow.clockwise")
                 }
 
+                if monetization.isManualUnlockActive {
+                    Button(role: .destructive) {
+                        monetization.disableManualUnlock()
+                    } label: {
+                        Label("Volver a mostrar anuncios", systemImage: "rectangle.badge.xmark")
+                    }
+                }
+
                 if unlockCodeVisible {
                     HStack {
                         SecureField("", text: $monetization.unlockCode, prompt: Text(""))
