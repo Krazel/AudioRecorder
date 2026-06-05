@@ -17,8 +17,9 @@ enum AppMonetizationConfig {
         ManualUnlockCode(value: "VRP-5M9T-Q2LC-74XH-2026", generation: 2)
     ]
     static let manualResetCodes: [ManualUnlockCode] = [
-        ManualUnlockCode(value: "RESET-AK-2026-9V3Q-XR7L", generation: 2),
-        ManualUnlockCode(value: "ADS-ON-AUDIOK-B2X6-2026", generation: 2)
+        ManualUnlockCode(value: "RESET", generation: 2),
+        ManualUnlockCode(value: "ADS", generation: 2),
+        ManualUnlockCode(value: "ON", generation: 2)
     ]
 }
 
