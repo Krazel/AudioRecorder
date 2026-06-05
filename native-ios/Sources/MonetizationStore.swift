@@ -12,9 +12,9 @@ enum AppMonetizationConfig {
         "com.dmkr.audio.support.monthly.499"
     ]
     static let manualUnlockCodes: [ManualUnlockCode] = [
-        ManualUnlockCode(value: "AK-8Q4M-2026-L7XR-VPRO", generation: 2),
-        ManualUnlockCode(value: "KZ-AUDIOK-B2X6-D3A9-J9", generation: 2),
-        ManualUnlockCode(value: "VRP-5M9T-Q2LC-74XH-2026", generation: 2)
+        ManualUnlockCode(value: "AK-7M4Q-26", generation: 2),
+        ManualUnlockCode(value: "KZ-82QX-AK", generation: 2),
+        ManualUnlockCode(value: "VRP-39L-AK", generation: 2)
     ]
 }
 
