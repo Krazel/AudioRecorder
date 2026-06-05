@@ -4,32 +4,31 @@ struct RootView: View {
     @EnvironmentObject private var monetization: MonetizationStore
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            TabView {
-                RecorderView()
-                    .tabItem {
-                        Label("Grabar", systemImage: "record.circle")
-                    }
+        ZStack {
+            VStack(spacing: 0) {
+                TabView {
+                    RecorderView()
+                        .tabItem {
+                            Label("Grabar", systemImage: "record.circle")
+                        }
 
-                RecordingsView()
-                    .tabItem {
-                        Label("Archivos", systemImage: "waveform")
-                    }
+                    RecordingsView()
+                        .tabItem {
+                            Label("Archivos", systemImage: "waveform")
+                        }
 
-                SettingsView()
-                    .tabItem {
-                        Label("Ajustes", systemImage: "slider.horizontal.3")
-                    }
-            }
-
-            if monetization.shouldShowAds {
-                VStack(spacing: 0) {
-                    Spacer(minLength: 0)
-                    AdMobBannerView()
+                    SettingsView()
+                        .tabItem {
+                            Label("Ajustes", systemImage: "slider.horizontal.3")
+                        }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .ignoresSafeArea(.container, edges: .bottom)
-                .transition(.opacity.combined(with: .move(edge: .bottom)))
+
+                if monetization.shouldShowAds {
+                    Divider()
+                    AdMobBannerView()
+                        .frame(height: 50)
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
             }
 
             AutoStartRecorderView()
