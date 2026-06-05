@@ -13,6 +13,9 @@ Primary locale preparada: es-ES
 - Nombre visible actualizado a `Voice Recorder Pro - Audio K`.
 - Product IDs de StoreKit documentados en `store-manifest.json`.
 - Metadata `es-ES` de la version 1.0 subida por App Store Connect API.
+- Support URL: `https://github.com/Krazel/AudioRecorder/issues`
+- Marketing URL: `https://github.com/Krazel/AudioRecorder`
+- Support/Marketing URL aplicadas tambien en `en-US`.
 - Grupo de suscripciones y productos creados por App Store Connect API.
 - Precios configurados en 175 territorios por producto.
 - Disponibilidad configurada en 175 territorios por producto.
