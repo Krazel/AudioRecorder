@@ -39,12 +39,12 @@ struct RecorderView: View {
                 HStack(spacing: 16) {
                     MetricView(title: "Segmento", value: formatTime(recorder.elapsed))
                     MetricView(title: "Nivel", value: "\(visibleLevelDB) dB")
-                    MetricView(title: "Estado", value: recorder.isWritingAudio ? "Guarda" : "Espera")
+                    MetricView(title: "Estado", value: recorder.isWritingAudio ? L("Guarda") : L("Espera"))
                 }
 
                 VStack(spacing: 12) {
                     DetailRow(title: "Calidad", value: settings.quality.title)
-                    DetailRow(title: "Corte", value: "\(settings.segmentMinutes) min")
+                    DetailRow(title: "Corte", value: String(format: L("%d min"), settings.segmentMinutes))
                     DetailRow(title: "Modo", value: settings.mode.title)
                     if settings.mode == .soundActivated {
                         DetailRow(title: "Umbral", value: "\(visibleThresholdDB) dB")
@@ -72,19 +72,19 @@ struct RecorderView: View {
 
     private var statusText: String {
         if recorder.isInterrupted {
-            return "Pausado por otro audio. Se reanudara automaticamente"
+            return L("Pausado por otro audio. Se reanudara automaticamente")
         }
 
         if recorder.isRecording {
             if settings.mode == .everything {
-                return "Se crea un archivo nuevo cada \(settings.segmentMinutes) minutos"
+                return String(format: L("Se crea un archivo nuevo cada %d minutos"), settings.segmentMinutes)
             } else if recorder.isWritingAudio {
-                return "Supera \(visibleThresholdDB) dB y se esta guardando audio"
+                return String(format: L("Supera %d dB y se esta guardando audio"), visibleThresholdDB)
             } else {
-                return "Esperando sonido suficiente (\(visibleThresholdDB) dB)"
+                return String(format: L("Esperando sonido suficiente (%d dB)"), visibleThresholdDB)
             }
         } else {
-            return "Toca el micrófono para empezar"
+            return L("Toca el microfono para empezar")
         }
     }
 
@@ -117,7 +117,7 @@ struct RecorderView: View {
     }
 
     private func soundTailTitle(_ seconds: Double) -> String {
-        seconds == 0 ? "No" : String(format: "%.1f s", seconds)
+        seconds == 0 ? L("No") : String(format: L("%.1f s"), seconds)
     }
 }
 

@@ -109,7 +109,7 @@ final class RecorderService: ObservableObject {
             isInterrupted = false
             lastError = nil
         } catch {
-            lastError = "No se pudo reactivar la grabacion: \(error.localizedDescription)"
+            lastError = String(format: L("No se pudo reactivar la grabacion: %@"), error.localizedDescription)
         }
     }
 
@@ -460,7 +460,7 @@ final class RecorderService: ObservableObject {
         } catch {
             isRecording = false
             setWritingAudio(false)
-            lastError = "No se pudo recuperar el audio del sistema: \(error.localizedDescription)"
+            lastError = String(format: L("No se pudo recuperar el audio del sistema: %@"), error.localizedDescription)
         }
     }
 
@@ -490,7 +490,7 @@ final class RecorderService: ObservableObject {
         stopSystemRecorder(finalize: true)
         stopEngine()
         completeCurrentSegment()
-        lastError = "Grabacion pausada por otra app. Se reanudara sola."
+        lastError = L("Grabacion pausada por otra app. Se reanudara sola.")
     }
 
     private func resumeAfterAudioInterruption() async {
@@ -508,7 +508,7 @@ final class RecorderService: ObservableObject {
             isInterrupted = false
             isRecording = false
             setWritingAudio(false)
-            lastError = "No se pudo reanudar la grabacion: \(error.localizedDescription)"
+            lastError = String(format: L("No se pudo reanudar la grabacion: %@"), error.localizedDescription)
         }
     }
 
@@ -551,11 +551,11 @@ enum RecorderError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .microphoneDenied:
-            "No hay permiso para usar el microfono."
+            L("No hay permiso para usar el microfono.")
         case .missingSettings:
-            "Faltan ajustes de grabacion."
+            L("Faltan ajustes de grabacion.")
         case .recorderStartFailed:
-            "No se pudo iniciar la grabacion."
+            L("No se pudo iniciar la grabacion.")
         }
     }
 }

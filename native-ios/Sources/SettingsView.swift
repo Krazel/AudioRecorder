@@ -61,7 +61,7 @@ struct SettingsView: View {
                             }
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
-                            Text("La grabacion por sonido empieza cuando el nivel visible supera \(visibleThresholdDB) dB.")
+                            Text(String(format: L("La grabacion por sonido empieza cuando el nivel visible supera %d dB."), visibleThresholdDB))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -159,7 +159,7 @@ struct SettingsView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(monetization.adsRemoved ? "Sin anuncios activo" : "Apoyar la app")
                             .font(.subheadline.weight(.semibold))
-                        Text("Con una aportacion mensual ayudas a mantener la app. Mientras este activa, se quitan los anuncios.")
+                            Text("Con una aportacion mensual ayudas a mantener la app. Mientras este activa, se quitan los anuncios.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -233,7 +233,7 @@ struct SettingsView: View {
     }
 
     private func segmentTitle(_ minutes: Int) -> String {
-        "\(minutes) minutos"
+        String(format: L("%d minutos"), minutes)
     }
 
     private var visibleThresholdDB: Int {
@@ -241,7 +241,7 @@ struct SettingsView: View {
     }
 
     private func soundTailTitle(_ seconds: Double) -> String {
-        seconds == 0 ? "No" : String(format: "%.1f segundos", seconds)
+        seconds == 0 ? L("No") : String(format: L("%.1f segundos"), seconds)
     }
 
     private var appVersionText: String {

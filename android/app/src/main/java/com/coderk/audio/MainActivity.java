@@ -103,7 +103,7 @@ public class MainActivity extends Activity {
                 .putString("quality", "Media")
                 .putString("mode", "Por sonido")
                 .putInt("segment", 15)
-                .putInt("sensitivity", 62)
+                .putInt("sensitivity", 35)
                 .putInt("soundTailTenths", 10)
                 .putBoolean("startOnLaunch", false)
                 .putBoolean("adsRemoved", false)
@@ -330,7 +330,7 @@ public class MainActivity extends Activity {
 
     private TextView body(String value, int sp, int color, boolean bold) {
         TextView view = new TextView(this);
-        view.setText(value);
+        view.setText(t(value));
         view.setTextSize(sp);
         view.setTextColor(color);
         view.setIncludeFontPadding(true);
@@ -339,7 +339,7 @@ public class MainActivity extends Activity {
     }
 
     private TextView metric(String title, String value) {
-        TextView view = body(value + "\n" + title, 14, COLOR_PRIMARY, true);
+        TextView view = body(value + "\n" + t(title), 14, COLOR_PRIMARY, true);
         view.setGravity(Gravity.CENTER);
         view.setPadding(dp(8), dp(12), dp(8), dp(12));
         view.setBackground(roundRect(0xFFE9EDF3, dp(8), 0, 0));
@@ -514,7 +514,7 @@ public class MainActivity extends Activity {
 
     private CheckBox checkbox(String label, boolean checked) {
         CheckBox box = new CheckBox(this);
-        box.setText(label);
+        box.setText(t(label));
         box.setTextSize(16);
         box.setTextColor(COLOR_PRIMARY);
         box.setChecked(checked);
@@ -533,7 +533,7 @@ public class MainActivity extends Activity {
 
     private Button plainButton(String label, View.OnClickListener listener) {
         Button button = new Button(this);
-        button.setText(label);
+        button.setText(t(label));
         button.setAllCaps(false);
         button.setTextColor(COLOR_ACCENT);
         button.setBackgroundColor(0x00000000);
@@ -899,6 +899,72 @@ public class MainActivity extends Activity {
 
     private String formatTime(long seconds) {
         return String.format(Locale.US, "%02d:%02d", seconds / 60, seconds % 60);
+    }
+
+    private String t(String value) {
+        if (value == null) return "";
+        String lang = Locale.getDefault().getLanguage();
+        if ("es".equals(lang)) return value;
+
+        switch (value) {
+            case "Grabar": return tr("Record", "Enregistrer", "Aufnehmen", "Registra", "Gravar", "Gravar");
+            case "Archivos": return tr("Files", "Fichiers", "Dateien", "File", "Ficheiros", "Fitxers");
+            case "Ajustes": return tr("Settings", "Reglages", "Einstellungen", "Impostazioni", "Definicoes", "Ajustos");
+            case "Grabando": return tr("Recording", "Enregistrement", "Aufnahme", "Registrazione", "Gravacao", "Gravant");
+            case "Preparado": return tr("Ready", "Pret", "Bereit", "Pronto", "Pronto", "Preparat");
+            case "Segmento": return tr("Segment", "Segment", "Segment", "Segmento", "Segmento", "Segment");
+            case "Nivel": return tr("Level", "Niveau", "Pegel", "Livello", "Nivel", "Nivell");
+            case "Estado": return tr("Status", "Etat", "Status", "Stato", "Estado", "Estat");
+            case "Guarda": return tr("Saving", "Enregistre", "Speichert", "Salva", "Guarda", "Desa");
+            case "Espera": return tr("Waiting", "Attente", "Wartet", "Attesa", "Espera", "Espera");
+            case "Calidad": return tr("Quality", "Qualite", "Qualitat", "Qualita", "Qualidade", "Qualitat");
+            case "Corte": return tr("Split", "Decoupe", "Teilung", "Divisione", "Corte", "Tall");
+            case "Modo": return tr("Mode", "Mode", "Modus", "Modalita", "Modo", "Mode");
+            case "Umbral": return tr("Threshold", "Seuil", "Schwelle", "Soglia", "Limiar", "Llindar");
+            case "Extra": return tr("Extra", "Extra", "Extra", "Extra", "Extra", "Extra");
+            case "Sensibilidad": return tr("Sensitivity", "Sensibilite", "Empfindlichkeit", "Sensibilita", "Sensibilidade", "Sensibilitat");
+            case "Seleccionar": return tr("Select", "Selectionner", "Auswahlen", "Seleziona", "Selecionar", "Seleccionar");
+            case "Enviar": return tr("Send", "Envoyer", "Senden", "Invia", "Enviar", "Enviar");
+            case "Eliminar": return tr("Delete", "Supprimer", "Loschen", "Elimina", "Eliminar", "Eliminar");
+            case "Renombrar": return tr("Rename", "Renommer", "Umbenennen", "Rinomina", "Renomear", "Canviar nom");
+            case "Cancelar": return tr("Cancel", "Annuler", "Abbrechen", "Annulla", "Cancelar", "Cancel-lar");
+            case "Guardar": return tr("Save", "Enregistrer", "Speichern", "Salva", "Guardar", "Desar");
+            case "Sin grabaciones": return tr("No recordings", "Aucun enregistrement", "Keine Aufnahmen", "Nessuna registrazione", "Sem gravacoes", "Sense gravacions");
+            case "Sin favoritos": return tr("No favorites", "Aucun favori", "Keine Favoriten", "Nessun preferito", "Sem favoritos", "Sense favorits");
+            case "Grabacion": return tr("Recording", "Enregistrement", "Aufnahme", "Registrazione", "Gravacao", "Gravacio");
+            case "Separar cada": return tr("Split every", "Separer toutes les", "Trennen alle", "Dividi ogni", "Separar a cada", "Separar cada");
+            case "Por sonido": return tr("By sound", "Par son", "Nach Ton", "Per suono", "Por som", "Per so");
+            case "Todo": return tr("Everything", "Tout", "Alles", "Tutto", "Tudo", "Tot");
+            case "Muy baja": return tr("Very low", "Tres basse", "Sehr niedrig", "Molto bassa", "Muito baixa", "Molt baixa");
+            case "Baja": return tr("Low", "Basse", "Niedrig", "Bassa", "Baixa", "Baixa");
+            case "Media": return tr("Medium", "Moyenne", "Mittel", "Media", "Media", "Mitjana");
+            case "Alta": return tr("High", "Haute", "Hoch", "Alta", "Alta", "Alta");
+            case "No": return tr("No", "Non", "Nein", "No", "Nao", "No");
+            case "Grabar al abrir la app": return tr("Record when opening the app", "Enregistrer a l'ouverture", "Beim Offnen aufnehmen", "Registra all'apertura", "Gravar ao abrir a app", "Gravar en obrir l'app");
+            case "Eliminar todos los archivos": return tr("Delete all files", "Supprimer tous les fichiers", "Alle Dateien loschen", "Elimina tutti i file", "Eliminar todos os ficheiros", "Eliminar tots els fitxers");
+            case "Apoyar la app": return tr("Support the app", "Soutenir l'app", "App unterstutzen", "Sostieni l'app", "Apoiar a app", "Donar suport a l'app");
+            case "Donaciones y anuncios": return tr("Donations and ads", "Dons et annonces", "Spenden und Anzeigen", "Donazioni e annunci", "Donativos e anuncios", "Donacions i anuncis");
+            case "Sin anuncios activo": return tr("No ads active", "Sans annonces actif", "Keine Anzeigen aktiv", "Senza annunci attivo", "Sem anuncios ativo", "Sense anuncis actiu");
+            case "Opcional": return tr("Optional", "Optionnel", "Optional", "Opzionale", "Opcional", "Opcional");
+            case "Activo": return tr("Active", "Actif", "Aktiv", "Attivo", "Ativo", "Actiu");
+            case "Restaurar compras": return tr("Restore purchases", "Restaurer les achats", "Kaufe wiederherstellen", "Ripristina acquisti", "Restaurar compras", "Restaurar compres");
+            case "Enviar bugs o feedback": return tr("Send bugs or feedback", "Envoyer bugs ou avis", "Fehler oder Feedback senden", "Invia bug o feedback", "Enviar erros ou feedback", "Enviar errors o feedback");
+            case "Version": return tr("Version", "Version", "Version", "Versione", "Versao", "Versio");
+            case "Local": return tr("Local", "Local", "Lokal", "Locale", "Local", "Local");
+            case "No disponible": return tr("Unavailable", "Indisponible", "Nicht verfugbar", "Non disponibile", "Indisponivel", "No disponible");
+            default:
+                return value;
+        }
+    }
+
+    private String tr(String en, String fr, String de, String it, String pt, String ca) {
+        String lang = Locale.getDefault().getLanguage();
+        if ("fr".equals(lang)) return fr;
+        if ("de".equals(lang)) return de;
+        if ("it".equals(lang)) return it;
+        if ("pt".equals(lang)) return pt;
+        if ("ca".equals(lang)) return ca;
+        return en;
     }
 
     private TextView pill(String text) {

@@ -11,10 +11,10 @@ enum AudioQuality: String, CaseIterable, Codable, Identifiable {
 
     var title: String {
         switch self {
-        case .veryLow: "Muy baja"
-        case .low: "Baja"
-        case .medium: "Media"
-        case .high: "Alta (maxima)"
+        case .veryLow: L("Muy baja")
+        case .low: L("Baja")
+        case .medium: L("Media")
+        case .high: L("Alta (maxima)")
         }
     }
 

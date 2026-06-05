@@ -70,7 +70,7 @@ final class MonetizationStore: ObservableObject {
             products = try await Product.products(for: AppMonetizationConfig.monthlySupportProductIDs)
             await refreshEntitlements()
         } catch {
-            purchaseMessage = "No se han podido cargar las opciones de apoyo."
+            purchaseMessage = L("No se han podido cargar las opciones de apoyo.")
         }
     }
 
@@ -82,17 +82,17 @@ final class MonetizationStore: ObservableObject {
                 let transaction = try checkVerified(verification)
                 adsRemoved = true
                 defaults.set(AdsRemovedSource.subscription.rawValue, forKey: adsRemovedSourceKey)
-                purchaseMessage = "Gracias. Los anuncios se han quitado."
+                purchaseMessage = L("Gracias. Los anuncios se han quitado.")
                 await transaction.finish()
             case .pending:
-                purchaseMessage = "La compra queda pendiente de aprobacion."
+                purchaseMessage = L("La compra queda pendiente de aprobacion.")
             case .userCancelled:
                 break
             @unknown default:
-                purchaseMessage = "No se ha podido completar la compra."
+                purchaseMessage = L("No se ha podido completar la compra.")
             }
         } catch {
-            purchaseMessage = "No se ha podido completar la compra."
+            purchaseMessage = L("No se ha podido completar la compra.")
         }
     }
 
@@ -100,9 +100,9 @@ final class MonetizationStore: ObservableObject {
         do {
             try await AppStore.sync()
             await refreshEntitlements()
-            purchaseMessage = adsRemoved ? "Compras restauradas." : "No hay una suscripcion activa para restaurar."
+            purchaseMessage = adsRemoved ? L("Compras restauradas.") : L("No hay una suscripcion activa para restaurar.")
         } catch {
-            purchaseMessage = "No se han podido restaurar las compras."
+            purchaseMessage = L("No se han podido restaurar las compras.")
         }
     }
 
@@ -113,14 +113,14 @@ final class MonetizationStore: ObservableObject {
 
         guard let code = AppMonetizationConfig.manualUnlockCodes.first(where: { $0.value == normalized }),
               code.generation == AppMonetizationConfig.activeManualUnlockGeneration else {
-            purchaseMessage = "Codigo no valido."
+            purchaseMessage = L("Codigo no valido.")
             return false
         }
         adsRemoved = true
         defaults.set(AdsRemovedSource.manual.rawValue, forKey: adsRemovedSourceKey)
         defaults.set(code.generation, forKey: manualUnlockGenerationKey)
         unlockCode = ""
-        purchaseMessage = "Codigo aplicado. Los anuncios se han quitado."
+        purchaseMessage = L("Codigo aplicado. Los anuncios se han quitado.")
         return true
     }
 
@@ -130,7 +130,7 @@ final class MonetizationStore: ObservableObject {
         defaults.removeObject(forKey: adsRemovedSourceKey)
         defaults.removeObject(forKey: manualUnlockGenerationKey)
         unlockCode = ""
-        purchaseMessage = "Los anuncios vuelven a estar activos."
+        purchaseMessage = L("Los anuncios vuelven a estar activos.")
     }
 
     func clearMessage() {

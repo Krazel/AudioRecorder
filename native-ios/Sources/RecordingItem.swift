@@ -84,11 +84,11 @@ enum UploadState: String, Codable, Equatable {
 
     var title: String {
         switch self {
-        case .localOnly: "Local"
-        case .queued: "En cola"
-        case .uploading: "Subiendo"
-        case .uploaded: "Subido"
-        case .failed: "Error"
+        case .localOnly: L("Local")
+        case .queued: L("En cola")
+        case .uploading: L("Subiendo")
+        case .uploaded: L("Subido")
+        case .failed: L("Error")
         }
     }
 }

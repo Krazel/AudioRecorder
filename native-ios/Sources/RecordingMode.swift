@@ -8,8 +8,8 @@ enum RecordingMode: String, CaseIterable, Codable, Identifiable {
 
     var title: String {
         switch self {
-        case .everything: "Todo"
-        case .soundActivated: "Por sonido"
+        case .everything: L("Todo")
+        case .soundActivated: L("Por sonido")
         }
     }
 
