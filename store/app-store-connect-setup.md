@@ -19,9 +19,11 @@ Primary locale preparada: es-ES
 
 Usar estas capturas en App Store Connect para iPhone 6.7:
 
-1. `store/app-store/es-ES/iphone-67-real/01-preparado-real.png`
-2. `store/app-store/es-ES/iphone-67-real/02-grabando-real.png`
-3. `store/app-store/es-ES/iphone-67-real/03-archivos-real.png`
+Screenshot set `APP_IPHONE_67`: `4f18f90b-d3cc-4d73-ad6d-ecb70b562a3a`
+
+1. `store/app-store/es-ES/iphone-67-real/01-preparado-real.png` (`0fb9a6b1-ad82-4959-97dd-92847e8721e3`)
+2. `store/app-store/es-ES/iphone-67-real/02-grabando-real.png` (`72f198b8-7b8e-4ca8-a82d-4e4f202f2c42`)
+3. `store/app-store/es-ES/iphone-67-real/03-archivos-real.png` (`94016756-7d50-4158-851c-aea0de22f12b`)
 
 Todas miden `1290x2796`.
 
