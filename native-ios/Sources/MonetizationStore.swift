@@ -4,7 +4,7 @@ import StoreKit
 enum AppMonetizationConfig {
     static let adsEnabled = true
     static let supportEmail = "coderappskrazel@gmail.com"
-    static let activeManualUnlockGeneration = 1
+    static let activeManualUnlockGeneration = 2
     static let adMobIOSBannerUnitID = "ca-app-pub-3940256099942544/2435281174"
     static let monthlySupportProductIDs = [
         "com.dmkr.audio.support.monthly.099",
@@ -12,9 +12,13 @@ enum AppMonetizationConfig {
         "com.dmkr.audio.support.monthly.499"
     ]
     static let manualUnlockCodes: [ManualUnlockCode] = [
-        ManualUnlockCode(value: "AUDIO-PRO-2026", generation: 1),
-        ManualUnlockCode(value: "KRAZEL-2026-AUDIO", generation: 1),
-        ManualUnlockCode(value: "DMKR-AUDIO-LIFETIME", generation: 1)
+        ManualUnlockCode(value: "AK-8Q4M-2026-L7XR-VPRO", generation: 2),
+        ManualUnlockCode(value: "KZ-AUDIOK-B2X6-D3A9-J9", generation: 2),
+        ManualUnlockCode(value: "VRP-5M9T-Q2LC-74XH-2026", generation: 2)
+    ]
+    static let manualResetCodes: [ManualUnlockCode] = [
+        ManualUnlockCode(value: "RESET-AK-2026-9V3Q-XR7L", generation: 2),
+        ManualUnlockCode(value: "ADS-ON-AUDIOK-B2X6-2026", generation: 2)
     ]
 }
 
@@ -106,6 +110,17 @@ final class MonetizationStore: ObservableObject {
         let normalized = unlockCode
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .uppercased()
+
+        if let resetCode = AppMonetizationConfig.manualResetCodes.first(where: { $0.value == normalized }),
+           resetCode.generation == AppMonetizationConfig.activeManualUnlockGeneration {
+            adsRemoved = false
+            defaults.removeObject(forKey: adsRemovedSourceKey)
+            defaults.removeObject(forKey: manualUnlockGenerationKey)
+            unlockCode = ""
+            purchaseMessage = "Codigo aplicado. Los anuncios vuelven a estar activos."
+            return true
+        }
+
         guard let code = AppMonetizationConfig.manualUnlockCodes.first(where: { $0.value == normalized }),
               code.generation == AppMonetizationConfig.activeManualUnlockGeneration else {
             purchaseMessage = "Codigo no valido."
