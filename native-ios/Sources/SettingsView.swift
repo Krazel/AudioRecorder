@@ -212,7 +212,7 @@ struct SettingsView: View {
 
                 if unlockCodeVisible {
                     HStack {
-                        SecureField("", text: $monetization.unlockCode, prompt: Text(""))
+                        TextField("", text: $monetization.unlockCode, prompt: Text(""))
                             .textInputAutocapitalization(.characters)
                             .autocorrectionDisabled()
                         Button {
