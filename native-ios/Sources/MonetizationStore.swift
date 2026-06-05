@@ -9,7 +9,13 @@ enum AppMonetizationConfig {
     static let monthlySupportProductIDs = [
         "com.dmkr.audio.support.monthly.099",
         "com.dmkr.audio.support.monthly.299",
-        "com.dmkr.audio.support.monthly.499"
+        "com.dmkr.audio.support.monthly.499",
+        "com.dmkr.audio.support.monthly.999",
+        "com.dmkr.audio.support.monthly.1499",
+        "com.dmkr.audio.support.monthly.2999",
+        "com.dmkr.audio.support.monthly.4999",
+        "com.dmkr.audio.support.monthly.9999",
+        "com.dmkr.audio.support.monthly.29999"
     ]
     static let manualUnlockCodes: [ManualUnlockCode] = [
         ManualUnlockCode(value: "AK-7M4Q-26", generation: 2),
@@ -67,7 +73,11 @@ final class MonetizationStore: ObservableObject {
         defer { isLoadingProducts = false }
 
         do {
+            let productOrder = Dictionary(
+                uniqueKeysWithValues: AppMonetizationConfig.monthlySupportProductIDs.enumerated().map { ($0.element, $0.offset) }
+            )
             products = try await Product.products(for: AppMonetizationConfig.monthlySupportProductIDs)
+                .sorted { (productOrder[$0.id] ?? Int.max) < (productOrder[$1.id] ?? Int.max) }
             await refreshEntitlements()
         } catch {
             purchaseMessage = L("No se han podido cargar las opciones de apoyo.")

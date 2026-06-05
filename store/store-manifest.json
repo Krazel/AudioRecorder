@@ -169,73 +169,289 @@
         },
         {
           "productId": "com.dmkr.audio.support.monthly.299",
-          "referenceName": "Audio K Support Monthly 2.99",
+          "referenceName": "Audio K Support Monthly 3",
           "duration": "P1M",
-          "price": "2.99",
+          "price": "3.0",
           "locales": {
             "es-ES": {
-              "displayName": "Apoyo Plus mensual",
+              "displayName": "Apoyo 3 mensual",
               "description": "Quita anuncios y apoya la app."
             },
             "en-US": {
-              "displayName": "Support Plus Monthly",
+              "displayName": "Support 3 Monthly",
               "description": "Removes ads and supports the app."
             },
             "fr-FR": {
-              "displayName": "Soutien Plus mensuel",
+              "displayName": "Soutien 3 mensuel",
               "description": "Supprime les annonces et soutient l app."
             },
             "de-DE": {
-              "displayName": "Support Plus monatlich",
+              "displayName": "Support 3 monatlich",
               "description": "Entfernt Anzeigen und unterstuetzt die App."
             },
             "it": {
-              "displayName": "Supporto Plus mensile",
+              "displayName": "Supporto 3 mensile",
               "description": "Rimuove annunci e supporta la app."
             },
             "pt-PT": {
-              "displayName": "Apoio Plus mensal",
+              "displayName": "Apoio 3 mensal",
               "description": "Remove anuncios e apoia a app."
             },
             "ca": {
-              "displayName": "Suport Plus mensual",
+              "displayName": "Suport 3 mensual",
               "description": "Treu anuncis i dona suport a l app."
             }
           }
         },
         {
           "productId": "com.dmkr.audio.support.monthly.499",
-          "referenceName": "Audio K Support Monthly 4.99",
+          "referenceName": "Audio K Support Monthly 5",
           "duration": "P1M",
-          "price": "4.99",
+          "price": "5.0",
           "locales": {
             "es-ES": {
-              "displayName": "Apoyo Pro mensual",
-              "description": "Quita anuncios y apoya mas."
+              "displayName": "Apoyo 5 mensual",
+              "description": "Quita anuncios y apoya la app."
             },
             "en-US": {
-              "displayName": "Support Pro Monthly",
-              "description": "Removes ads and supports more."
+              "displayName": "Support 5 Monthly",
+              "description": "Removes ads and supports the app."
             },
             "fr-FR": {
-              "displayName": "Soutien Pro mensuel",
-              "description": "Supprime les annonces et soutient plus."
+              "displayName": "Soutien 5 mensuel",
+              "description": "Supprime les annonces et soutient l app."
             },
             "de-DE": {
-              "displayName": "Support Pro monatlich",
-              "description": "Entfernt Anzeigen und unterstuetzt mehr."
+              "displayName": "Support 5 monatlich",
+              "description": "Entfernt Anzeigen und unterstuetzt die App."
             },
             "it": {
-              "displayName": "Supporto Pro mensile",
-              "description": "Rimuove annunci e supporta di piu."
+              "displayName": "Supporto 5 mensile",
+              "description": "Rimuove annunci e supporta la app."
             },
             "pt-PT": {
-              "displayName": "Apoio Pro mensal",
-              "description": "Remove anuncios e apoia mais."
+              "displayName": "Apoio 5 mensal",
+              "description": "Remove anuncios e apoia a app."
             },
             "ca": {
-              "displayName": "Suport Pro mensual",
-              "description": "Treu anuncis i dona mes suport."
+              "displayName": "Suport 5 mensual",
+              "description": "Treu anuncis i dona suport a l app."
+            }
+          }
+        },
+        {
+          "productId": "com.dmkr.audio.support.monthly.999",
+          "referenceName": "Audio K Support Monthly 10",
+          "duration": "P1M",
+          "price": "10.0",
+          "locales": {
+            "es-ES": {
+              "displayName": "Apoyo 10 mensual",
+              "description": "Quita anuncios y apoya la app."
+            },
+            "en-US": {
+              "displayName": "Support 10 Monthly",
+              "description": "Removes ads and supports the app."
+            },
+            "fr-FR": {
+              "displayName": "Soutien 10 mensuel",
+              "description": "Supprime les annonces et soutient l app."
+            },
+            "de-DE": {
+              "displayName": "Support 10 monatlich",
+              "description": "Entfernt Anzeigen und unterstuetzt die App."
+            },
+            "it": {
+              "displayName": "Supporto 10 mensile",
+              "description": "Rimuove annunci e supporta la app."
+            },
+            "pt-PT": {
+              "displayName": "Apoio 10 mensal",
+              "description": "Remove anuncios e apoia a app."
+            },
+            "ca": {
+              "displayName": "Suport 10 mensual",
+              "description": "Treu anuncis i dona suport a l app."
+            }
+          }
+        },
+        {
+          "productId": "com.dmkr.audio.support.monthly.1499",
+          "referenceName": "Audio K Support Monthly 15",
+          "duration": "P1M",
+          "price": "15.0",
+          "locales": {
+            "es-ES": {
+              "displayName": "Apoyo 15 mensual",
+              "description": "Quita anuncios y apoya la app."
+            },
+            "en-US": {
+              "displayName": "Support 15 Monthly",
+              "description": "Removes ads and supports the app."
+            },
+            "fr-FR": {
+              "displayName": "Soutien 15 mensuel",
+              "description": "Supprime les annonces et soutient l app."
+            },
+            "de-DE": {
+              "displayName": "Support 15 monatlich",
+              "description": "Entfernt Anzeigen und unterstuetzt die App."
+            },
+            "it": {
+              "displayName": "Supporto 15 mensile",
+              "description": "Rimuove annunci e supporta la app."
+            },
+            "pt-PT": {
+              "displayName": "Apoio 15 mensal",
+              "description": "Remove anuncios e apoia a app."
+            },
+            "ca": {
+              "displayName": "Suport 15 mensual",
+              "description": "Treu anuncis i dona suport a l app."
+            }
+          }
+        },
+        {
+          "productId": "com.dmkr.audio.support.monthly.2999",
+          "referenceName": "Audio K Support Monthly 30",
+          "duration": "P1M",
+          "price": "30.0",
+          "locales": {
+            "es-ES": {
+              "displayName": "Apoyo 30 mensual",
+              "description": "Quita anuncios y apoya la app."
+            },
+            "en-US": {
+              "displayName": "Support 30 Monthly",
+              "description": "Removes ads and supports the app."
+            },
+            "fr-FR": {
+              "displayName": "Soutien 30 mensuel",
+              "description": "Supprime les annonces et soutient l app."
+            },
+            "de-DE": {
+              "displayName": "Support 30 monatlich",
+              "description": "Entfernt Anzeigen und unterstuetzt die App."
+            },
+            "it": {
+              "displayName": "Supporto 30 mensile",
+              "description": "Rimuove annunci e supporta la app."
+            },
+            "pt-PT": {
+              "displayName": "Apoio 30 mensal",
+              "description": "Remove anuncios e apoia a app."
+            },
+            "ca": {
+              "displayName": "Suport 30 mensual",
+              "description": "Treu anuncis i dona suport a l app."
+            }
+          }
+        },
+        {
+          "productId": "com.dmkr.audio.support.monthly.4999",
+          "referenceName": "Audio K Support Monthly 50",
+          "duration": "P1M",
+          "price": "50.0",
+          "locales": {
+            "es-ES": {
+              "displayName": "Apoyo 50 mensual",
+              "description": "Quita anuncios y apoya la app."
+            },
+            "en-US": {
+              "displayName": "Support 50 Monthly",
+              "description": "Removes ads and supports the app."
+            },
+            "fr-FR": {
+              "displayName": "Soutien 50 mensuel",
+              "description": "Supprime les annonces et soutient l app."
+            },
+            "de-DE": {
+              "displayName": "Support 50 monatlich",
+              "description": "Entfernt Anzeigen und unterstuetzt die App."
+            },
+            "it": {
+              "displayName": "Supporto 50 mensile",
+              "description": "Rimuove annunci e supporta la app."
+            },
+            "pt-PT": {
+              "displayName": "Apoio 50 mensal",
+              "description": "Remove anuncios e apoia a app."
+            },
+            "ca": {
+              "displayName": "Suport 50 mensual",
+              "description": "Treu anuncis i dona suport a l app."
+            }
+          }
+        },
+        {
+          "productId": "com.dmkr.audio.support.monthly.9999",
+          "referenceName": "Audio K Support Monthly 100",
+          "duration": "P1M",
+          "price": "100.0",
+          "locales": {
+            "es-ES": {
+              "displayName": "Apoyo 100 mensual",
+              "description": "Quita anuncios y apoya la app."
+            },
+            "en-US": {
+              "displayName": "Support 100 Monthly",
+              "description": "Removes ads and supports the app."
+            },
+            "fr-FR": {
+              "displayName": "Soutien 100 mensuel",
+              "description": "Supprime les annonces et soutient l app."
+            },
+            "de-DE": {
+              "displayName": "Support 100 monatlich",
+              "description": "Entfernt Anzeigen und unterstuetzt die App."
+            },
+            "it": {
+              "displayName": "Supporto 100 mensile",
+              "description": "Rimuove annunci e supporta la app."
+            },
+            "pt-PT": {
+              "displayName": "Apoio 100 mensal",
+              "description": "Remove anuncios e apoia a app."
+            },
+            "ca": {
+              "displayName": "Suport 100 mensual",
+              "description": "Treu anuncis i dona suport a l app."
+            }
+          }
+        },
+        {
+          "productId": "com.dmkr.audio.support.monthly.29999",
+          "referenceName": "Audio K Support Monthly 300",
+          "duration": "P1M",
+          "price": "300.0",
+          "locales": {
+            "es-ES": {
+              "displayName": "Apoyo 300 mensual",
+              "description": "Quita anuncios y apoya la app."
+            },
+            "en-US": {
+              "displayName": "Support 300 Monthly",
+              "description": "Removes ads and supports the app."
+            },
+            "fr-FR": {
+              "displayName": "Soutien 300 mensuel",
+              "description": "Supprime les annonces et soutient l app."
+            },
+            "de-DE": {
+              "displayName": "Support 300 monatlich",
+              "description": "Entfernt Anzeigen und unterstuetzt die App."
+            },
+            "it": {
+              "displayName": "Supporto 300 mensile",
+              "description": "Rimuove annunci e supporta la app."
+            },
+            "pt-PT": {
+              "displayName": "Apoio 300 mensal",
+              "description": "Remove anuncios e apoia a app."
+            },
+            "ca": {
+              "displayName": "Suport 300 mensual",
+              "description": "Treu anuncis i dona suport a l app."
             }
           }
         }

@@ -10,6 +10,7 @@ jobs:
   upload:
     if: github.actor == github.repository_owner
     runs-on: macos-latest
+    environment: app-store-production
     env:
       APP_VERSION: "1.0"
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
