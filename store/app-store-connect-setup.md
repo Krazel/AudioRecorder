@@ -2,6 +2,7 @@
 
 App: Voice Recorder Pro - Audio K
 Bundle ID: com.dmkr.audio
+App Store Connect App ID: 6772278149
 Version: 1.0
 Primary locale preparada: es-ES
 
@@ -11,6 +12,8 @@ Primary locale preparada: es-ES
 - Capturas iPhone 6.7 enlazadas en `store-manifest.json`.
 - Nombre visible actualizado a `Voice Recorder Pro - Audio K`.
 - Product IDs de StoreKit documentados en `store-manifest.json`.
+- Metadata `es-ES` de la version 1.0 subida por App Store Connect API.
+- Grupo de suscripciones y productos creados por App Store Connect API.
 
 ## Capturas Ios
 
@@ -27,14 +30,15 @@ Todas miden `1290x2796`.
 Crear un grupo de suscripciones:
 
 - Reference name: `Voice Recorder Pro - Audio K Support`
+- App Store Connect ID: `22136463`
 
 Crear estos productos dentro del grupo:
 
-| Product ID | Reference name | Duracion | Precio objetivo |
-| --- | --- | --- | --- |
-| `com.dmkr.audio.support.monthly.099` | `Audio K Support Monthly 0.99` | 1 mes | 0.99 |
-| `com.dmkr.audio.support.monthly.299` | `Audio K Support Monthly 2.99` | 1 mes | 2.99 |
-| `com.dmkr.audio.support.monthly.499` | `Audio K Support Monthly 4.99` | 1 mes | 4.99 |
+| Product ID | App Store Connect ID | Reference name | Duracion | Precio objetivo |
+| --- | --- | --- | --- | --- |
+| `com.dmkr.audio.support.monthly.099` | `6777118434` | `Audio K Support Monthly 0.99` | 1 mes | 0.99 |
+| `com.dmkr.audio.support.monthly.299` | `6777118297` | `Audio K Support Monthly 2.99` | 1 mes | 2.99 |
+| `com.dmkr.audio.support.monthly.499` | `6777118235` | `Audio K Support Monthly 4.99` | 1 mes | 4.99 |
 
 Localizacion inicial:
 
@@ -46,10 +50,9 @@ Localizacion inicial:
 
 ## Pendiente En Apple
 
-- Crear o verificar la app con Bundle ID `com.dmkr.audio`.
-- Configurar App Information: nombre, categoria, edad, privacidad y soporte.
-- Aceptar Paid Apps Agreement y completar banking/tax si las suscripciones aun no cargan.
-- Crear el grupo de suscripciones y los tres productos anteriores.
+- Configurar App Information pendiente no cubierta por el script: categoria, edad, privacidad y soporte.
+- Aceptar Paid Apps Agreement y completar banking/tax si las suscripciones no permiten precio o venta.
+- Configurar precios/price points de los tres productos si Apple los muestra como metadata pendiente.
 - Subir la build a TestFlight/App Store Connect.
 - Asociar las suscripciones a la version antes de enviarla a review.
 - Completar App Privacy, Content Rights, Ads Identifier y review notes.
