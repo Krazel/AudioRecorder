@@ -9,7 +9,7 @@
     "versionString": "1.0",
     "locales": {
       "es-ES": {
-        "name": "Grabadora de Voz Pro - Audio K",
+        "name": "Voice Recorder Pro - Audio K",
         "subtitle": "Grabadora gratis",
         "promotionalText": "Graba, organiza y comparte audio. Todas las funciones de grabación son gratis.",
         "description": "AudioRecorder es una grabadora sencilla para guardar notas de voz, reuniones, ideas y audio del día a día.\n\nTodas las funciones principales son gratis: grabar audio, elegir calidad, separar archivos por intervalos, usar grabación por sonido, reproducir grabaciones, marcar favoritos, renombrar archivos, eliminar grabaciones y compartirlas manualmente con otras apps.\n\nFunciones principales:\n\n- Grabación de audio desde el micrófono.\n- Segmentación configurable: 5, 15, 30, 60 o 120 minutos.\n- Calidad muy baja, baja, media o alta.\n- Modo todo o modo por sonido.\n- Sensibilidad ajustable para grabación por sonido.\n- Biblioteca local de grabaciones.\n- Reproducción integrada.\n- Favoritos y selección múltiple.\n- Renombrar, eliminar y compartir archivos.\n- Opción de grabar al abrir la app.\n- Contacto directo para bugs o feedback.\n\nLa app guarda las grabaciones en el dispositivo y permite compartirlas manualmente mediante la hoja nativa del sistema.",
@@ -17,8 +17,67 @@
         "supportUrl": "",
         "marketingUrl": "",
         "whatsNew": "Primera preparacion de ficha de tienda.",
-        "screenshots": {}
+        "screenshots": {
+          "APP_IPHONE_67": [
+            "app-store/es-ES/iphone-67-real/01-preparado-real.png",
+            "app-store/es-ES/iphone-67-real/02-grabando-real.png",
+            "app-store/es-ES/iphone-67-real/03-archivos-real.png"
+          ]
+        }
       }
+    },
+    "subscriptions": {
+      "groupReferenceName": "Voice Recorder Pro - Audio K Support",
+      "products": [
+        {
+          "productId": "com.dmkr.audio.support.monthly.099",
+          "referenceName": "Audio K Support Monthly 0.99",
+          "duration": "P1M",
+          "price": "0.99",
+          "locales": {
+            "es-ES": {
+              "displayName": "Sin anuncios mensual",
+              "description": "Quita los anuncios de la app."
+            },
+            "en-US": {
+              "displayName": "No Ads Monthly",
+              "description": "Removes ads from the app."
+            }
+          }
+        },
+        {
+          "productId": "com.dmkr.audio.support.monthly.299",
+          "referenceName": "Audio K Support Monthly 2.99",
+          "duration": "P1M",
+          "price": "2.99",
+          "locales": {
+            "es-ES": {
+              "displayName": "Apoyo Plus mensual",
+              "description": "Quita anuncios y apoya la app."
+            },
+            "en-US": {
+              "displayName": "Support Plus Monthly",
+              "description": "Removes ads and supports the app."
+            }
+          }
+        },
+        {
+          "productId": "com.dmkr.audio.support.monthly.499",
+          "referenceName": "Audio K Support Monthly 4.99",
+          "duration": "P1M",
+          "price": "4.99",
+          "locales": {
+            "es-ES": {
+              "displayName": "Apoyo Pro mensual",
+              "description": "Quita anuncios y apoya mas."
+            },
+            "en-US": {
+              "displayName": "Support Pro Monthly",
+              "description": "Removes ads and supports more."
+            }
+          }
+        }
+      ]
     }
   },
   "android": {
@@ -26,7 +85,7 @@
     "releaseName": "1.0",
     "locales": {
       "es-ES": {
-        "title": "Grabadora de Voz Pro - Audio K",
+        "title": "Voice Recorder Pro - Audio K",
         "shortDescription": "Grabadora gratis con cortes, modo por sonido y envío manual.",
         "fullDescription": "AudioRecorder es una grabadora sencilla para guardar notas de voz, reuniones, ideas y audio del día a día.\n\nTodas las funciones principales son gratis: grabar audio, elegir calidad, separar archivos por intervalos, usar grabación por sonido, reproducir grabaciones, marcar favoritos, renombrar archivos, eliminar grabaciones y compartirlas manualmente con otras apps.\n\nFunciones principales:\n\n- Grabación de audio desde el micrófono.\n- Segmentación configurable: 5, 15, 30, 60 o 120 minutos.\n- Calidad muy baja, baja, media o alta.\n- Modo todo o modo por sonido.\n- Sensibilidad ajustable para grabación por sonido.\n- Biblioteca local de grabaciones.\n- Reproducción integrada.\n- Favoritos y selección múltiple.\n- Renombrar, eliminar y compartir archivos.\n- Opción de grabar al abrir la app.\n- Contacto directo para bugs o feedback.\n\nLa app guarda las grabaciones en el dispositivo y permite compartirlas manualmente mediante la hoja nativa del sistema.",
         "releaseNotes": "Primera versión preparada para pruebas internas.",
