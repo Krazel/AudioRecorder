@@ -19,20 +19,20 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Grabación") {
-                    Picker("Calidad", selection: $settings.quality) {
+                Section(L("Grabacion")) {
+                    Picker(L("Calidad"), selection: $settings.quality) {
                         ForEach(AudioQuality.allCases) { quality in
                             Text(quality.title).tag(quality)
                         }
                     }
 
-                    Picker("Separar cada", selection: $settings.segmentMinutes) {
+                    Picker(L("Separar cada"), selection: $settings.segmentMinutes) {
                         ForEach(segmentOptions, id: \.self) { minutes in
                             Text(segmentTitle(minutes)).tag(minutes)
                         }
                     }
 
-                    Picker("Modo", selection: $settings.mode) {
+                    Picker(L("Modo"), selection: $settings.mode) {
                         ForEach(RecordingMode.allCases) { mode in
                             Text(mode.title).tag(mode)
                         }
@@ -41,7 +41,7 @@ struct SettingsView: View {
                     if settings.mode == .soundActivated {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                Text("Sensibilidad")
+                                Text(L("Sensibilidad"))
                                 Spacer()
                                 Text("\(visibleThresholdDB) dB")
                                     .foregroundStyle(.secondary)
@@ -55,9 +55,9 @@ struct SettingsView: View {
                                 step: 1
                             )
                             HStack {
-                                Text("Menos")
+                                Text(L("Menos"))
                                 Spacer()
-                                Text("Mas")
+                                Text(L("Mas"))
                             }
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
@@ -66,21 +66,21 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
 
-                        Picker("Grabar un poco mas", selection: $settings.soundTailSeconds) {
+                        Picker(L("Grabar un poco mas"), selection: $settings.soundTailSeconds) {
                             ForEach(soundTailOptions, id: \.self) { seconds in
                                 Text(soundTailTitle(seconds)).tag(seconds)
                             }
                         }
                     }
 
-                    Toggle("Grabar al abrir la app", isOn: $settings.startRecordingOnLaunch)
+                    Toggle(L("Grabar al abrir la app"), isOn: $settings.startRecordingOnLaunch)
                 }
 
-                Section("Archivos") {
+                Section(L("Archivos")) {
                     Button(role: .destructive) {
                         confirmingDeleteAllFiles = true
                     } label: {
-                        Label("Eliminar todos los archivos", systemImage: "trash")
+                        Label(L("Eliminar todos los archivos"), systemImage: "trash")
                     }
                     .disabled(library.items.isEmpty)
                 }
@@ -89,17 +89,17 @@ struct SettingsView: View {
                     supportSection
                 }
 
-                Section("Contacto") {
+                Section(L("Contacto")) {
                     Button {
                         if let url = monetization.feedbackURL() {
                             openURL(url)
                         }
                     } label: {
-                        Label("Enviar bugs o feedback", systemImage: "envelope")
+                            Label(L("Enviar bugs o feedback"), systemImage: "envelope")
                     }
                 }
 
-                Section("Version") {
+                Section(L("Version")) {
                     HStack {
                         Text("Voice Recorder Pro - Audio K")
                         Spacer()
@@ -109,24 +109,24 @@ struct SettingsView: View {
                     }
                 }
             }
-            .navigationTitle("Ajustes")
+            .navigationTitle(L("Ajustes"))
             .task {
                 await monetization.loadProductsIfNeeded()
             }
             .alert("Voice Recorder Pro - Audio K", isPresented: messageBinding) {
-                Button("OK", role: .cancel) {
+                Button(L("OK"), role: .cancel) {
                     monetization.clearMessage()
                 }
             } message: {
                 Text(monetization.purchaseMessage ?? "")
             }
-            .alert("Eliminar todos los archivos", isPresented: $confirmingDeleteAllFiles) {
-                Button("Eliminar todo", role: .destructive) {
+            .alert(L("Eliminar todos los archivos"), isPresented: $confirmingDeleteAllFiles) {
+                Button(L("Eliminar todo"), role: .destructive) {
                     deleteAllFiles()
                 }
-                Button("Cancelar", role: .cancel) {}
+                Button(L("Cancelar"), role: .cancel) {}
             } message: {
-                Text("Se borraran todas las grabaciones guardadas en este iPhone. Esta accion no se puede deshacer.")
+                Text(L("Se borraran todas las grabaciones guardadas en este iPhone. Esta accion no se puede deshacer."))
             }
         }
     }
@@ -139,9 +139,9 @@ struct SettingsView: View {
                 }
             } label: {
                 HStack {
-                    Label("Donaciones y anuncios", systemImage: "heart.fill")
+                    Label(L("Donaciones y anuncios"), systemImage: "heart.fill")
                     Spacer()
-                    Text(monetization.adsRemoved ? "Sin anuncios" : "Opcional")
+                    Text(monetization.adsRemoved ? L("Sin anuncios") : L("Opcional"))
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                     Image(systemName: "chevron.down")
@@ -157,9 +157,9 @@ struct SettingsView: View {
                         .font(.title3.weight(.bold))
                         .foregroundStyle(monetization.adsRemoved ? .green : .accentColor)
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(monetization.adsRemoved ? "Sin anuncios activo" : "Apoyar la app")
+                        Text(monetization.adsRemoved ? L("Sin anuncios activo") : L("Apoyar la app"))
                             .font(.subheadline.weight(.semibold))
-                            Text("Con una aportacion mensual ayudas a mantener la app. Mientras este activa, se quitan los anuncios.")
+                            Text(L("Con una aportacion mensual ayudas a mantener la app. Mientras este activa, se quitan los anuncios."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -172,9 +172,9 @@ struct SettingsView: View {
                 }
 
                 if monetization.isLoadingProducts {
-                    ProgressView("Cargando opciones")
+                    ProgressView(L("Cargando opciones"))
                 } else if monetization.products.isEmpty {
-                    Text("Las suscripciones se cargaran cuando los productos esten creados en App Store Connect.")
+                    Text(L("Las suscripciones se cargaran cuando los productos esten creados en App Store Connect."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {
@@ -199,14 +199,14 @@ struct SettingsView: View {
                         await monetization.restorePurchases()
                     }
                 } label: {
-                    Label("Restaurar compras", systemImage: "arrow.clockwise")
+                    Label(L("Restaurar compras"), systemImage: "arrow.clockwise")
                 }
 
                 if monetization.isManualUnlockActive {
                     Button(role: .destructive) {
                         monetization.disableManualUnlock()
                     } label: {
-                        Label("Volver a mostrar anuncios", systemImage: "rectangle.badge.xmark")
+                        Label(L("Volver a mostrar anuncios"), systemImage: "rectangle.badge.xmark")
                     }
                 }
 
@@ -228,7 +228,7 @@ struct SettingsView: View {
                 }
             }
         } header: {
-            Text("Apoyar la app")
+            Text(L("Apoyar la app"))
         }
     }
 

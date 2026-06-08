@@ -46,10 +46,10 @@ struct RecordingsView: View {
             .onPreferenceChange(RecordingRowFramePreferenceKey.self) { frames in
                 rowFrames = frames
             }
-            .navigationTitle("Archivos")
+            .navigationTitle(L("Archivos"))
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(selectionMode ? "OK" : "Seleccionar") {
+                    Button(selectionMode ? L("OK") : L("Seleccionar")) {
                         selectionMode.toggle()
                         if !selectionMode {
                             selection.removeAll()
@@ -66,45 +66,45 @@ struct RecordingsView: View {
                                 selection = selection.intersection(Set(displayedItems.map(\.id)))
                             }
                         } label: {
-                            Label(showFavoritesOnly ? "Mostrar todos" : "Solo favoritos", systemImage: showFavoritesOnly ? "tray.full" : "star.fill")
+                            Label(showFavoritesOnly ? L("Mostrar todos") : L("Solo favoritos"), systemImage: showFavoritesOnly ? "tray.full" : "star.fill")
                         }
 
                         Button {
                             sharePending()
                         } label: {
-                            Label("Enviar pendientes", systemImage: "tray.and.arrow.up")
+                            Label(L("Enviar pendientes"), systemImage: "tray.and.arrow.up")
                         }
                         .disabled(pendingItems.isEmpty)
 
                         Button {
                             shareSelected()
                         } label: {
-                            Label("Enviar seleccionados", systemImage: "checkmark.circle")
+                            Label(L("Enviar seleccionados"), systemImage: "checkmark.circle")
                         }
                         .disabled(selection.isEmpty)
 
                         Button {
                             markSelectedFavorite(true)
                         } label: {
-                            Label("Marcar favoritos", systemImage: "star")
+                            Label(L("Marcar favoritos"), systemImage: "star")
                         }
                         .disabled(selection.isEmpty)
 
                         Button {
                             markSelectedFavorite(false)
                         } label: {
-                            Label("Quitar favoritos", systemImage: "star.slash")
+                            Label(L("Quitar favoritos"), systemImage: "star.slash")
                         }
                         .disabled(selection.isEmpty)
 
                         Button(role: .destructive) {
                             deleteSelected()
                         } label: {
-                            Label("Eliminar seleccionados", systemImage: "trash")
+                            Label(L("Eliminar seleccionados"), systemImage: "trash")
                         }
                         .disabled(selection.isEmpty)
                     } label: {
-                        Label("Acciones", systemImage: "ellipsis.circle")
+                        Label(L("Acciones"), systemImage: "ellipsis.circle")
                     }
                     .disabled(library.items.isEmpty)
                 }
@@ -116,12 +116,12 @@ struct RecordingsView: View {
                     }
                 }
             }
-            .alert("Cambiar nombre", isPresented: renameBinding) {
-                TextField("Nombre", text: $renameText)
-                Button("Cancelar", role: .cancel) {
+            .alert(L("Cambiar nombre"), isPresented: renameBinding) {
+                TextField(L("Nombre"), text: $renameText)
+                Button(L("Cancelar"), role: .cancel) {
                     renameItem = nil
                 }
-                Button("Guardar") {
+                Button(L("Guardar")) {
                     guard let renameItem else { return }
                     Task {
                         await library.rename(renameItem, to: renameText)
@@ -129,7 +129,7 @@ struct RecordingsView: View {
                     }
                 }
             } message: {
-                Text("Se renombrara tambien el archivo de audio.")
+                Text(L("Se renombrara tambien el archivo de audio."))
             }
         }
     }
@@ -228,9 +228,9 @@ private struct EmptyRecordingsView: View {
             Image(systemName: showingFavoritesOnly ? "star.slash" : "waveform.slash")
                 .font(.system(size: 42))
                 .foregroundStyle(.secondary)
-            Text(showingFavoritesOnly ? "Sin favoritos" : "Sin grabaciones")
+            Text(showingFavoritesOnly ? L("Sin favoritos") : L("Sin grabaciones"))
                 .font(.headline)
-            Text(showingFavoritesOnly ? "Toca la estrella de una grabacion para guardarla aqui." : "Los segmentos apareceran aqui cuando termines de grabar.")
+            Text(showingFavoritesOnly ? L("Toca la estrella de una grabacion para guardarla aqui.") : L("Los segmentos apareceran aqui cuando termines de grabar."))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -272,7 +272,7 @@ private struct RecordingRow: View {
                             onDragSelection(value.location)
                         }
                 )
-                .accessibilityLabel(isSelected ? "Quitar seleccion" : "Seleccionar")
+                .accessibilityLabel(Text(isSelected ? L("Quitar seleccion") : L("Seleccionar")))
             }
 
             Button {
@@ -288,7 +288,7 @@ private struct RecordingRow: View {
             }
             .buttonStyle(.plain)
             .disabled(selectionMode || !item.isPlayable)
-            .accessibilityLabel(item.isPlayable ? (playback.playingID == item.id ? "Parar audio" : "Escuchar audio") : "Archivo no disponible")
+            .accessibilityLabel(Text(item.isPlayable ? (playback.playingID == item.id ? L("Parar audio") : L("Escuchar audio")) : L("Archivo no disponible")))
 
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
@@ -311,7 +311,7 @@ private struct RecordingRow: View {
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel(item.isFavorite ? "Quitar de favoritos" : "Marcar como favorito")
+                        .accessibilityLabel(Text(item.isFavorite ? L("Quitar de favoritos") : L("Marcar como favorito")))
                     }
                 }
 
@@ -324,7 +324,7 @@ private struct RecordingRow: View {
                     MetadataPill(text: item.mode.title, icon: "slider.horizontal.2.square")
                     MetadataPill(text: item.quality.title, icon: "speaker.wave.2")
                     if !item.isPlayable {
-                        MetadataPill(text: "No disponible", icon: "exclamationmark.triangle")
+                        MetadataPill(text: L("No disponible"), icon: "exclamationmark.triangle")
                     }
                 }
 
@@ -367,21 +367,21 @@ private struct RecordingRow: View {
             Button(role: .destructive) {
                 onDelete()
             } label: {
-                Label("Eliminar", systemImage: "trash")
+                Label(L("Eliminar"), systemImage: "trash")
             }
         }
         .swipeActions(edge: .leading) {
             Button {
                 onShare()
             } label: {
-                Label("Enviar", systemImage: "square.and.arrow.up")
+                Label(L("Enviar"), systemImage: "square.and.arrow.up")
             }
             .tint(.blue)
 
             Button {
                 onRename()
             } label: {
-                Label("Renombrar", systemImage: "pencil")
+                Label(L("Renombrar"), systemImage: "pencil")
             }
             .tint(.orange)
         }
@@ -389,19 +389,19 @@ private struct RecordingRow: View {
             Button {
                 onShare()
             } label: {
-                Label("Enviar", systemImage: "square.and.arrow.up")
+                Label(L("Enviar"), systemImage: "square.and.arrow.up")
             }
 
             Button {
                 onRename()
             } label: {
-                Label("Renombrar", systemImage: "pencil")
+                Label(L("Renombrar"), systemImage: "pencil")
             }
 
             Button(role: .destructive) {
                 onDelete()
             } label: {
-                Label("Eliminar", systemImage: "trash")
+                Label(L("Eliminar"), systemImage: "trash")
             }
         }
     }

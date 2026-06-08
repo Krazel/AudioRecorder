@@ -14,15 +14,15 @@ enum CloudUploadError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .providerDisabled:
-            "La subida automatica esta desactivada."
+            L("La subida automatica esta desactivada.")
         case .authenticationRequired(let provider):
-            "Falta iniciar sesion en \(provider.title)."
+            String(format: L("Falta iniciar sesion en %@."), provider.title)
         case .missingEndpoint:
-            "Falta configurar la URL de subida del servidor propio."
+            L("Falta configurar la URL de subida del servidor propio.")
         case .invalidServerResponse(let statusCode):
-            "El servidor rechazo la subida con codigo \(statusCode)."
+            String(format: L("El servidor rechazo la subida con codigo %d."), statusCode)
         case .copyFailed(let provider):
-            "No se pudo guardar el archivo en \(provider.title)."
+            String(format: L("No se pudo guardar el archivo en %@."), provider.title)
         }
     }
 }

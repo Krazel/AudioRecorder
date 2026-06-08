@@ -93,7 +93,7 @@ final class RecorderService: ObservableObject {
                 isInterrupted = false
                 lastError = nil
             } catch {
-                lastError = "No se pudo reactivar la grabacion: \(error.localizedDescription)"
+                lastError = String(format: L("No se pudo reactivar la grabacion: %@"), error.localizedDescription)
             }
             return
         }

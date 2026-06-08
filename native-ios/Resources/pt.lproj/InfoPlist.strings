@@ -1,1 +1,3 @@
-NSMicrophoneUsageDescription = "A app precisa de acesso ao microfone para gravar áudio e criar segmentos.";
+CFBundleDisplayName = "Voice Recorder Pro - Audio K";
+CFBundleName = "VoiceRecorderPro";
+NSMicrophoneUsageDescription = "A app precisa de acesso ao microfone para gravar audio e criar segmentos.";

@@ -11,11 +11,11 @@ enum CloudProvider: String, CaseIterable, Codable, Identifiable {
 
     var title: String {
         switch self {
-        case .none: "Sin subida"
-        case .iCloudDrive: "iCloud Drive / Archivos"
+        case .none: L("Sin subida")
+        case .iCloudDrive: "iCloud Drive / \(L("Archivos"))"
         case .googleDrive: "Google Drive"
         case .oneDrive: "OneDrive"
-        case .customServer: "Servidor propio"
+        case .customServer: L("Servidor propio")
         }
     }
 }

@@ -13,7 +13,7 @@ struct RecorderView: View {
                     .frame(height: 24)
 
                 VStack(spacing: 8) {
-                    Text(recorder.isRecording ? "Grabando" : "Preparado")
+                    Text(recorder.isRecording ? L("Grabando") : L("Preparado"))
                         .font(.largeTitle.weight(.semibold))
                     Text(statusText)
                         .font(.subheadline)
@@ -129,7 +129,7 @@ private struct MetricView: View {
         VStack(spacing: 6) {
             Text(value)
                 .font(.title2.monospacedDigit().weight(.semibold))
-            Text(title)
+            Text(L(title))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -146,7 +146,7 @@ private struct DetailRow: View {
 
     var body: some View {
         HStack {
-            Text(title)
+            Text(L(title))
                 .foregroundStyle(.secondary)
             Spacer()
             Text(value)

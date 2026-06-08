@@ -84,7 +84,6 @@
 "Grabar un poco mas" = "Grabar un poco mas";
 "Con una aportacion mensual ayudas a mantener la app. Mientras este activa, se quitan los anuncios." = "Con una aportacion mensual ayudas a mantener la app. Mientras este activa, se quitan los anuncios.";
 "Las suscripciones se cargaran cuando los productos esten creados en App Store Connect." = "Las suscripciones se cargaran cuando los productos esten creados en App Store Connect.";
-"Eliminar todos los archivos" = "Eliminar todos los archivos";
 "Eliminar todo" = "Eliminar todo";
 "Se borraran todas las grabaciones guardadas en este iPhone. Esta accion no se puede deshacer." = "Se borraran todas las grabaciones guardadas en este iPhone. Esta accion no se puede deshacer.";
 "Se renombrara tambien el archivo de audio." = "Se renombrara tambien el archivo de audio.";
@@ -105,3 +104,12 @@
 "No hay permiso para usar el microfono." = "No hay permiso para usar el microfono.";
 "Faltan ajustes de grabacion." = "Faltan ajustes de grabacion.";
 "No se pudo iniciar la grabacion." = "No se pudo iniciar la grabacion.";
+"Contacto" = "Contacto";
+"Cargando opciones" = "Cargando opciones";
+"Sin subida" = "Sin subida";
+"Servidor propio" = "Servidor propio";
+"La subida automatica esta desactivada." = "La subida automatica esta desactivada.";
+"Falta iniciar sesion en %@." = "Falta iniciar sesion en %@.";
+"Falta configurar la URL de subida del servidor propio." = "Falta configurar la URL de subida del servidor propio.";
+"El servidor rechazo la subida con codigo %d." = "El servidor rechazo la subida con codigo %d.";
+"No se pudo guardar el archivo en %@." = "No se pudo guardar el archivo en %@.";

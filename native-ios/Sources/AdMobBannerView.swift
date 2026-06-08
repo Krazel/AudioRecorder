@@ -11,7 +11,7 @@ struct AdMobBannerView: View {
             .frame(maxWidth: .infinity)
             .clipped()
             .background(Color(.systemBackground))
-            .accessibilityLabel("Anuncio")
+            .accessibilityLabel(Text(L("Anuncio")))
     }
 }
 
