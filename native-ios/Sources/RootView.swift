@@ -54,10 +54,18 @@ private struct AutoStartRecorderView: View {
                 await startIfNeeded()
             }
             .onChange(of: scenePhase) { phase in
-                guard phase == .active else { return }
                 Task {
-                    await recorder.recoverActiveRecordingIfNeeded()
-                    await startIfNeeded()
+                    switch phase {
+                    case .active:
+                        await recorder.recoverActiveRecordingIfNeeded()
+                        await startIfNeeded()
+                    case .background:
+                        await recorder.checkpointForBackgroundIfNeeded()
+                    case .inactive:
+                        break
+                    @unknown default:
+                        break
+                    }
                 }
             }
     }
