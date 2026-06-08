@@ -27,6 +27,7 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
     private var uploadQueue: CloudUploadQueue?
     private var shouldResumeAfterInterruption = false
     private var isCheckpointingSegment = false
+    private var recoveryRetryTask: Task<Void, Never>?
     private var lastBackgroundCheckpointAt = Date.distantPast
     private var lastVisibleMeterUpdate = Date.distantPast
     private var lastSoundAboveThresholdAt: Date?
@@ -55,6 +56,7 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
             try startRecordingBackend()
             isRecording = true
             isInterrupted = false
+            cancelRecoveryRetry()
             persistRecordingIntent(true)
             lastError = nil
         } catch {
@@ -66,6 +68,7 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
     func stop() {
         shouldResumeAfterInterruption = false
         isInterrupted = false
+        cancelRecoveryRetry()
         persistRecordingIntent(false)
         stopSystemRecorder(finalize: true)
         stopEngine()
@@ -93,9 +96,12 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
                 try startNewSegment()
                 try startSystemRecorder()
                 isInterrupted = false
+                cancelRecoveryRetry()
                 lastError = nil
             } catch {
-                lastError = String(format: L("No se pudo reactivar la grabacion: %@"), error.localizedDescription)
+                scheduleRecoveryRetry(
+                    message: String(format: L("No se pudo reactivar la grabacion: %@"), error.localizedDescription)
+                )
             }
             return
         }
@@ -109,9 +115,12 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
             }
             try startEngine()
             isInterrupted = false
+            cancelRecoveryRetry()
             lastError = nil
         } catch {
-            lastError = String(format: L("No se pudo reactivar la grabacion: %@"), error.localizedDescription)
+            scheduleRecoveryRetry(
+                message: String(format: L("No se pudo reactivar la grabacion: %@"), error.localizedDescription)
+            )
         }
     }
 
@@ -148,9 +157,12 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
             }
             isRecording = true
             isInterrupted = false
+            cancelRecoveryRetry()
             lastError = nil
         } catch {
-            lastError = String(format: L("No se pudo reactivar la grabacion: %@"), error.localizedDescription)
+            scheduleRecoveryRetry(
+                message: String(format: L("No se pudo reactivar la grabacion: %@"), error.localizedDescription)
+            )
         }
     }
 
@@ -346,12 +358,13 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
             try startSystemRecorder()
             isInterrupted = false
             if flag {
+                cancelRecoveryRetry()
                 lastError = nil
             }
         } catch {
-            isRecording = false
-            setWritingAudio(false)
-            lastError = String(format: L("No se pudo reanudar la grabacion: %@"), error.localizedDescription)
+            scheduleRecoveryRetry(
+                message: String(format: L("No se pudo reanudar la grabacion: %@"), error.localizedDescription)
+            )
         }
     }
 
@@ -561,11 +574,12 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
             try startNewSegment()
             try startRecordingBackend()
             isInterrupted = false
+            cancelRecoveryRetry()
             lastError = nil
         } catch {
-            isRecording = false
-            setWritingAudio(false)
-            lastError = String(format: L("No se pudo recuperar el audio del sistema: %@"), error.localizedDescription)
+            scheduleRecoveryRetry(
+                message: String(format: L("No se pudo recuperar el audio del sistema: %@"), error.localizedDescription)
+            )
         }
     }
 
@@ -608,12 +622,52 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
             try startRecordingBackend()
             isRecording = true
             isInterrupted = false
+            cancelRecoveryRetry()
             lastError = nil
         } catch {
             isInterrupted = false
-            isRecording = false
-            setWritingAudio(false)
-            lastError = String(format: L("No se pudo reanudar la grabacion: %@"), error.localizedDescription)
+            scheduleRecoveryRetry(
+                message: String(format: L("No se pudo reanudar la grabacion: %@"), error.localizedDescription)
+            )
+        }
+    }
+
+    private func scheduleRecoveryRetry(message: String) {
+        guard isRecording else { return }
+        persistRecordingIntent(true)
+        setWritingAudio(false)
+        lastError = message
+
+        guard recoveryRetryTask == nil else { return }
+        recoveryRetryTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 5_000_000_000)
+            await self?.runScheduledRecoveryRetry()
+        }
+    }
+
+    private func runScheduledRecoveryRetry() async {
+        recoveryRetryTask = nil
+        guard isRecording else { return }
+        await recoverActiveRecordingIfNeeded()
+
+        if isRecording, !hasActiveRecordingBackend {
+            scheduleRecoveryRetry(message: lastError ?? L("No se pudo reanudar la grabacion."))
+        }
+    }
+
+    private func cancelRecoveryRetry() {
+        recoveryRetryTask?.cancel()
+        recoveryRetryTask = nil
+    }
+
+    private var hasActiveRecordingBackend: Bool {
+        switch currentSettings?.mode ?? activeSettings?.mode {
+        case .everything:
+            return audioRecorder?.isRecording == true
+        case .soundActivated:
+            return engine.isRunning
+        case .none:
+            return false
         }
     }
 
@@ -621,6 +675,7 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         guard isRecording else { return }
         shouldResumeAfterInterruption = false
         isInterrupted = false
+        cancelRecoveryRetry()
         stopSystemRecorder(finalize: true)
         stopEngine()
         completeCurrentSegment()

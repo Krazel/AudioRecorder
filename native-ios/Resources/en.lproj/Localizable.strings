@@ -101,6 +101,7 @@
 "No se pudo recuperar el audio del sistema: %@" = "Could not recover system audio: %@";
 "Grabacion pausada por otra app. Se reanudara sola." = "Recording paused by another app. It will resume automatically.";
 "No se pudo reanudar la grabacion: %@" = "Could not resume recording: %@";
+"No se pudo reanudar la grabacion." = "Could not resume recording.";
 "No hay permiso para usar el microfono." = "Microphone permission is missing.";
 "Faltan ajustes de grabacion." = "Recording settings are missing.";
 "No se pudo iniciar la grabacion." = "Recording could not be started.";
