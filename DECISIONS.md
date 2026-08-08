@@ -130,3 +130,12 @@ Google Mobile Ads queda fijado en 12.14.0 y UMP en 3.1.0 para la candidata actua
 ### D-015 — Firma de distribución correcta — 2026-08-09
 
 El propietario autorizó crear todos los recursos Apple necesarios para firmar VoiceRecorder correctamente. Se usa un certificado Apple Distribution moderno y un perfil App Store exclusivo de la app; no se reutilizan perfiles caducados, no se revocan recursos previos y la subida a TestFlight permanece separada de la preparación y verificación de la build.
+### F-010 — Build firmada 1 verificada — 2026-08-09
+
+- El run `31282363769` del commit `d02ec93` completó archive y exportación firmados para iOS 1.0 (build 1) con anuncios demo y barrera `TestFlight Internal Only`.
+- El IPA pasó codesign estricto, perfil/certificado/equipo/bundle, siete idiomas, AdMob demo y comprobación dSYM. SHA-256 interno: `a21721c4b34203cc3ecb5387a8eb0760f09f9aaf84bfe6cdaacf0642b8d772ab`.
+- Validación con App Store Connect y upload fueron omitidos. Los materiales temporales de firma se limpiaron.
+
+### D-016 — Custodia de la identidad de firma — 2026-08-09
+
+El propietario autorizó transferir la identidad a los secretos cifrados del environment GitHub tras ser informado del riesgo. El workflow solo la decodifica en `$RUNNER_TEMP`, usa un llavero efímero, valida certificado y perfil, y elimina el material temporal con `always()`. Ninguna clave privada se versiona ni se incluye en artefactos o registros.

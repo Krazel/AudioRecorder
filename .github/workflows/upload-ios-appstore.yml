@@ -164,12 +164,12 @@ jobs:
             -k "$IOS_KEYCHAIN_PATH" \
             -P "$IOS_DISTRIBUTION_P12_PASSWORD" \
             -T /usr/bin/codesign \
-            -T /usr/bin/security
+            -T /usr/bin/security >/dev/null
           security set-key-partition-list \
             -S apple-tool:,apple:,codesign: \
             -s \
             -k "$IOS_KEYCHAIN_PASSWORD" \
-            "$IOS_KEYCHAIN_PATH"
+            "$IOS_KEYCHAIN_PATH" >/dev/null
 
           SIGNING_IDENTITIES="$(
             security find-identity -v -p codesigning "$IOS_KEYCHAIN_PATH" |
