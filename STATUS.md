@@ -5,9 +5,9 @@
 ## Resumen operativo
 
 - Proyecto en cierre y auditoría del candidato iOS 1.0 (RC-001). La prioridad inmediata es una beta restringida a TestFlight interno con anuncios oficiales de prueba; AdMob real queda para una build pública posterior.
-- Repositorio en `agent/prepare-ios-test-build`, `HEAD` `cdcce91`, sincronizado con `origin/agent/prepare-ios-test-build`; draft PR `#1` abierto contra `main`.
+- Repositorio en agent/prepare-ios-test-build, con la preparación de firma publicada hasta fa4a051 en origin/agent/prepare-ios-test-build; draft PR #1 abierto contra main.
 - `origin` apunta a `https://github.com/Krazel/AudioRecorder.git`.
-- El árbol de trabajo contiene la adaptación local sin commit del workflow firmado para TestFlight interno y este estado durable. `artifact/` sigue sin seguimiento y debe preservarse.
+- El workflow firmado, el script de secrets y la documentación de TestFlight interno están publicados en la rama de la PR. artifact/ sigue sin seguimiento y debe preservarse.
 - `artifact/` conserva binarios históricos sin seguimiento y no forma parte del candidato. La build GitHub Actions `31271758443` valida el commit `db0d870` de la rama `agent/prepare-ios-test-build`.
 - Android existe históricamente, pero su estado y sus diffs de trabajo e índice están vacíos. Permanece fuera de alcance.
 
@@ -68,6 +68,9 @@
 - Tras la verificación se necesitan exactamente el App ID iOS (`ca-app-pub-…~…`) y el Banner ad unit ID (`ca-app-pub-…/…`) de la app con bundle `com.dmkr.audio.B2X6D3A9J9`, además de los mensajes aplicables publicados en `Privacy & messaging`.
 - GitHub ya tiene el environment `app-store-production` y los cuatro secrets requeridos (`APPLE_TEAM_ID`, `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_PRIVATE_KEY_BASE64`). Se cargaron desde los materiales locales sin mostrar sus valores; la Team API Key activa tiene rol Gestor de apps.
 - App Store Connect se comprobó en vivo: existe `Voice Recorder Pro - Audio K` (`6772278149`, bundle `com.dmkr.audio.B2X6D3A9J9`), todavía no hay ninguna build y por tanto el build `1` está libre. Existe el grupo interno `Testers` con un único tester y cero builds.
+- El run 31275686032 confirmó Xcode 26.6/iOS SDK 26.5, secrets legibles, par demo correcto, generación del proyecto y dependencias GMA 12.14.0/UMP 3.1.0. La API key también autentica en la API pública y lee app/Bundle ID.
+- La firma automática está bloqueada: Xcode recibe HTTP 401 en listTeams.action y no obtiene un provisioning profile App Store. La Team API Key actual tiene rol Gestor de apps; crear una nueva clave Admin o certificados/perfiles manuales requiere autorización expresa adicional.
+- Los runs 31275416194, 31275507646 y 31275610317 diagnosticaron y resolvieron únicamente la codificación BOM del secret. Ninguno ejecutó upload.
 - Solo hay un usuario en App Store Connect. Para la segunda persona habrá que invitar primero su Apple Account como usuario con acceso a la app y después añadirla al grupo interno; falta su dirección de cuenta.
 - ATT/IDFA no se ha activado. Requiere una decisión expresa separada; si se adopta habrá que añadir su texto, localizarlo y probar el permiso antes de cargar anuncios personalizados.
 - La política debe publicarse y verificarse desde una sesión cerrada antes de usar su URL pública.
@@ -75,9 +78,9 @@
 - Quedan pendientes privacidad, edad, categorías, derechos de contenido, acuerdos, fiscalidad, banco, contacto de revisión y metadatos localizados en App Store Connect.
 - Las notas de revisión deben describir fielmente el mecanismo de códigos manuales ocultos.
 - Deben decidirse y verificarse cumplimiento de exportación y familia de dispositivos. La build superada mantiene un aviso porque solo declara orientación vertical mientras el destino puede incluir iPad; decidir iPhone-only, universal o pantalla completa antes del archive firmado.
-- La adaptación para TestFlight interno sigue solo en el árbol local. No se ha hecho commit ni push, por lo que GitHub todavía ejecutaría la versión anterior del workflow.
+- GitHub ejecuta ya el workflow actualizado de la rama. Ninguna ejecución de firma activó validación externa ni upload.
 - Cualquier publicación, subida o envío requiere aprobación expresa independiente.
 
 ## Próximo paso coordinado
 
-Llevar los cambios locales autorizados a la rama remota y lanzar build `1` con `ad_configuration=test`, `confirm_internal_testflight_only=false`, `validate_with_app_store=false`, `upload_to_app_store=false`. Si el archive firmado pasa, solicitar confirmación final y repetir con `confirm_internal_testflight_only=true` y `upload_to_app_store=true`; esa segunda ejecución sube únicamente una build marcada por Apple como TestFlight interna y no la envía a revisión.
+Obtener autorización para crear una nueva Team API Key con rol Admin (o proporcionar una clave existente con acceso de firma/provisioning) y sustituir los tres secrets ASC. Después repetir build 1 con upload desactivado. No crear certificados/perfiles, no subir y no distribuir hasta esa autorización.

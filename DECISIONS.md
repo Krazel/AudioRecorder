@@ -59,6 +59,8 @@ Este documento distingue hechos observados de decisiones del propietario. Un hec
 
 - GitHub tiene el environment `app-store-production` y los cuatro secrets Apple requeridos, cargados con autorización expresa sin mostrar sus valores. La Team API Key activa tiene rol Gestor de apps.
 - App Store Connect se comprobó en vivo: app `6772278149`, bundle `com.dmkr.audio.B2X6D3A9J9`, cero builds, grupo interno `Testers` con un tester y un único usuario elegible. El build `1` está libre.
+- El run 31275686032 validó secrets, toolchain, configuración test y dependencias, pero Xcode recibió HTTP 401 al consultar equipos y no obtuvo perfil App Store. La clave actual sí autentica contra la API pública y lee el Bundle ID; el bloqueo queda acotado a firma/provisioning automático.
+- No se ejecutó validación Apple del IPA, upload ni distribución.
 
 ## Decisiones vigentes
 
