@@ -7,13 +7,26 @@ on:
         description: Unique positive build number for version 1.0
         required: true
         type: string
+      ad_configuration:
+        description: AdMob configuration embedded in the signed build
+        required: true
+        default: test
+        type: choice
+        options:
+          - test
+          - production
+      confirm_internal_testflight_only:
+        description: Required to upload a test-ID build; confirms Internal TestFlight only (never external testing or App Review)
+        required: true
+        default: false
+        type: boolean
       validate_with_app_store:
         description: Validate the exported IPA with App Store Connect without uploading it for testing
         required: true
         default: false
         type: boolean
       upload_to_app_store:
-        description: Upload the exported IPA to App Store Connect
+        description: Upload the exported IPA to App Store Connect (does not submit it for review)
         required: true
         default: false
         type: boolean
@@ -29,12 +42,15 @@ jobs:
     env:
       APP_VERSION: "1.0"
       APP_BUILD_NUMBER: ${{ inputs.build_number }}
+      ADMOB_CONFIGURATION: ${{ inputs.ad_configuration }}
+      ADMOB_TEST_APP_ID: ca-app-pub-3940256099942544~1458002511
+      ADMOB_TEST_BANNER_UNIT_ID: ca-app-pub-3940256099942544/2435281174
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       ASC_PRIVATE_KEY_BASE64: ${{ secrets.ASC_PRIVATE_KEY_BASE64 }}
-      ADMOB_IOS_APP_ID: ${{ secrets.ADMOB_IOS_APP_ID }}
-      ADMOB_IOS_BANNER_UNIT_ID: ${{ secrets.ADMOB_IOS_BANNER_UNIT_ID }}
+      ADMOB_PRODUCTION_IOS_APP_ID: ${{ secrets.ADMOB_IOS_APP_ID }}
+      ADMOB_PRODUCTION_IOS_BANNER_UNIT_ID: ${{ secrets.ADMOB_IOS_BANNER_UNIT_ID }}
 
     steps:
       - name: Checkout
@@ -80,22 +96,44 @@ jobs:
           echo "${ASC_PRIVATE_KEY_BASE64}" | base64 --decode > "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
           chmod 600 "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
 
-      - name: Validate production AdMob identifiers
+      - name: Select and validate AdMob configuration
         run: |
           set -euo pipefail
-          if [[ ! "${ADMOB_IOS_APP_ID}" =~ ^ca-app-pub-[0-9]{16}~[0-9]{10}$ ]]; then
-            echo "Missing or invalid ADMOB_IOS_APP_ID secret"
-            exit 1
-          fi
-          if [[ ! "${ADMOB_IOS_BANNER_UNIT_ID}" =~ ^ca-app-pub-[0-9]{16}/[0-9]{10}$ ]]; then
-            echo "Missing or invalid ADMOB_IOS_BANNER_UNIT_ID secret"
-            exit 1
-          fi
-          if [[ "${ADMOB_IOS_APP_ID}" == ca-app-pub-3940256099942544~* ]] || \
-             [[ "${ADMOB_IOS_BANNER_UNIT_ID}" == ca-app-pub-3940256099942544/* ]]; then
-            echo "Google demo AdMob identifiers are not allowed in a signed App Store archive"
-            exit 1
-          fi
+          case "${ADMOB_CONFIGURATION}" in
+            test)
+              EFFECTIVE_APP_ID="${ADMOB_TEST_APP_ID}"
+              EFFECTIVE_BANNER_ID="${ADMOB_TEST_BANNER_UNIT_ID}"
+              if [[ "${{ inputs.upload_to_app_store }}" == "true" ]] && \
+                 [[ "${{ inputs.confirm_internal_testflight_only }}" != "true" ]]; then
+                echo "Uploading a test-ID build requires confirm_internal_testflight_only=true"
+                exit 1
+              fi
+              ;;
+            production)
+              EFFECTIVE_APP_ID="${ADMOB_PRODUCTION_IOS_APP_ID}"
+              EFFECTIVE_BANNER_ID="${ADMOB_PRODUCTION_IOS_BANNER_UNIT_ID}"
+              if [[ ! "${EFFECTIVE_APP_ID}" =~ ^ca-app-pub-[0-9]{16}~[0-9]{10}$ ]]; then
+                echo "Missing or invalid ADMOB_IOS_APP_ID secret"
+                exit 1
+              fi
+              if [[ ! "${EFFECTIVE_BANNER_ID}" =~ ^ca-app-pub-[0-9]{16}/[0-9]{10}$ ]]; then
+                echo "Missing or invalid ADMOB_IOS_BANNER_UNIT_ID secret"
+                exit 1
+              fi
+              if [[ "${EFFECTIVE_APP_ID}" == ca-app-pub-3940256099942544~* ]] || \
+                 [[ "${EFFECTIVE_BANNER_ID}" == ca-app-pub-3940256099942544/* ]]; then
+                echo "Google demo identifiers are forbidden in the production configuration"
+                exit 1
+              fi
+              ;;
+            *)
+              echo "Unknown AdMob configuration"
+              exit 1
+              ;;
+          esac
+          echo "ADMOB_IOS_APP_ID=${EFFECTIVE_APP_ID}" >> "${GITHUB_ENV}"
+          echo "ADMOB_IOS_BANNER_UNIT_ID=${EFFECTIVE_BANNER_ID}" >> "${GITHUB_ENV}"
+          echo "Selected AdMob configuration: ${ADMOB_CONFIGURATION}"
 
       - name: Generate native Xcode project
         working-directory: native-ios
@@ -145,25 +183,39 @@ jobs:
           fi
           if [[ "${ARCHIVED_APP_ID}" != "${ADMOB_IOS_APP_ID}" ]] || \
              [[ "${ARCHIVED_BANNER_ID}" != "${ADMOB_IOS_BANNER_UNIT_ID}" ]]; then
-            echo "Archived app does not contain the expected production AdMob identifiers"
+            echo "Archived app does not contain the selected AdMob configuration"
             exit 1
           fi
           for LOCALE in ca de en es fr it pt; do
             test -d "${APP_BUNDLE}/${LOCALE}.lproj"
           done
           codesign --verify --deep --strict --verbose=2 "${APP_BUNDLE}"
+          security cms -D -i "${APP_BUNDLE}/embedded.mobileprovision" > build/appstore/profile.plist
+          PROFILE_TEAM_ID="$(/usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' build/appstore/profile.plist)"
+          PROFILE_APP_ID="$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' build/appstore/profile.plist)"
+          PROFILE_GET_TASK_ALLOW="$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:get-task-allow' build/appstore/profile.plist)"
+          if [[ "${PROFILE_TEAM_ID}" != "${APPLE_TEAM_ID}" ]] || \
+             [[ "${PROFILE_APP_ID}" != "${APPLE_TEAM_ID}.com.dmkr.audio.B2X6D3A9J9" ]] || \
+             [[ "${PROFILE_GET_TASK_ALLOW}" != "false" ]]; then
+            echo "Archive does not use the expected App Store distribution profile"
+            exit 1
+          fi
           /usr/libexec/PlistBuddy -c 'Print :UIDeviceFamily' "${APP_PLIST}"
 
       - name: Retain signed archive and dSYM
         uses: actions/upload-artifact@v4
         with:
-          name: AudioRecorder-appstore-archive-build-${{ inputs.build_number }}
+          name: AudioRecorder-${{ inputs.ad_configuration }}-archive-build-${{ inputs.build_number }}
           path: build/appstore/AudioRecorder.xcarchive
           retention-days: 7
 
       - name: Export IPA
         run: |
           set -euo pipefail
+          INTERNAL_TESTFLIGHT_OPTION=""
+          if [[ "${ADMOB_CONFIGURATION}" == "test" ]]; then
+            INTERNAL_TESTFLIGHT_OPTION="<key>testFlightInternalTestingOnly</key><true/>"
+          fi
           cat > ExportOptions.plist <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -175,6 +227,7 @@ jobs:
             <string>automatic</string>
             <key>teamID</key>
             <string>${APPLE_TEAM_ID}</string>
+            ${INTERNAL_TESTFLIGHT_OPTION}
             <key>stripSwiftSymbols</key>
             <true/>
             <key>uploadBitcode</key>
@@ -184,6 +237,7 @@ jobs:
           </dict>
           </plist>
           EOF
+          plutil -lint ExportOptions.plist
           xcodebuild -exportArchive \
             -archivePath build/appstore/AudioRecorder.xcarchive \
             -exportPath build/appstore/export \
@@ -206,7 +260,7 @@ jobs:
             --apiKey "${ASC_KEY_ID}" \
             --apiIssuer "${ASC_ISSUER_ID}"
 
-      - name: Upload to App Store Connect
+      - name: Upload to App Store Connect (never submits for review)
         if: inputs.upload_to_app_store
         run: |
           set -euo pipefail
@@ -224,6 +278,6 @@ jobs:
       - name: Upload exported IPA artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AudioRecorder-appstore-ipa-build-${{ inputs.build_number }}
+          name: AudioRecorder-${{ inputs.ad_configuration }}-ipa-build-${{ inputs.build_number }}
           path: build/appstore/export/*.ipa
           retention-days: 7

@@ -33,7 +33,8 @@ The privacy URL will not be public until the new policy is committed and pushed 
 
 - The iOS integration requests UMP consent information on every launch and gates Mobile Ads plus banner loading behind `canRequestAds`.
 - The privacy-options action is exposed only when UMP reports it as required.
-- Local and unsigned builds retain Google's demo App ID and banner ID. Signed App Store archives require separate production values and reject the demo publisher.
+- Local/unsigned builds and the authorized internal TestFlight beta may use Google's exact demo App ID and banner ID. The beta workflow exports that configuration as `TestFlight Internal Only`, so Apple prevents external testing or customer distribution from that build.
+- Any public candidate requires a newly generated archive with separate production values; the production workflow path rejects the demo publisher.
 - Google Mobile Ads is pinned to `12.14.0` and UMP to `3.1.0` until a major-version migration can be compiled and regression-tested on macOS.
 - `Info.plist` contains the 50 SKAdNetwork identifiers from Google's official iOS quick-start example checked on 2026-08-08.
 - No ATT/IDFA prompt, test-device hash, forced geography, consent reset, tracking domain, or invented console value is embedded in the release configuration.
@@ -117,7 +118,7 @@ Use Apple's displayed localized product price rather than hard-coding a currency
 - [x] Integrate UMP locally so no ad request occurs before `canRequestAds`, with privacy options exposed when required.
 - [ ] In AdMob, create/associate/translate/publish the applicable regional messages, then test the real downloaded CMP.
 - [ ] Ensure tracking/IDFA answers and any App Tracking Transparency prompt match actual SDK behavior.
-- [ ] Confirm the production AdMob app and ad-unit identifiers; do not submit a monetized release using Google's test identifiers.
+- [ ] Confirm the production AdMob app and ad-unit identifiers; never use the internal demo build for external TestFlight or a public submission.
 - [ ] Complete age rating, content rights, advertising identifier questions, support contact, and review contact.
 - [ ] In App Review notes, describe every mechanism that removes ads, including any retained manual code mechanism; do not present hidden functionality misleadingly.
 - [ ] Confirm Paid Apps Agreement, banking, and tax status before attempting to sell subscriptions.
@@ -161,7 +162,7 @@ Official references:
 
 ### Actions requiring owner approval, credentials, or external systems
 
-- [ ] Wait for the new AdMob account verification; then register/confirm the iOS app, create/confirm its banner unit, and provide the two production IDs. Do not ship Google's demo IDs.
+- [ ] The internal beta may use the exact Google demo pair. Wait for AdMob verification before generating any public candidate; then register/confirm the iOS app, create/confirm its banner unit, and provide the two production IDs.
 - [ ] Configure, translate, associate, and publish the applicable AdMob privacy messages; test consent withdrawal and reconcile the final non-ATT configuration with App Privacy answers.
 - [ ] Run the unsigned macOS CI build for 1.0 with `publish_release=false`; inspect the generated app bundle and IPA before any publication.
 - [ ] Run the signed archive/export workflow with `upload_to_app_store=false`; validate the archive and aggregated privacy report before any upload.
@@ -197,7 +198,7 @@ node tools\store-publishing\scripts\appstoreconnect-check.mjs Audio\store\store-
 node tools\store-publishing\scripts\appstoreconnect-metadata.mjs Audio\store\store-manifest.json --upload
 ```
 
-The upload workflow is `.github/workflows/upload-ios-appstore.yml` and expects these repository secrets:
+The upload workflow is `.github/workflows/upload-ios-appstore.yml`. Every signed build expects these Apple secrets in the environment-scoped `app-store-production` configuration:
 
 ```text
 APPLE_TEAM_ID
@@ -208,13 +209,15 @@ ADMOB_IOS_APP_ID
 ADMOB_IOS_BANNER_UNIT_ID
 ```
 
-The signed workflow also requires an explicit unused positive `build_number` for version 1.0. Check the highest build already present in App Store Connect before running it. `validate_with_app_store` and `upload_to_app_store` both default to `false`; enabling either is an external action requiring contemporaneous owner authorization.
+The two AdMob secrets are required only for `ad_configuration=production`. The internal beta uses Google's fixed official demo pair and must use `ad_configuration=test`, which writes `testFlightInternalTestingOnly=true` into the export options. The four Apple secrets are configured in the GitHub environment `app-store-production`; their values are never stored in this repository.
+
+The signed workflow also requires an explicit unused positive `build_number` for version 1.0. The live App Store Connect check found no prior builds, so build `1` is available for this beta. `validate_with_app_store` and `upload_to_app_store` both default to `false`; enabling either is an external action requiring contemporaneous owner authorization. Uploading a test-ID build additionally requires `confirm_internal_testflight_only=true`.
 
 A successful no-upload run retains:
 
 - the exported IPA;
 - the signed `.xcarchive`, including its dSYM;
-- checks for bundle/version/build identity, production AdMob IDs, signature, provisioning profile, privacy manifest, asset catalog, seven localizations, dSYM, and the archive's `UIDeviceFamily`.
+- checks for bundle/version/build identity, the selected AdMob IDs, signature, distribution provisioning identity/entitlements, privacy manifest, asset catalog, seven localizations, dSYM, and the archive's `UIDeviceFamily`.
 
 The final privacy report still has to be generated or inspected with Xcode Organizer. ATT, export-compliance classification, and iPhone-only versus universal device family remain explicit owner decisions.
 

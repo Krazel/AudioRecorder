@@ -9,13 +9,13 @@ Este documento distingue hechos observados de decisiones del propietario. Un hec
 ### F-001 — Identidad del repositorio — 2026-08-08
 
 - Ruta: `C:\Users\dmkra\Documents\Codex Apps\Audio`.
-- Rama: `main`.
-- Commit actual: `35a7afadf6c0a53803f44aa1b5d9ff7b918a91c4`.
+- Rama: `agent/prepare-ios-test-build`.
+- Commit actual: `cdcce91`; draft PR `#1` contra `main`.
 - Remoto `origin`: `https://github.com/Krazel/AudioRecorder.git`.
 
 ### F-002 — Estado del árbol — 2026-08-08
 
-- Hay cambios iOS, documentación y CI locales sin commit que deben preservarse.
+- Hay cambios locales sin commit en CI y documentación durable para TestFlight interno que deben preservarse.
 - `artifact/` permanece sin seguimiento y se excluyó expresamente. La política, el procesador por sonido y el manifiesto de privacidad ya forman parte del commit candidato.
 - Android no presenta cambios en el árbol ni en el índice.
 
@@ -25,7 +25,7 @@ Este documento distingue hechos observados de decisiones del propietario. Un hec
 - Existen siete localizaciones coherentes: `ca/de/en/es/fr/it/pt`.
 - El código local carga seis suscripciones mensuales de apoyo: 0,99 / 3 / 5 / 10 / 15 / 30.
 - App Store Connect conserva históricamente nueve productos; los tres niveles 50/100/300 no forman parte de la preparación local 1.0.
-- AdMob usa todavía identificadores de demostración de Google como valores locales de desarrollo; el workflow firmado exige IDs reales y rechaza los demos.
+- AdMob usa todavía identificadores de demostración de Google. El workflow local permite ese par exacto únicamente para una exportación `TestFlight Internal Only`; la ruta de producción sigue exigiendo IDs reales y rechaza los demos.
 
 ### F-004 — Validación disponible — 2026-08-08
 
@@ -36,7 +36,7 @@ Este documento distingue hechos observados de decisiones del propietario. Un hec
 
 - UMP está declarado como dependencia directa y el flujo local ejecuta actualización, formulario requerido y comprobación de `canRequestAds` antes de iniciar Mobile Ads o cargar un banner.
 - Ajustes expone las opciones de privacidad solo cuando UMP las marca como requeridas.
-- El App ID y el Banner ad unit ID se inyectan por separado. El archivo firmado comprueba formato, rechaza el publicador demo y verifica los valores archivados.
+- El App ID y el Banner ad unit ID se inyectan por separado. El archivo firmado verifica los valores archivados; la ruta `production` valida formato y rechaza el publicador demo, mientras `test` acepta únicamente el par oficial y fuerza TestFlight interno.
 - El workflow firmado se detiene con Xcode o SDK iOS anteriores a la versión 26 y mantiene la validación externa y la subida desactivadas por defecto.
 - Exige un número de build positivo explícito, inspecciona el archive y conserva IPA, archive y dSYM como artefactos temporales.
 - `Info.plist` incluye los 50 SKAdNetwork IDs del ejemplo oficial de Google vigente el 2026-08-08.
@@ -54,6 +54,11 @@ Este documento distingue hechos observados de decisiones del propietario. Un hec
 - IPA: 6.600.734 bytes; SHA-256 `EF4FBB659AC69EF99904BF88E19DF7143012E30FD74FDDB23446B79931C14C11`.
 - Se verificaron ambos frameworks Google, manifiesto de privacidad, assets y siete idiomas.
 - Los avisos de `allowBluetooth` y destino ambiguo quedaron corregidos. Permanece el aviso de orientaciones, ligado a la decisión pendiente sobre iPhone/iPad.
+
+### F-008 — Firma y credenciales TestFlight — 2026-08-08
+
+- GitHub tiene el environment `app-store-production` y los cuatro secrets Apple requeridos, cargados con autorización expresa sin mostrar sus valores. La Team API Key activa tiene rol Gestor de apps.
+- App Store Connect se comprobó en vivo: app `6772278149`, bundle `com.dmkr.audio.B2X6D3A9J9`, cero builds, grupo interno `Testers` con un tester y un único usuario elegible. El build `1` está libre.
 
 ## Decisiones vigentes
 
@@ -93,9 +98,9 @@ No publicar releases, subir builds, asociar suscripciones a revisión, enviar a 
 
 Preservar todos los cambios existentes. No borrar, revertir o reemplazar trabajo local sin autorización expresa en el momento y una verificación previa del objetivo exacto.
 
-### D-010 — AdMob real antes de TestFlight — 2026-08-08
+### D-010 — Beta interna antes de AdMob real — 2026-08-08 (sustituye la formulación anterior)
 
-La candidata de TestFlight debe integrar los identificadores reales de la app iOS y de su unidad banner. Los IDs demo pueden permanecer para desarrollo local, pero deben quedar bloqueados en cualquier archive firmado destinado a App Store Connect.
+Se permite probar ahora con el par oficial de IDs demo de Google, exclusivamente en una build exportada como `TestFlight Internal Only`. Esa build no se reutiliza para TestFlight externo ni para clientes. Antes de cualquier candidata pública se generará un archive nuevo con IDs reales y mensajes UMP/CMP configurados y probados.
 
 ### D-011 — Consentimiento antes de anuncios — 2026-08-08
 

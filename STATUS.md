@@ -4,10 +4,10 @@
 
 ## Resumen operativo
 
-- Proyecto en cierre y auditoría del candidato iOS 1.0 (RC-001), con el flujo local UMP/AdMob ya preparado y pendiente de credenciales reales y validación Apple.
-- Repositorio en `main`, `HEAD` `35a7afadf6c0a53803f44aa1b5d9ff7b918a91c4`, sin diferencia de commits indicada frente a `origin/main`.
+- Proyecto en cierre y auditoría del candidato iOS 1.0 (RC-001). La prioridad inmediata es una beta restringida a TestFlight interno con anuncios oficiales de prueba; AdMob real queda para una build pública posterior.
+- Repositorio en `agent/prepare-ios-test-build`, `HEAD` `cdcce91`, sincronizado con `origin/agent/prepare-ios-test-build`; draft PR `#1` abierto contra `main`.
 - `origin` apunta a `https://github.com/Krazel/AudioRecorder.git`.
-- El árbol de trabajo contiene cambios locales sin commit que deben preservarse. Incluyen suscripciones, selector y textos de siete idiomas, enlaces legales, política de privacidad, manifiesto de tienda, procesamiento de audio fuera del actor de interfaz, manifiesto de privacidad, UMP/AdMob y salvaguardas de CI.
+- El árbol de trabajo contiene la adaptación local sin commit del workflow firmado para TestFlight interno y este estado durable. `artifact/` sigue sin seguimiento y debe preservarse.
 - `artifact/` conserva binarios históricos sin seguimiento y no forma parte del candidato. La build GitHub Actions `31271758443` valida el commit `db0d870` de la rama `agent/prepare-ios-test-build`.
 - Android existe históricamente, pero su estado y sus diffs de trabajo e índice están vacíos. Permanece fuera de alcance.
 
@@ -26,7 +26,8 @@
 - Los IDs de demostración de Google permanecen como valores locales para desarrollo/unsigned. `Info.plist` y el código admiten inyección separada del App ID y del Banner ad unit ID reales.
 - `Info.plist` contiene los 50 `SKAdNetworkIdentifier` del ejemplo oficial de Google vigente el 2026-08-08; esta preparación no activa ATT.
 - Google Mobile Ads queda fijado exactamente en 12.14.0 y UMP en 3.1.0 para que la resolución sea reproducible; el salto mayor a GMA 13 se reserva para compilación y regresión en Mac.
-- El workflow firmado exige secretos AdMob con formato válido, rechaza el publicador demo, inyecta y comprueba ambos IDs en el archive y falla si Xcode o el SDK de iOS son anteriores a 26.
+- El workflow firmado ofrece dos configuraciones explícitas: `test`, con el par demo oficial y exportación `TestFlight Internal Only`; y `production`, con secretos AdMob reales y rechazo del publicador demo.
+- La configuración `test` exige confirmación adicional antes de cualquier upload y la opción de exportación de Apple impide usar esa build para TestFlight externo o para clientes. La configuración pública debe generar un archive nuevo con IDs reales.
 - La build firmada exige un número positivo explícito, inspecciona identidad/versión/build, firma, provisioning, recursos, siete idiomas, familia de dispositivos, manifiesto y dSYM; conserva IPA y `.xcarchive` durante siete días.
 - La validación con App Store Connect y la subida son opciones independientes, ambas desactivadas por defecto.
 - Los workflows usan versión 1.0. Publicar una release unsigned o subir a App Store Connect requiere una opción manual explícita; `upload_to_app_store` permanece desactivado por defecto.
@@ -51,7 +52,7 @@
 
 - Generación y build limpia en macOS con Xcode 26+, SDK iOS 26+ y XcodeGen, primero unsigned con `publish_release=false`.
 - Resolución y compilación reales de Google Mobile Ads 12.x y UMP 3.x; Windows no puede validar importación, enlace ni APIs Swift.
-- Archivo firmado e inspección automatizada del archive con `upload_to_app_store=false`. Generar o inspeccionar además el privacy report agregado en Xcode Organizer; la validación externa sigue separada y desactivada por defecto.
+- Archivo firmado e inspección automatizada del archive con `ad_configuration=test`, `validate_with_app_store=false` y `upload_to_app_store=false`. Generar o inspeccionar además el privacy report agregado en Xcode Organizer; la validación externa sigue separada y desactivada por defecto.
 - Prueba UMP/AdMob en dispositivo de prueba: instalación limpia EEE/Reino Unido, aceptar/rechazar, reapertura, opciones de privacidad, fuera de zona regulada, primer arranque sin red y sesión con consentimiento previo. Confirmar cero solicitudes antes de `canRequestAds`.
 - Verificar que una suscripción o código manual activo elimina el banner y que su pérdida lo reactiva solo si UMP permite anuncios.
 - Prueba real en iOS 16 y una versión actual: grabación continua y por sonido, rotación, segundo plano/bloqueo, reproducción, renombrado, favoritos, compartir y borrar.
@@ -63,18 +64,20 @@
 
 ## Bloqueos humanos o externos
 
-- La nueva cuenta AdMob del propietario está pendiente de verificación por Google. Hasta completarse no se pueden obtener de forma fiable los IDs reales ni configurar y publicar los mensajes UMP/CMP.
+- La nueva cuenta AdMob del propietario está pendiente de verificación por Google. Esto no bloquea la beta interna con anuncios demo, pero sí bloquea la validación del CMP real y cualquier candidata pública monetizada.
 - Tras la verificación se necesitan exactamente el App ID iOS (`ca-app-pub-…~…`) y el Banner ad unit ID (`ca-app-pub-…/…`) de la app con bundle `com.dmkr.audio.B2X6D3A9J9`, además de los mensajes aplicables publicados en `Privacy & messaging`.
-- Los IDs actuales son los de demostración de Google. El CI firmado los rechaza y no se ha inventado ni creado ningún recurso externo.
+- GitHub ya tiene el environment `app-store-production` y los cuatro secrets requeridos (`APPLE_TEAM_ID`, `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_PRIVATE_KEY_BASE64`). Se cargaron desde los materiales locales sin mostrar sus valores; la Team API Key activa tiene rol Gestor de apps.
+- App Store Connect se comprobó en vivo: existe `Voice Recorder Pro - Audio K` (`6772278149`, bundle `com.dmkr.audio.B2X6D3A9J9`), todavía no hay ninguna build y por tanto el build `1` está libre. Existe el grupo interno `Testers` con un único tester y cero builds.
+- Solo hay un usuario en App Store Connect. Para la segunda persona habrá que invitar primero su Apple Account como usuario con acceso a la app y después añadirla al grupo interno; falta su dirección de cuenta.
 - ATT/IDFA no se ha activado. Requiere una decisión expresa separada; si se adopta habrá que añadir su texto, localizarlo y probar el permiso antes de cargar anuncios personalizados.
 - La política debe publicarse y verificarse desde una sesión cerrada antes de usar su URL pública.
 - App Store Connect requiere comprobación humana de los seis productos elegidos; los productos 50/100/300 deben quedar fuera de venta y fuera de la versión 1.0.
 - Quedan pendientes privacidad, edad, categorías, derechos de contenido, acuerdos, fiscalidad, banco, contacto de revisión y metadatos localizados en App Store Connect.
 - Las notas de revisión deben describir fielmente el mecanismo de códigos manuales ocultos.
 - Deben decidirse y verificarse cumplimiento de exportación y familia de dispositivos. La build superada mantiene un aviso porque solo declara orientación vertical mientras el destino puede incluir iPad; decidir iPhone-only, universal o pantalla completa antes del archive firmado.
-- Los cambios siguen solo en el árbol local. Un workflow de GitHub compilaría `origin/main`, no este candidato, hasta que exista autorización posterior para commit/push o se transfiera íntegramente el árbol a un Mac.
+- La adaptación para TestFlight interno sigue solo en el árbol local. No se ha hecho commit ni push, por lo que GitHub todavía ejecutaría la versión anterior del workflow.
 - Cualquier publicación, subida o envío requiere aprobación expresa independiente.
 
 ## Próximo paso coordinado
 
-Esperar la verificación de AdMob. Después, obtener o proporcionar los dos IDs reales y publicar en la consola los mensajes UMP aplicables. Configurar esos IDs como secretos del workflow, elegir un `build_number` todavía no usado y realizar una build macOS/Xcode 26 con `validate_with_app_store=false` y `upload_to_app_store=false`, sin transmitirla a Apple. Antes de usar GitHub Actions hará falta autorización separada para llevar este candidato local al remoto; antes de TestFlight hará falta otra autorización expresa de subida.
+Llevar los cambios locales autorizados a la rama remota y lanzar build `1` con `ad_configuration=test`, `confirm_internal_testflight_only=false`, `validate_with_app_store=false`, `upload_to_app_store=false`. Si el archive firmado pasa, solicitar confirmación final y repetir con `confirm_internal_testflight_only=true` y `upload_to_app_store=true`; esa segunda ejecución sube únicamente una build marcada por Apple como TestFlight interna y no la envía a revisión.
