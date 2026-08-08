@@ -95,14 +95,20 @@ jobs:
             echo "Missing ASC_KEY_ID, ASC_ISSUER_ID, ASC_PRIVATE_KEY_BASE64, or APPLE_TEAM_ID secret"
             exit 1
           fi
-          mkdir -p "$HOME/private_keys"
-          export ASC_PRIVATE_KEY_PATH="$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
           python3 - <<'PY'
           import base64
           import os
+          import re
           from pathlib import Path
 
-          encoded = os.environ["ASC_PRIVATE_KEY_BASE64"].strip().lstrip("﻿")
+          key_id = os.environ["ASC_KEY_ID"].strip().lstrip("\ufeff")
+          issuer_id = os.environ["ASC_ISSUER_ID"].strip().lstrip("\ufeff")
+          if not re.fullmatch(r"[A-Z0-9]{10}", key_id):
+              raise SystemExit("ASC_KEY_ID does not have the expected format")
+          if not re.fullmatch(r"[0-9A-Fa-f-]{36}", issuer_id):
+              raise SystemExit("ASC_ISSUER_ID does not have the expected format")
+
+          encoded = os.environ["ASC_PRIVATE_KEY_BASE64"].strip().lstrip("\ufeff")
           try:
               private_key = base64.b64decode(encoded, validate=True)
           except Exception as error:
@@ -112,9 +118,17 @@ jobs:
               and private_key.rstrip().endswith(b"-----END PRIVATE KEY-----")
           ):
               raise SystemExit("Decoded App Store Connect key is not a valid PEM private key")
-          Path(os.environ["ASC_PRIVATE_KEY_PATH"]).write_bytes(private_key)
+
+          private_key_directory = Path.home() / ".appstoreconnect" / "private_keys"
+          private_key_directory.mkdir(parents=True, exist_ok=True)
+          private_key_path = private_key_directory / f"AuthKey_{key_id}.p8"
+          private_key_path.write_bytes(private_key)
+          private_key_path.chmod(0o600)
+          with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as github_environment:
+              github_environment.write(f"ASC_KEY_ID={key_id}\n")
+              github_environment.write(f"ASC_ISSUER_ID={issuer_id}\n")
+              github_environment.write(f"ASC_PRIVATE_KEY_PATH={private_key_path}\n")
           PY
-          chmod 600 "$ASC_PRIVATE_KEY_PATH"
 
       - name: Install manual signing identity and profile
         run: |
@@ -488,6 +502,7 @@ jobs:
             security delete-keychain "${IOS_KEYCHAIN_PATH}"
           fi
           rm -f \
+            "${ASC_PRIVATE_KEY_PATH:-}" \
             "${IOS_PROFILE_INSTALL_PATH:-}" \
             "${IOS_SIGNING_P12_PATH:-}" \
             "${IOS_SIGNING_PROFILE_PATH:-}" \
