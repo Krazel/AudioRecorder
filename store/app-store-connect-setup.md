@@ -205,11 +205,14 @@ APPLE_TEAM_ID
 ASC_KEY_ID
 ASC_ISSUER_ID
 ASC_PRIVATE_KEY_BASE64
+IOS_DISTRIBUTION_P12_BASE64
+IOS_DISTRIBUTION_P12_PASSWORD
+IOS_APP_STORE_PROFILE_BASE64
 ADMOB_IOS_APP_ID
 ADMOB_IOS_BANNER_UNIT_ID
 ```
 
-The two AdMob secrets are required only for `ad_configuration=production`. The internal beta uses Google's fixed official demo pair and must use `ad_configuration=test`, which writes `testFlightInternalTestingOnly=true` into the export options. The four Apple secrets are configured in the GitHub environment `app-store-production`; their values are never stored in this repository.
+The two AdMob secrets are required only for `ad_configuration=production`. The internal beta uses Google's fixed official demo pair and must use `ad_configuration=test`, which writes `testFlightInternalTestingOnly=true` into the export options. The first four Apple secrets authenticate App Store Connect; the P12, its password, and the provisioning profile provide the separate Apple Distribution signing identity. All seven belong in the protected GitHub environment `app-store-production`; their values are never stored in this repository. The workflow decodes them only under `$RUNNER_TEMP`, validates that the profile matches the team, bundle, certificate, and expiration, then removes the temporary keychain and profile with an `always()` cleanup step.
 
 The signed workflow also requires an explicit unused positive `build_number` for version 1.0. The live App Store Connect check found no prior builds, so build `1` is available for this beta. `validate_with_app_store` and `upload_to_app_store` both default to `false`; enabling either is an external action requiring contemporaneous owner authorization. Uploading a test-ID build additionally requires `confirm_internal_testflight_only=true`.
 

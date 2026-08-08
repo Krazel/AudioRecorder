@@ -49,6 +49,9 @@ jobs:
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       ASC_PRIVATE_KEY_BASE64: ${{ secrets.ASC_PRIVATE_KEY_BASE64 }}
+      IOS_DISTRIBUTION_P12_BASE64: ${{ secrets.IOS_DISTRIBUTION_P12_BASE64 }}
+      IOS_DISTRIBUTION_P12_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_P12_PASSWORD }}
+      IOS_APP_STORE_PROFILE_BASE64: ${{ secrets.IOS_APP_STORE_PROFILE_BASE64 }}
       ADMOB_PRODUCTION_IOS_APP_ID: ${{ secrets.ADMOB_IOS_APP_ID }}
       ADMOB_PRODUCTION_IOS_BANNER_UNIT_ID: ${{ secrets.ADMOB_IOS_BANNER_UNIT_ID }}
 
@@ -113,6 +116,134 @@ jobs:
           PY
           chmod 600 "$ASC_PRIVATE_KEY_PATH"
 
+      - name: Install manual signing identity and profile
+        run: |
+          set -euo pipefail
+          if [[ -z "${IOS_DISTRIBUTION_P12_BASE64}" || \
+                -z "${IOS_DISTRIBUTION_P12_PASSWORD}" || \
+                -z "${IOS_APP_STORE_PROFILE_BASE64}" ]]; then
+            echo "Missing one or more manual iOS signing secrets"
+            exit 1
+          fi
+
+          IOS_SIGNING_P12_PATH="$RUNNER_TEMP/VoiceRecorder-Distribution.p12"
+          IOS_SIGNING_PROFILE_PATH="$RUNNER_TEMP/VoiceRecorder-App-Store.mobileprovision"
+          IOS_SIGNING_PROFILE_PLIST="$RUNNER_TEMP/VoiceRecorder-App-Store.plist"
+          export IOS_SIGNING_P12_PATH IOS_SIGNING_PROFILE_PATH IOS_SIGNING_PROFILE_PLIST
+          python3 - <<'PY'
+          import base64
+          import os
+          from pathlib import Path
+
+          for environment_name, output_name in (
+              ("IOS_DISTRIBUTION_P12_BASE64", "IOS_SIGNING_P12_PATH"),
+              ("IOS_APP_STORE_PROFILE_BASE64", "IOS_SIGNING_PROFILE_PATH"),
+          ):
+              encoded = os.environ[environment_name].strip().lstrip("\ufeff")
+              try:
+                  decoded = base64.b64decode(encoded, validate=True)
+              except Exception as error:
+                  raise SystemExit(f"{environment_name} is not valid Base64: {error}")
+              if not decoded:
+                  raise SystemExit(f"{environment_name} decoded to an empty file")
+              Path(os.environ[output_name]).write_bytes(decoded)
+          PY
+          chmod 600 "$IOS_SIGNING_P12_PATH" "$IOS_SIGNING_PROFILE_PATH"
+
+          IOS_KEYCHAIN_PATH="$RUNNER_TEMP/voice-recorder-signing.keychain-db"
+          IOS_KEYCHAIN_PASSWORD="$(openssl rand -hex 32)"
+          echo "::add-mask::${IOS_KEYCHAIN_PASSWORD}"
+          security create-keychain -p "$IOS_KEYCHAIN_PASSWORD" "$IOS_KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$IOS_KEYCHAIN_PATH"
+          security unlock-keychain -p "$IOS_KEYCHAIN_PASSWORD" "$IOS_KEYCHAIN_PATH"
+          ORIGINAL_KEYCHAINS="$(security list-keychains -d user | tr -d '"')"
+          security list-keychains -d user -s "$IOS_KEYCHAIN_PATH" ${ORIGINAL_KEYCHAINS}
+          security default-keychain -d user -s "$IOS_KEYCHAIN_PATH"
+          security import "$IOS_SIGNING_P12_PATH" \
+            -k "$IOS_KEYCHAIN_PATH" \
+            -P "$IOS_DISTRIBUTION_P12_PASSWORD" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: \
+            -s \
+            -k "$IOS_KEYCHAIN_PASSWORD" \
+            "$IOS_KEYCHAIN_PATH"
+
+          SIGNING_IDENTITIES="$(
+            security find-identity -v -p codesigning "$IOS_KEYCHAIN_PATH" |
+              awk '/Apple Distribution/ { print $2 }'
+          )"
+          SIGNING_IDENTITY_COUNT="$(printf '%s\n' "$SIGNING_IDENTITIES" | grep -c '^[0-9A-Fa-f]\{40\}$' || true)"
+          if [[ "$SIGNING_IDENTITY_COUNT" -ne 1 ]]; then
+            echo "Expected exactly one valid Apple Distribution identity in the temporary keychain"
+            security find-identity -v -p codesigning "$IOS_KEYCHAIN_PATH"
+            exit 1
+          fi
+          IOS_SIGNING_IDENTITY_SHA1="$(printf '%s' "$SIGNING_IDENTITIES" | tr -d '[:space:]')"
+
+          security cms -D -i "$IOS_SIGNING_PROFILE_PATH" > "$IOS_SIGNING_PROFILE_PLIST"
+          export IOS_SIGNING_IDENTITY_SHA1
+          python3 - <<'PY'
+          import datetime
+          import hashlib
+          import os
+          import plistlib
+          from pathlib import Path
+
+          expected_team = os.environ["APPLE_TEAM_ID"]
+          expected_bundle = "com.dmkr.audio.B2X6D3A9J9"
+          with Path(os.environ["IOS_SIGNING_PROFILE_PLIST"]).open("rb") as profile_file:
+              profile = plistlib.load(profile_file)
+
+          prefixes = profile.get("ApplicationIdentifierPrefix", [])
+          teams = profile.get("TeamIdentifier", [])
+          entitlements = profile.get("Entitlements", {})
+          certificates = profile.get("DeveloperCertificates", [])
+          expiration = profile.get("ExpirationDate")
+          if profile.get("Name") != "VoiceRecorder App Store 2026-08-09":
+              raise SystemExit("Unexpected provisioning profile name")
+          if teams != [expected_team] or len(prefixes) != 1:
+              raise SystemExit("Unexpected provisioning team or application prefix")
+          if entitlements.get("com.apple.developer.team-identifier") != expected_team:
+              raise SystemExit("Unexpected team entitlement")
+          if entitlements.get("application-identifier") != f"{prefixes[0]}.{expected_bundle}":
+              raise SystemExit("Unexpected application identifier entitlement")
+          if entitlements.get("get-task-allow") is not False:
+              raise SystemExit("App Store profile must set get-task-allow to false")
+          if "ProvisionedDevices" in profile or profile.get("ProvisionsAllDevices"):
+              raise SystemExit("App Store profile must not provision specific devices or all devices")
+          if len(certificates) != 1:
+              raise SystemExit("App Store profile must contain exactly one distribution certificate")
+          if not isinstance(expiration, datetime.datetime):
+              raise SystemExit("Provisioning profile has no valid expiration date")
+          expiration_utc = expiration.replace(tzinfo=datetime.timezone.utc) if expiration.tzinfo is None else expiration
+          if expiration_utc <= datetime.datetime.now(datetime.timezone.utc):
+              raise SystemExit("Provisioning profile is expired")
+
+          profile_certificate_sha1 = hashlib.sha1(certificates[0]).hexdigest().upper()
+          if profile_certificate_sha1 != os.environ["IOS_SIGNING_IDENTITY_SHA1"].upper():
+              raise SystemExit("Provisioning profile certificate does not match imported identity")
+
+          with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as github_environment:
+              github_environment.write(f"IOS_PROFILE_UUID={profile['UUID']}\n")
+              github_environment.write(f"IOS_PROFILE_NAME={profile['Name']}\n")
+              github_environment.write(f"IOS_PROFILE_CERTIFICATE_SHA1={profile_certificate_sha1}\n")
+          PY
+
+          IOS_PROFILE_INSTALL_DIRECTORY="$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+          mkdir -p "$IOS_PROFILE_INSTALL_DIRECTORY"
+          IOS_PROFILE_INSTALL_PATH="$IOS_PROFILE_INSTALL_DIRECTORY/$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$IOS_SIGNING_PROFILE_PLIST").mobileprovision"
+          cp "$IOS_SIGNING_PROFILE_PATH" "$IOS_PROFILE_INSTALL_PATH"
+          echo "IOS_KEYCHAIN_PATH=${IOS_KEYCHAIN_PATH}" >> "$GITHUB_ENV"
+          echo "IOS_KEYCHAIN_PASSWORD=${IOS_KEYCHAIN_PASSWORD}" >> "$GITHUB_ENV"
+          echo "IOS_SIGNING_IDENTITY_SHA1=${IOS_SIGNING_IDENTITY_SHA1}" >> "$GITHUB_ENV"
+          echo "IOS_SIGNING_P12_PATH=${IOS_SIGNING_P12_PATH}" >> "$GITHUB_ENV"
+          echo "IOS_SIGNING_PROFILE_PATH=${IOS_SIGNING_PROFILE_PATH}" >> "$GITHUB_ENV"
+          echo "IOS_SIGNING_PROFILE_PLIST=${IOS_SIGNING_PROFILE_PLIST}" >> "$GITHUB_ENV"
+          echo "IOS_PROFILE_INSTALL_PATH=${IOS_PROFILE_INSTALL_PATH}" >> "$GITHUB_ENV"
+          echo "Manual signing identity and App Store profile validated and installed"
+
       - name: Select and validate AdMob configuration
         run: |
           set -euo pipefail
@@ -164,17 +295,17 @@ jobs:
             -scheme AudioRecorder \
             -configuration Release \
             -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
             -archivePath build/appstore/AudioRecorder.xcarchive \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
-            -authenticationKeyID "${ASC_KEY_ID}" \
-            -authenticationKeyIssuerID "${ASC_ISSUER_ID}" \
             MARKETING_VERSION="${APP_VERSION}" \
             CURRENT_PROJECT_VERSION="${APP_BUILD_NUMBER}" \
             ADMOB_IOS_APP_ID="${ADMOB_IOS_APP_ID}" \
             ADMOB_IOS_BANNER_UNIT_ID="${ADMOB_IOS_BANNER_UNIT_ID}" \
             DEVELOPMENT_TEAM="${APPLE_TEAM_ID}" \
-            CODE_SIGN_STYLE=Automatic
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="${IOS_SIGNING_IDENTITY_SHA1}" \
+            PROVISIONING_PROFILE_SPECIFIER="${IOS_PROFILE_UUID}" \
+            "OTHER_CODE_SIGN_FLAGS=--keychain ${IOS_KEYCHAIN_PATH}"
 
       - name: Verify archived candidate
         run: |
@@ -211,10 +342,25 @@ jobs:
           PROFILE_TEAM_ID="$(/usr/libexec/PlistBuddy -c 'Print :TeamIdentifier:0' build/appstore/profile.plist)"
           PROFILE_APP_ID="$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' build/appstore/profile.plist)"
           PROFILE_GET_TASK_ALLOW="$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:get-task-allow' build/appstore/profile.plist)"
+          PROFILE_UUID="$(/usr/libexec/PlistBuddy -c 'Print :UUID' build/appstore/profile.plist)"
+          ARCHIVED_PROFILE_CERTIFICATE_SHA1="$(python3 - <<'PY'
+          import hashlib
+          import plistlib
+
+          with open("build/appstore/profile.plist", "rb") as profile_file:
+              profile = plistlib.load(profile_file)
+          certificates = profile.get("DeveloperCertificates", [])
+          if len(certificates) != 1:
+              raise SystemExit("Archived profile must contain exactly one certificate")
+          print(hashlib.sha1(certificates[0]).hexdigest().upper())
+          PY
+          )"
           if [[ "${PROFILE_TEAM_ID}" != "${APPLE_TEAM_ID}" ]] || \
              [[ "${PROFILE_APP_ID}" != "${APPLE_TEAM_ID}.com.dmkr.audio.B2X6D3A9J9" ]] || \
-             [[ "${PROFILE_GET_TASK_ALLOW}" != "false" ]]; then
-            echo "Archive does not use the expected App Store distribution profile"
+             [[ "${PROFILE_GET_TASK_ALLOW}" != "false" ]] || \
+             [[ "${PROFILE_UUID}" != "${IOS_PROFILE_UUID}" ]] || \
+             [[ "${ARCHIVED_PROFILE_CERTIFICATE_SHA1}" != "${IOS_PROFILE_CERTIFICATE_SHA1}" ]]; then
+            echo "Archive does not use the expected App Store distribution profile and certificate"
             exit 1
           fi
           /usr/libexec/PlistBuddy -c 'Print :UIDeviceFamily' "${APP_PLIST}"
@@ -241,7 +387,14 @@ jobs:
             <key>method</key>
             <string>app-store-connect</string>
             <key>signingStyle</key>
-            <string>automatic</string>
+            <string>manual</string>
+            <key>signingCertificate</key>
+            <string>${IOS_SIGNING_IDENTITY_SHA1}</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.dmkr.audio.B2X6D3A9J9</key>
+              <string>${IOS_PROFILE_UUID}</string>
+            </dict>
             <key>teamID</key>
             <string>${APPLE_TEAM_ID}</string>
             ${INTERNAL_TESTFLIGHT_OPTION}
@@ -258,12 +411,34 @@ jobs:
           xcodebuild -exportArchive \
             -archivePath build/appstore/AudioRecorder.xcarchive \
             -exportPath build/appstore/export \
-            -exportOptionsPlist ExportOptions.plist \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
-            -authenticationKeyID "${ASC_KEY_ID}" \
-            -authenticationKeyIssuerID "${ASC_ISSUER_ID}"
+            -exportOptionsPlist ExportOptions.plist
           ls -lh build/appstore/export
+
+      - name: Verify exported IPA
+        run: |
+          set -euo pipefail
+          IPA_PATH="$(find build/appstore/export -name '*.ipa' -type f | head -n 1)"
+          test -n "$IPA_PATH"
+          EXPORT_VERIFY_DIRECTORY="$RUNNER_TEMP/voice-recorder-export-verification"
+          mkdir -p "$EXPORT_VERIFY_DIRECTORY"
+          ditto -x -k "$IPA_PATH" "$EXPORT_VERIFY_DIRECTORY"
+          EXPORTED_APP="$(find "$EXPORT_VERIFY_DIRECTORY/Payload" -maxdepth 1 -name '*.app' -type d | head -n 1)"
+          test -n "$EXPORTED_APP"
+          codesign --verify --deep --strict --verbose=2 "$EXPORTED_APP"
+          EXPORTED_PLIST="$EXPORTED_APP/Info.plist"
+          [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$EXPORTED_PLIST")" == "com.dmkr.audio.B2X6D3A9J9" ]]
+          [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$EXPORTED_PLIST")" == "$APP_VERSION" ]]
+          [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$EXPORTED_PLIST")" == "$APP_BUILD_NUMBER" ]]
+          security cms -D -i "$EXPORTED_APP/embedded.mobileprovision" > "$RUNNER_TEMP/exported-profile.plist"
+          [[ "$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$RUNNER_TEMP/exported-profile.plist")" == "$IOS_PROFILE_UUID" ]]
+          for LOCALE in ca de en es fr it pt; do
+            test -d "$EXPORTED_APP/${LOCALE}.lproj"
+          done
+          EXECUTABLE_NAME="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$EXPORTED_PLIST")"
+          EXECUTABLE_UUIDS="$(dwarfdump --uuid "$EXPORTED_APP/$EXECUTABLE_NAME" | awk '{ print $2 }' | sort)"
+          DSYM_UUIDS="$(dwarfdump --uuid build/appstore/AudioRecorder.xcarchive/dSYMs/AudioRecorder.app.dSYM | awk '{ print $2 }' | sort)"
+          [[ -n "$EXECUTABLE_UUIDS" && "$EXECUTABLE_UUIDS" == "$DSYM_UUIDS" ]]
+          shasum -a 256 "$IPA_PATH"
 
       - name: Validate exported IPA with App Store Connect
         if: inputs.validate_with_app_store
@@ -298,3 +473,17 @@ jobs:
           name: AudioRecorder-${{ inputs.ad_configuration }}-ipa-build-${{ inputs.build_number }}
           path: build/appstore/export/*.ipa
           retention-days: 7
+      - name: Clean temporary signing material
+        if: always()
+        run: |
+          set +e
+          if [[ -n "${IOS_KEYCHAIN_PATH:-}" && -f "${IOS_KEYCHAIN_PATH}" ]]; then
+            security default-keychain -d user -s login.keychain-db
+            security delete-keychain "${IOS_KEYCHAIN_PATH}"
+          fi
+          rm -f \
+            "${IOS_PROFILE_INSTALL_PATH:-}" \
+            "${IOS_SIGNING_P12_PATH:-}" \
+            "${IOS_SIGNING_PROFILE_PATH:-}" \
+            "${IOS_SIGNING_PROFILE_PLIST:-}" \
+            "$RUNNER_TEMP/exported-profile.plist"
