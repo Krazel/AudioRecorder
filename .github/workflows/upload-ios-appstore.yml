@@ -192,8 +192,10 @@ jobs:
           import plistlib
           from pathlib import Path
 
-          expected_team = os.environ["APPLE_TEAM_ID"]
+          expected_team = os.environ["APPLE_TEAM_ID"].strip().lstrip("\ufeff")
           expected_bundle = "com.dmkr.audio.B2X6D3A9J9"
+          if expected_team != "B2X6D3A9J9":
+              raise SystemExit("APPLE_TEAM_ID does not match the VoiceRecorder team")
           with Path(os.environ["IOS_SIGNING_PROFILE_PLIST"]).open("rb") as profile_file:
               profile = plistlib.load(profile_file)
 
@@ -204,8 +206,10 @@ jobs:
           expiration = profile.get("ExpirationDate")
           if profile.get("Name") != "VoiceRecorder App Store 2026-08-09":
               raise SystemExit("Unexpected provisioning profile name")
-          if teams != [expected_team] or len(prefixes) != 1:
-              raise SystemExit("Unexpected provisioning team or application prefix")
+          if teams != [expected_team]:
+              raise SystemExit("Unexpected provisioning TeamIdentifier")
+          if prefixes != [expected_team]:
+              raise SystemExit("Unexpected provisioning ApplicationIdentifierPrefix")
           if entitlements.get("com.apple.developer.team-identifier") != expected_team:
               raise SystemExit("Unexpected team entitlement")
           if entitlements.get("application-identifier") != f"{prefixes[0]}.{expected_bundle}":
