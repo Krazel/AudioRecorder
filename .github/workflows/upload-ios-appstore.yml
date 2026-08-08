@@ -149,6 +149,13 @@ jobs:
               Path(os.environ[output_name]).write_bytes(decoded)
           PY
           chmod 600 "$IOS_SIGNING_P12_PATH" "$IOS_SIGNING_PROFILE_PATH"
+          if ! openssl pkcs12 \
+            -in "$IOS_SIGNING_P12_PATH" \
+            -passin env:IOS_DISTRIBUTION_P12_PASSWORD \
+            -noout >/dev/null 2>&1; then
+            echo "The decoded P12 and its password secret do not match"
+            exit 1
+          fi
 
           IOS_KEYCHAIN_PATH="$RUNNER_TEMP/voice-recorder-signing.keychain-db"
           IOS_KEYCHAIN_PASSWORD="$(openssl rand -hex 32)"
@@ -160,6 +167,7 @@ jobs:
           security list-keychains -d user -s "$IOS_KEYCHAIN_PATH" ${ORIGINAL_KEYCHAINS}
           security default-keychain -d user -s "$IOS_KEYCHAIN_PATH"
           security import "$IOS_SIGNING_P12_PATH" \
+            -f pkcs12 \
             -k "$IOS_KEYCHAIN_PATH" \
             -P "$IOS_DISTRIBUTION_P12_PASSWORD" \
             -T /usr/bin/codesign \
