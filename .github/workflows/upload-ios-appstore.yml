@@ -231,6 +231,7 @@ jobs:
               raise SystemExit("Provisioning profile certificate does not match imported identity")
 
           with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as github_environment:
+              github_environment.write(f"APPLE_TEAM_ID={expected_team}\n")
               github_environment.write(f"IOS_PROFILE_UUID={profile['UUID']}\n")
               github_environment.write(f"IOS_PROFILE_NAME={profile['Name']}\n")
               github_environment.write(f"IOS_PROFILE_CERTIFICATE_SHA1={profile_certificate_sha1}\n")
