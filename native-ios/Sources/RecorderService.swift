@@ -190,7 +190,7 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
 
     private func configureAudioSession() throws {
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playAndRecord, mode: .default, options: [.allowBluetooth, .defaultToSpeaker, .mixWithOthers])
+        try session.setCategory(.playAndRecord, mode: .default, options: [.allowBluetoothHFP, .defaultToSpeaker, .mixWithOthers])
         try session.setActive(true)
     }
 

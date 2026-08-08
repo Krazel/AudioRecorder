@@ -41,6 +41,7 @@ jobs:
             -scheme AudioRecorder \
             -configuration Release \
             -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
             -derivedDataPath build/ios \
             MARKETING_VERSION=${APP_VERSION} \
             CURRENT_PROJECT_VERSION=${{ github.run_number }} \
