@@ -53,9 +53,33 @@ if ($LASTEXITCODE -ne 0) {
   throw "No se pudo preparar el environment '$Environment' en $Repository"
 }
 
-$AppleTeamId | & $ghExecutable secret set --env $Environment APPLE_TEAM_ID
-$keyId | & $ghExecutable secret set --env $Environment ASC_KEY_ID
-$issuerId | & $ghExecutable secret set --env $Environment ASC_ISSUER_ID
-$privateKeyBase64 | & $ghExecutable secret set --env $Environment ASC_PRIVATE_KEY_BASE64
+function Set-GitHubEnvironmentSecret {
+  param(
+    [Parameter(Mandatory = $true)][string]$Name,
+    [Parameter(Mandatory = $true)][string]$Value
+  )
+
+  $startInfo = [Diagnostics.ProcessStartInfo]::new()
+  $startInfo.FileName = $ghExecutable
+  $startInfo.Arguments = "secret set --repo $Repository --env $Environment $Name"
+  $startInfo.UseShellExecute = $false
+  $startInfo.RedirectStandardInput = $true
+  $startInfo.RedirectStandardOutput = $true
+  $startInfo.RedirectStandardError = $true
+
+  $process = [Diagnostics.Process]::Start($startInfo)
+  $secretBytes = [Text.Encoding]::ASCII.GetBytes($Value)
+  $process.StandardInput.BaseStream.Write($secretBytes, 0, $secretBytes.Length)
+  $process.StandardInput.Close()
+  $process.WaitForExit()
+  if ($process.ExitCode -ne 0) {
+    throw "No se pudo actualizar el secret '$Name': $($process.StandardError.ReadToEnd())"
+  }
+}
+
+Set-GitHubEnvironmentSecret -Name APPLE_TEAM_ID -Value $AppleTeamId
+Set-GitHubEnvironmentSecret -Name ASC_KEY_ID -Value $keyId
+Set-GitHubEnvironmentSecret -Name ASC_ISSUER_ID -Value $issuerId
+Set-GitHubEnvironmentSecret -Name ASC_PRIVATE_KEY_BASE64 -Value $privateKeyBase64
 
 Write-Host "Secrets de App Store Connect actualizados en el environment '$Environment'."
