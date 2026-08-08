@@ -139,3 +139,6 @@ El propietario autorizó crear todos los recursos Apple necesarios para firmar V
 ### D-016 — Custodia de la identidad de firma — 2026-08-09
 
 El propietario autorizó transferir la identidad a los secretos cifrados del environment GitHub tras ser informado del riesgo. El workflow solo la decodifica en `$RUNNER_TEMP`, usa un llavero efímero, valida certificado y perfil, y elimina el material temporal con `always()`. Ninguna clave privada se versiona ni se incluye en artefactos o registros.
+### D-017 — VoiceRecorder 1.0 es iPhone-only — 2026-08-09
+
+La versión 1.0 se distribuye únicamente para iPhone y conserva orientación vertical. Esta decisión sigue la definición histórica del MVP, textos, artefactos y capturas existentes, todos exclusivos de iPhone; evita declarar soporte iPad no diseñado ni probado. Cualquier ampliación futura a iPad requerirá diseño, capturas, cuatro orientaciones para multitarea y pruebas específicas.

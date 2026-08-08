@@ -222,6 +222,6 @@ A successful no-upload run retains:
 - the signed `.xcarchive`, including its dSYM;
 - checks for bundle/version/build identity, the selected AdMob IDs, signature, distribution provisioning identity/entitlements, privacy manifest, asset catalog, seven localizations, dSYM, and the archive's `UIDeviceFamily`.
 
-The final privacy report still has to be generated or inspected with Xcode Organizer. ATT, export-compliance classification, and iPhone-only versus universal device family remain explicit owner decisions.
+The final privacy report still has to be generated or inspected with Xcode Organizer. VoiceRecorder 1.0 is explicitly iPhone-only (`TARGETED_DEVICE_FAMILY=1`) and portrait; ATT and export-compliance classification remain explicit owner decisions.
 
 Do not put private keys or secret values in this document or in the manifest.

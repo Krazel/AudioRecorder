@@ -383,7 +383,11 @@ jobs:
             echo "Archive does not use the expected App Store distribution profile and certificate"
             exit 1
           fi
-          /usr/libexec/PlistBuddy -c 'Print :UIDeviceFamily' "${APP_PLIST}"
+          ARCHIVED_DEVICE_FAMILY="$(/usr/libexec/PlistBuddy -c 'Print :UIDeviceFamily:0' "${APP_PLIST}")"
+          if [[ "${ARCHIVED_DEVICE_FAMILY}" != "1" ]]; then
+            echo "The VoiceRecorder 1.0 archive must target iPhone only"
+            exit 1
+          fi
 
       - name: Retain signed archive and dSYM
         uses: actions/upload-artifact@v4
