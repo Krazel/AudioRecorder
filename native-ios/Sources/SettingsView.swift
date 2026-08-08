@@ -7,6 +7,8 @@ struct SettingsView: View {
     @EnvironmentObject private var library: RecordingLibrary
     @EnvironmentObject private var uploadQueue: CloudUploadQueue
     @EnvironmentObject private var playback: AudioPlaybackService
+    @EnvironmentObject private var language: AppLanguageStore
+    @EnvironmentObject private var adConsent: AdConsentManager
     @Environment(\.openURL) private var openURL
 
     @State private var supportExpanded = false
@@ -19,6 +21,15 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section(L("Idioma")) {
+                    Picker(L("Idioma de la aplicacion"), selection: $language.selected) {
+                        ForEach(AppLanguage.allCases) { language in
+                            Text(language.nativeName).tag(language)
+                        }
+                    }
+                    .pickerStyle(.navigationLink)
+                }
+
                 Section(L("Grabacion")) {
                     Picker(L("Calidad"), selection: $settings.quality) {
                         ForEach(AudioQuality.allCases) { quality in
@@ -89,6 +100,19 @@ struct SettingsView: View {
                     supportSection
                 }
 
+                if adConsent.isPrivacyOptionsRequired {
+                    Section {
+                        Button {
+                            Task {
+                                await adConsent.presentPrivacyOptions()
+                            }
+                        } label: {
+                            Label(L("Opciones de privacidad"), systemImage: "hand.raised")
+                        }
+                        .disabled(adConsent.isPresentingPrivacyOptions)
+                    }
+                }
+
                 Section(L("Contacto")) {
                     Button {
                         if let url = monetization.feedbackURL() {
@@ -127,6 +151,13 @@ struct SettingsView: View {
                 Button(L("Cancelar"), role: .cancel) {}
             } message: {
                 Text(L("Se borraran todas las grabaciones guardadas en este iPhone. Esta accion no se puede deshacer."))
+            }
+            .alert("Voice Recorder Pro - Audio K", isPresented: privacyOptionsErrorBinding) {
+                Button(L("OK"), role: .cancel) {
+                    adConsent.clearPrivacyOptionsError()
+                }
+            } message: {
+                Text(adConsent.privacyOptionsErrorMessage ?? "")
             }
         }
     }
@@ -185,13 +216,33 @@ struct SettingsView: View {
                             }
                         } label: {
                             HStack {
-                                Text(product.displayName)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(product.displayName)
+                                    Text(L("Suscripcion mensual"))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                                 Spacer()
-                                Text(product.displayPrice)
-                                    .fontWeight(.semibold)
+                                VStack(alignment: .trailing, spacing: 2) {
+                                    Text(product.displayPrice)
+                                        .fontWeight(.semibold)
+                                    Text(L("al mes"))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                         }
                     }
+                }
+
+                Text(L("Cada opcion es una suscripcion mensual renovable. El pago se carga a tu cuenta de Apple y se renueva automaticamente cada mes, salvo que la canceles al menos 24 horas antes del final del periodo actual."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Button {
+                    openURL(AppMonetizationConfig.manageSubscriptionsURL)
+                } label: {
+                    Label(L("Gestionar o cancelar suscripcion"), systemImage: "person.crop.circle.badge.checkmark")
                 }
 
                 Button {
@@ -200,6 +251,14 @@ struct SettingsView: View {
                     }
                 } label: {
                     Label(L("Restaurar compras"), systemImage: "arrow.clockwise")
+                }
+
+                Link(destination: AppMonetizationConfig.privacyPolicyURL) {
+                    Label(L("Politica de privacidad"), systemImage: "hand.raised")
+                }
+
+                Link(destination: AppMonetizationConfig.termsOfUseURL) {
+                    Label(L("Condiciones de uso"), systemImage: "doc.text")
                 }
 
                 if monetization.isManualUnlockActive {
@@ -262,6 +321,13 @@ struct SettingsView: View {
         Binding(
             get: { monetization.purchaseMessage != nil },
             set: { if !$0 { monetization.clearMessage() } }
+        )
+    }
+
+    private var privacyOptionsErrorBinding: Binding<Bool> {
+        Binding(
+            get: { adConsent.privacyOptionsErrorMessage != nil },
+            set: { if !$0 { adConsent.clearPrivacyOptionsError() } }
         )
     }
 }

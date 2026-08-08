@@ -114,3 +114,13 @@
 "Falta configurar la URL de subida del servidor propio." = "The custom server upload URL is missing.";
 "El servidor rechazo la subida con codigo %d." = "The server rejected the upload with code %d.";
 "No se pudo guardar el archivo en %@." = "The file could not be saved in %@.";
+"Idioma" = "Language";
+"Idioma de la aplicacion" = "App language";
+"Suscripcion mensual" = "Monthly subscription";
+"al mes" = "per month";
+"Cada opcion es una suscripcion mensual renovable. El pago se carga a tu cuenta de Apple y se renueva automaticamente cada mes, salvo que la canceles al menos 24 horas antes del final del periodo actual." = "Each option is an auto-renewable monthly subscription. Payment is charged to your Apple Account and renews automatically every month unless you cancel at least 24 hours before the end of the current period.";
+"Gestionar o cancelar suscripcion" = "Manage or cancel subscription";
+"Politica de privacidad" = "Privacy Policy";
+"Condiciones de uso" = "Terms of Use";
+"Opciones de privacidad" = "Privacy options";
+"No se pudieron abrir las opciones de privacidad." = "Privacy options could not be opened.";

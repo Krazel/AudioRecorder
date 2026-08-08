@@ -5,18 +5,21 @@ enum AppMonetizationConfig {
     static let adsEnabled = true
     static let supportEmail = "coderappskrazel@gmail.com"
     static let activeManualUnlockGeneration = 2
-    static let adMobIOSBannerUnitID = "ca-app-pub-3940256099942544/2435281174"
+    static var adMobIOSBannerUnitID: String {
+        (Bundle.main.object(forInfoDictionaryKey: "ADMOBBannerUnitID") as? String)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
     static let monthlySupportProductIDs = [
         "com.dmkr.audio.support.monthly.099",
         "com.dmkr.audio.support.monthly.299",
         "com.dmkr.audio.support.monthly.499",
         "com.dmkr.audio.support.monthly.999",
         "com.dmkr.audio.support.monthly.1499",
-        "com.dmkr.audio.support.monthly.2999",
-        "com.dmkr.audio.support.monthly.4999",
-        "com.dmkr.audio.support.monthly.9999",
-        "com.dmkr.audio.support.monthly.29999"
+        "com.dmkr.audio.support.monthly.2999"
     ]
+    static let privacyPolicyURL = URL(string: "https://github.com/Krazel/AudioRecorder/blob/main/docs/PRIVACY.md")!
+    static let termsOfUseURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
+    static let manageSubscriptionsURL = URL(string: "https://apps.apple.com/account/subscriptions")!
     static let manualUnlockCodes: [ManualUnlockCode] = [
         ManualUnlockCode(value: "AK-7M4Q-26", generation: 2),
         ManualUnlockCode(value: "KZ-82QX-AK", generation: 2),
@@ -189,15 +192,10 @@ final class MonetizationStore: ObservableObject {
             for await result in Transaction.updates {
                 guard let self else { return }
                 guard let transaction = try? self.checkVerified(result) else { continue }
-                if AppMonetizationConfig.monthlySupportProductIDs.contains(transaction.productID) {
-                    self.adsRemoved = transaction.revocationDate == nil
-                    if self.adsRemoved {
-                        self.defaults.set(AdsRemovedSource.subscription.rawValue, forKey: self.adsRemovedSourceKey)
-                    } else if self.defaults.string(forKey: self.adsRemovedSourceKey) == AdsRemovedSource.subscription.rawValue {
-                        self.defaults.removeObject(forKey: self.adsRemovedSourceKey)
-                    }
-                }
                 await transaction.finish()
+                if AppMonetizationConfig.monthlySupportProductIDs.contains(transaction.productID) {
+                    await self.refreshEntitlements()
+                }
             }
         }
     }

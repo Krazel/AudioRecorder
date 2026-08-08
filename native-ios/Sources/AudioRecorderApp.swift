@@ -1,5 +1,4 @@
 import SwiftUI
-import GoogleMobileAds
 
 @main
 struct AudioRecorderApp: App {
@@ -9,10 +8,8 @@ struct AudioRecorderApp: App {
     @StateObject private var uploadQueue = CloudUploadQueue()
     @StateObject private var playback = AudioPlaybackService()
     @StateObject private var monetization = MonetizationStore()
-
-    init() {
-        MobileAds.shared.start()
-    }
+    @StateObject private var language = AppLanguageStore()
+    @StateObject private var adConsent = AdConsentManager()
 
     var body: some Scene {
         WindowGroup {
@@ -23,7 +20,11 @@ struct AudioRecorderApp: App {
                 .environmentObject(uploadQueue)
                 .environmentObject(playback)
                 .environmentObject(monetization)
+                .environmentObject(language)
+                .environmentObject(adConsent)
+                .environment(\.locale, Locale(identifier: language.selected.rawValue))
                 .task {
+                    await adConsent.prepareForAds()
                     await library.load()
                     await uploadQueue.load()
                 }

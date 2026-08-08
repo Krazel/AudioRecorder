@@ -114,3 +114,13 @@
 "Falta configurar la URL de subida del servidor propio." = "Die Upload-URL des eigenen Servers fehlt.";
 "El servidor rechazo la subida con codigo %d." = "Der Server hat den Upload mit Code %d abgelehnt.";
 "No se pudo guardar el archivo en %@." = "Die Datei konnte nicht in %@ gespeichert werden.";
+"Idioma" = "Sprache";
+"Idioma de la aplicacion" = "App-Sprache";
+"Suscripcion mensual" = "Monatsabonnement";
+"al mes" = "pro Monat";
+"Cada opcion es una suscripcion mensual renovable. El pago se carga a tu cuenta de Apple y se renueva automaticamente cada mes, salvo que la canceles al menos 24 horas antes del final del periodo actual." = "Jede Option ist ein automatisch verlängerbares Monatsabo. Die Zahlung wird deinem Apple Account belastet und das Abo verlängert sich jeden Monat automatisch, sofern du es nicht mindestens 24 Stunden vor Ende des aktuellen Zeitraums kündigst.";
+"Gestionar o cancelar suscripcion" = "Abo verwalten oder kündigen";
+"Politica de privacidad" = "Datenschutzrichtlinie";
+"Condiciones de uso" = "Nutzungsbedingungen";
+"Opciones de privacidad" = "Datenschutzeinstellungen";
+"No se pudieron abrir las opciones de privacidad." = "Die Datenschutzeinstellungen konnten nicht geöffnet werden.";

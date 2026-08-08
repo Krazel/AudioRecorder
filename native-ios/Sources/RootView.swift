@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject private var monetization: MonetizationStore
+    @EnvironmentObject private var adConsent: AdConsentManager
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -22,7 +23,7 @@ struct RootView: View {
                     }
             }
 
-            if monetization.shouldShowAds {
+            if monetization.shouldShowAds && adConsent.canRequestAds && adConsent.isMobileAdsStarted {
                 VStack(spacing: 0) {
                     Spacer(minLength: 0)
                     AdMobBannerView()

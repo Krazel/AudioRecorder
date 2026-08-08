@@ -13,7 +13,12 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
     @Published private(set) var isInterrupted = false
 
     private let engine = AVAudioEngine()
-    private let analyzer = VoiceNoiseAnalyzer()
+    private lazy var soundProcessor = SoundActivatedAudioProcessor { [weak self] progress in
+        Task { @MainActor [weak self] in
+            self?.applySoundProcessorProgress(progress)
+        }
+    }
+    private var soundProcessorGeneration: UUID?
     private var audioRecorder: AVAudioRecorder?
     private var recorderTimer: Timer?
     private var currentFile: AVAudioFile?
@@ -29,8 +34,6 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
     private var isCheckpointingSegment = false
     private var recoveryRetryTask: Task<Void, Never>?
     private var lastBackgroundCheckpointAt = Date.distantPast
-    private var lastVisibleMeterUpdate = Date.distantPast
-    private var lastSoundAboveThresholdAt: Date?
     private let persistedRecordingIntentKey = "RecorderService.persistedRecordingIntent"
 
     var shouldResumePersistedRecording: Bool {
@@ -266,13 +269,26 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
     }
 
     private func startEngine() throws {
+        guard let currentFile, let settings = currentSettings else {
+            throw RecorderError.missingSettings
+        }
+        if soundProcessorGeneration == nil {
+            soundProcessorGeneration = soundProcessor.start(
+                file: currentFile,
+                settings: SoundActivatedAudioSettings(
+                    segmentDuration: settings.segmentDuration,
+                    thresholdDB: settings.thresholdDB,
+                    soundTailDuration: settings.soundTailDuration
+                )
+            )
+        }
+
         let input = engine.inputNode
         let inputFormat = input.outputFormat(forBus: 0)
+        let processor = soundProcessor
         input.removeTap(onBus: 0)
-        input.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { [weak self] buffer, _ in
-            Task { @MainActor in
-                self?.handle(buffer)
-            }
+        input.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { buffer, _ in
+            processor.enqueue(buffer)
         }
 
         engine.prepare()
@@ -282,6 +298,12 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
     private func stopEngine() {
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
+        let shouldApplyFinalProgress = soundProcessorGeneration != nil
+        soundProcessorGeneration = nil
+        let progress = soundProcessor.stop()
+        if shouldApplyFinalProgress {
+            applySoundProcessorState(progress)
+        }
     }
 
     private func startNewSegment() throws {
@@ -301,7 +323,6 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         currentSegmentStartedAt = Date()
         writtenDuration = 0
         didWriteCurrentSegment = false
-        lastSoundAboveThresholdAt = nil
         elapsed = 0
         isWritingAudio = settings.mode == .everything
     }
@@ -314,6 +335,17 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
             try startNewSegment()
             if currentSettings?.mode == .everything {
                 try startSystemRecorder()
+            } else if currentSettings?.mode == .soundActivated,
+                      let currentFile,
+                      let settings = currentSettings {
+                soundProcessorGeneration = soundProcessor.start(
+                    file: currentFile,
+                    settings: SoundActivatedAudioSettings(
+                        segmentDuration: settings.segmentDuration,
+                        thresholdDB: settings.thresholdDB,
+                        soundTailDuration: settings.soundTailDuration
+                    )
+                )
             }
         } catch {
             lastError = error.localizedDescription
@@ -368,32 +400,6 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         }
     }
 
-    private func handle(_ buffer: AVAudioPCMBuffer) {
-        guard let settings = activeSettings else { return }
-        let analysis = analyzer.analyze(buffer)
-        publishLevelIfNeeded(analysis.rms)
-
-        guard shouldWriteBuffer(analysis: analysis, settings: settings) else {
-            setWritingAudio(false)
-            return
-        }
-
-        do {
-            try currentFile?.write(from: buffer)
-            let bufferDuration = Double(buffer.frameLength) / buffer.format.sampleRate
-            writtenDuration += bufferDuration
-            elapsed = writtenDuration
-            didWriteCurrentSegment = true
-            setWritingAudio(true)
-
-            if writtenDuration >= settings.segmentDuration {
-                rotateSegment()
-            }
-        } catch {
-            lastError = error.localizedDescription
-        }
-    }
-
     private var activeSettings: RecordingSnapshot? {
         if let settingsStore {
             return RecordingSnapshot(settingsStore)
@@ -401,31 +407,27 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         return currentSettings
     }
 
-    private func publishLevelIfNeeded(_ level: Float) {
-        let now = Date()
-        guard now.timeIntervalSince(lastVisibleMeterUpdate) >= 0.25 else { return }
-        currentLevel = level
-        lastVisibleMeterUpdate = now
+    private func applySoundProcessorProgress(_ progress: SoundActivatedAudioProgress) {
+        guard progress.generation == soundProcessorGeneration else { return }
+        applySoundProcessorState(progress)
+        if let errorDescription = progress.errorDescription {
+            lastError = errorDescription
+            stop()
+            return
+        }
+        if progress.reachedSegmentLimit, isRecording, currentSettings?.mode == .soundActivated {
+            rotateSegment()
+        }
     }
 
-    private func shouldWriteBuffer(analysis: VoiceNoiseAnalysis, settings: RecordingSnapshot) -> Bool {
-        switch settings.mode {
-        case .everything:
-            return true
-        case .soundActivated:
-            let now = Date()
-            if analysis.rms >= settings.thresholdDB {
-                lastSoundAboveThresholdAt = now
-                return true
-            }
-
-            guard settings.soundTailDuration > 0,
-                  let lastSoundAboveThresholdAt else {
-                return false
-            }
-
-            return now.timeIntervalSince(lastSoundAboveThresholdAt) <= settings.soundTailDuration
+    private func applySoundProcessorState(_ progress: SoundActivatedAudioProgress) {
+        if let level = progress.level {
+            currentLevel = level
         }
+        writtenDuration = progress.writtenDuration
+        elapsed = progress.writtenDuration
+        didWriteCurrentSegment = progress.didWrite
+        setWritingAudio(progress.isWriting)
     }
 
     private func setWritingAudio(_ value: Bool) {

@@ -138,32 +138,32 @@
           "price": "0.99",
           "locales": {
             "es-ES": {
-              "displayName": "Sin anuncios mensual",
-              "description": "Quita los anuncios de la app."
+              "displayName": "Apoyo Básico mensual",
+              "description": "Apoyo voluntario; sin anuncios mientras dure."
             },
             "en-US": {
-              "displayName": "No Ads Monthly",
-              "description": "Removes ads from the app."
+              "displayName": "Basic Support Monthly",
+              "description": "Voluntary support. Removes ads while active."
             },
             "fr-FR": {
-              "displayName": "Sans pubs mensuel",
-              "description": "Supprime les annonces de l app."
+              "displayName": "Soutien Basique mensuel",
+              "description": "Soutien volontaire; sans pubs tant qu'actif."
             },
             "de-DE": {
-              "displayName": "Werbefrei monatlich",
-              "description": "Entfernt Anzeigen aus der App."
+              "displayName": "Basis-Support monatlich",
+              "description": "Freiwilliger Support; werbefrei wenn aktiv."
             },
             "it": {
-              "displayName": "Senza annunci mensile",
-              "description": "Rimuove gli annunci dalla app."
+              "displayName": "Supporto Base mensile",
+              "description": "Supporto volontario; senza annunci se attivo."
             },
             "pt-PT": {
-              "displayName": "Sem anuncios mensal",
-              "description": "Remove anuncios da app."
+              "displayName": "Apoio Base mensal",
+              "description": "Apoio voluntário; sem anúncios se ativo."
             },
             "ca": {
-              "displayName": "Sense anuncis mensual",
-              "description": "Treu els anuncis de l app."
+              "displayName": "Suport Bàsic mensual",
+              "description": "Suport voluntari; sense anuncis si és actiu."
             }
           }
         },
@@ -174,32 +174,32 @@
           "price": "3.0",
           "locales": {
             "es-ES": {
-              "displayName": "Apoyo 3 mensual",
-              "description": "Quita anuncios y apoya la app."
+              "displayName": "Apoyo Amigo mensual",
+              "description": "Apoyo voluntario; sin anuncios mientras dure."
             },
             "en-US": {
-              "displayName": "Support 3 Monthly",
-              "description": "Removes ads and supports the app."
+              "displayName": "Friend Support Monthly",
+              "description": "Voluntary support. Removes ads while active."
             },
             "fr-FR": {
-              "displayName": "Soutien 3 mensuel",
-              "description": "Supprime les annonces et soutient l app."
+              "displayName": "Soutien Ami mensuel",
+              "description": "Soutien volontaire; sans pubs tant qu'actif."
             },
             "de-DE": {
-              "displayName": "Support 3 monatlich",
-              "description": "Entfernt Anzeigen und unterstuetzt die App."
+              "displayName": "Freund-Support monatlich",
+              "description": "Freiwilliger Support; werbefrei wenn aktiv."
             },
             "it": {
-              "displayName": "Supporto 3 mensile",
-              "description": "Rimuove annunci e supporta la app."
+              "displayName": "Supporto Amico mensile",
+              "description": "Supporto volontario; senza annunci se attivo."
             },
             "pt-PT": {
-              "displayName": "Apoio 3 mensal",
-              "description": "Remove anuncios e apoia a app."
+              "displayName": "Apoio Amigo mensal",
+              "description": "Apoio voluntário; sem anúncios se ativo."
             },
             "ca": {
-              "displayName": "Suport 3 mensual",
-              "description": "Treu anuncis i dona suport a l app."
+              "displayName": "Suport Amic mensual",
+              "description": "Suport voluntari; sense anuncis si és actiu."
             }
           }
         },
@@ -210,32 +210,32 @@
           "price": "5.0",
           "locales": {
             "es-ES": {
-              "displayName": "Apoyo 5 mensual",
-              "description": "Quita anuncios y apoya la app."
+              "displayName": "Apoyo Especial mensual",
+              "description": "Apoyo voluntario; sin anuncios mientras dure."
             },
             "en-US": {
-              "displayName": "Support 5 Monthly",
-              "description": "Removes ads and supports the app."
+              "displayName": "Special Support Monthly",
+              "description": "Voluntary support. Removes ads while active."
             },
             "fr-FR": {
-              "displayName": "Soutien 5 mensuel",
-              "description": "Supprime les annonces et soutient l app."
+              "displayName": "Soutien Spécial mensuel",
+              "description": "Soutien volontaire; sans pubs tant qu'actif."
             },
             "de-DE": {
-              "displayName": "Support 5 monatlich",
-              "description": "Entfernt Anzeigen und unterstuetzt die App."
+              "displayName": "Spezial-Support monatlich",
+              "description": "Freiwilliger Support; werbefrei wenn aktiv."
             },
             "it": {
-              "displayName": "Supporto 5 mensile",
-              "description": "Rimuove annunci e supporta la app."
+              "displayName": "Supporto Speciale mensile",
+              "description": "Supporto volontario; senza annunci se attivo."
             },
             "pt-PT": {
-              "displayName": "Apoio 5 mensal",
-              "description": "Remove anuncios e apoia a app."
+              "displayName": "Apoio Especial mensal",
+              "description": "Apoio voluntário; sem anúncios se ativo."
             },
             "ca": {
-              "displayName": "Suport 5 mensual",
-              "description": "Treu anuncis i dona suport a l app."
+              "displayName": "Suport Especial mensual",
+              "description": "Suport voluntari; sense anuncis si és actiu."
             }
           }
         },
@@ -246,32 +246,32 @@
           "price": "10.0",
           "locales": {
             "es-ES": {
-              "displayName": "Apoyo 10 mensual",
-              "description": "Quita anuncios y apoya la app."
+              "displayName": "Apoyo Generoso mensual",
+              "description": "Apoyo voluntario; sin anuncios mientras dure."
             },
             "en-US": {
-              "displayName": "Support 10 Monthly",
-              "description": "Removes ads and supports the app."
+              "displayName": "Generous Support Monthly",
+              "description": "Voluntary support. Removes ads while active."
             },
             "fr-FR": {
-              "displayName": "Soutien 10 mensuel",
-              "description": "Supprime les annonces et soutient l app."
+              "displayName": "Soutien Généreux mensuel",
+              "description": "Soutien volontaire; sans pubs tant qu'actif."
             },
             "de-DE": {
-              "displayName": "Support 10 monatlich",
-              "description": "Entfernt Anzeigen und unterstuetzt die App."
+              "displayName": "Großzügiger Support monatlich",
+              "description": "Freiwilliger Support; werbefrei wenn aktiv."
             },
             "it": {
-              "displayName": "Supporto 10 mensile",
-              "description": "Rimuove annunci e supporta la app."
+              "displayName": "Supporto Generoso mensile",
+              "description": "Supporto volontario; senza annunci se attivo."
             },
             "pt-PT": {
-              "displayName": "Apoio 10 mensal",
-              "description": "Remove anuncios e apoia a app."
+              "displayName": "Apoio Generoso mensal",
+              "description": "Apoio voluntário; sem anúncios se ativo."
             },
             "ca": {
-              "displayName": "Suport 10 mensual",
-              "description": "Treu anuncis i dona suport a l app."
+              "displayName": "Suport Generós mensual",
+              "description": "Suport voluntari; sense anuncis si és actiu."
             }
           }
         },
@@ -282,32 +282,32 @@
           "price": "15.0",
           "locales": {
             "es-ES": {
-              "displayName": "Apoyo 15 mensual",
-              "description": "Quita anuncios y apoya la app."
+              "displayName": "Gran Apoyo mensual",
+              "description": "Apoyo voluntario; sin anuncios mientras dure."
             },
             "en-US": {
-              "displayName": "Support 15 Monthly",
-              "description": "Removes ads and supports the app."
+              "displayName": "Great Support Monthly",
+              "description": "Voluntary support. Removes ads while active."
             },
             "fr-FR": {
-              "displayName": "Soutien 15 mensuel",
-              "description": "Supprime les annonces et soutient l app."
+              "displayName": "Grand Soutien mensuel",
+              "description": "Soutien volontaire; sans pubs tant qu'actif."
             },
             "de-DE": {
-              "displayName": "Support 15 monatlich",
-              "description": "Entfernt Anzeigen und unterstuetzt die App."
+              "displayName": "Großer Support monatlich",
+              "description": "Freiwilliger Support; werbefrei wenn aktiv."
             },
             "it": {
-              "displayName": "Supporto 15 mensile",
-              "description": "Rimuove annunci e supporta la app."
+              "displayName": "Grande Supporto mensile",
+              "description": "Supporto volontario; senza annunci se attivo."
             },
             "pt-PT": {
-              "displayName": "Apoio 15 mensal",
-              "description": "Remove anuncios e apoia a app."
+              "displayName": "Grande Apoio mensal",
+              "description": "Apoio voluntário; sem anúncios se ativo."
             },
             "ca": {
-              "displayName": "Suport 15 mensual",
-              "description": "Treu anuncis i dona suport a l app."
+              "displayName": "Gran Suport mensual",
+              "description": "Suport voluntari; sense anuncis si és actiu."
             }
           }
         },
@@ -318,140 +318,32 @@
           "price": "30.0",
           "locales": {
             "es-ES": {
-              "displayName": "Apoyo 30 mensual",
-              "description": "Quita anuncios y apoya la app."
+              "displayName": "Patrocinador mensual",
+              "description": "Apoyo voluntario; sin anuncios mientras dure."
             },
             "en-US": {
-              "displayName": "Support 30 Monthly",
-              "description": "Removes ads and supports the app."
+              "displayName": "Sponsor Support Monthly",
+              "description": "Voluntary support. Removes ads while active."
             },
             "fr-FR": {
-              "displayName": "Soutien 30 mensuel",
-              "description": "Supprime les annonces et soutient l app."
+              "displayName": "Parrain mensuel",
+              "description": "Soutien volontaire; sans pubs tant qu'actif."
             },
             "de-DE": {
-              "displayName": "Support 30 monatlich",
-              "description": "Entfernt Anzeigen und unterstuetzt die App."
+              "displayName": "Sponsor-Support monatlich",
+              "description": "Freiwilliger Support; werbefrei wenn aktiv."
             },
             "it": {
-              "displayName": "Supporto 30 mensile",
-              "description": "Rimuove annunci e supporta la app."
+              "displayName": "Sponsor mensile",
+              "description": "Supporto volontario; senza annunci se attivo."
             },
             "pt-PT": {
-              "displayName": "Apoio 30 mensal",
-              "description": "Remove anuncios e apoia a app."
+              "displayName": "Patrocinador mensal",
+              "description": "Apoio voluntário; sem anúncios se ativo."
             },
             "ca": {
-              "displayName": "Suport 30 mensual",
-              "description": "Treu anuncis i dona suport a l app."
-            }
-          }
-        },
-        {
-          "productId": "com.dmkr.audio.support.monthly.4999",
-          "referenceName": "Audio K Support Monthly 50",
-          "duration": "P1M",
-          "price": "50.0",
-          "locales": {
-            "es-ES": {
-              "displayName": "Apoyo 50 mensual",
-              "description": "Quita anuncios y apoya la app."
-            },
-            "en-US": {
-              "displayName": "Support 50 Monthly",
-              "description": "Removes ads and supports the app."
-            },
-            "fr-FR": {
-              "displayName": "Soutien 50 mensuel",
-              "description": "Supprime les annonces et soutient l app."
-            },
-            "de-DE": {
-              "displayName": "Support 50 monatlich",
-              "description": "Entfernt Anzeigen und unterstuetzt die App."
-            },
-            "it": {
-              "displayName": "Supporto 50 mensile",
-              "description": "Rimuove annunci e supporta la app."
-            },
-            "pt-PT": {
-              "displayName": "Apoio 50 mensal",
-              "description": "Remove anuncios e apoia a app."
-            },
-            "ca": {
-              "displayName": "Suport 50 mensual",
-              "description": "Treu anuncis i dona suport a l app."
-            }
-          }
-        },
-        {
-          "productId": "com.dmkr.audio.support.monthly.9999",
-          "referenceName": "Audio K Support Monthly 100",
-          "duration": "P1M",
-          "price": "100.0",
-          "locales": {
-            "es-ES": {
-              "displayName": "Apoyo 100 mensual",
-              "description": "Quita anuncios y apoya la app."
-            },
-            "en-US": {
-              "displayName": "Support 100 Monthly",
-              "description": "Removes ads and supports the app."
-            },
-            "fr-FR": {
-              "displayName": "Soutien 100 mensuel",
-              "description": "Supprime les annonces et soutient l app."
-            },
-            "de-DE": {
-              "displayName": "Support 100 monatlich",
-              "description": "Entfernt Anzeigen und unterstuetzt die App."
-            },
-            "it": {
-              "displayName": "Supporto 100 mensile",
-              "description": "Rimuove annunci e supporta la app."
-            },
-            "pt-PT": {
-              "displayName": "Apoio 100 mensal",
-              "description": "Remove anuncios e apoia a app."
-            },
-            "ca": {
-              "displayName": "Suport 100 mensual",
-              "description": "Treu anuncis i dona suport a l app."
-            }
-          }
-        },
-        {
-          "productId": "com.dmkr.audio.support.monthly.29999",
-          "referenceName": "Audio K Support Monthly 300",
-          "duration": "P1M",
-          "price": "300.0",
-          "locales": {
-            "es-ES": {
-              "displayName": "Apoyo 300 mensual",
-              "description": "Quita anuncios y apoya la app."
-            },
-            "en-US": {
-              "displayName": "Support 300 Monthly",
-              "description": "Removes ads and supports the app."
-            },
-            "fr-FR": {
-              "displayName": "Soutien 300 mensuel",
-              "description": "Supprime les annonces et soutient l app."
-            },
-            "de-DE": {
-              "displayName": "Support 300 monatlich",
-              "description": "Entfernt Anzeigen und unterstuetzt die App."
-            },
-            "it": {
-              "displayName": "Supporto 300 mensile",
-              "description": "Rimuove annunci e supporta la app."
-            },
-            "pt-PT": {
-              "displayName": "Apoio 300 mensal",
-              "description": "Remove anuncios e apoia a app."
-            },
-            "ca": {
-              "displayName": "Suport 300 mensual",
-              "description": "Treu anuncis i dona suport a l app."
+              "displayName": "Patrocinador mensual",
+              "description": "Suport voluntari; sense anuncis si és actiu."
             }
           }
         }

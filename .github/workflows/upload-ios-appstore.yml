@@ -2,6 +2,21 @@ name: Upload iOS App Store Build
 
 on:
   workflow_dispatch:
+    inputs:
+      build_number:
+        description: Unique positive build number for version 1.0
+        required: true
+        type: string
+      validate_with_app_store:
+        description: Validate the exported IPA with App Store Connect without uploading it for testing
+        required: true
+        default: false
+        type: boolean
+      upload_to_app_store:
+        description: Upload the exported IPA to App Store Connect
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -13,14 +28,43 @@ jobs:
     environment: app-store-production
     env:
       APP_VERSION: "1.0"
+      APP_BUILD_NUMBER: ${{ inputs.build_number }}
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       ASC_PRIVATE_KEY_BASE64: ${{ secrets.ASC_PRIVATE_KEY_BASE64 }}
+      ADMOB_IOS_APP_ID: ${{ secrets.ADMOB_IOS_APP_ID }}
+      ADMOB_IOS_BANNER_UNIT_ID: ${{ secrets.ADMOB_IOS_BANNER_UNIT_ID }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Validate Apple submission toolchain
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          XCODE_MAJOR="$(xcodebuild -version | awk '/^Xcode / { split($2, version, "."); print version[1] }')"
+          IOS_SDK_VERSION="$(xcrun --sdk iphoneos --show-sdk-version)"
+          IOS_SDK_MAJOR="${IOS_SDK_VERSION%%.*}"
+          echo "iOS SDK ${IOS_SDK_VERSION}"
+          if [[ -z "${XCODE_MAJOR}" ]] || (( XCODE_MAJOR < 26 )); then
+            echo "Xcode 26 or later is required for App Store Connect submissions"
+            exit 1
+          fi
+          if [[ -z "${IOS_SDK_MAJOR}" ]] || (( IOS_SDK_MAJOR < 26 )); then
+            echo "The iOS 26 SDK or later is required for App Store Connect submissions"
+            exit 1
+          fi
+
+      - name: Validate candidate build number
+        run: |
+          set -euo pipefail
+          if [[ ! "${APP_BUILD_NUMBER}" =~ ^[1-9][0-9]*$ ]]; then
+            echo "build_number must be a positive integer not previously used for version ${APP_VERSION}"
+            exit 1
+          fi
+          echo "Preparing version ${APP_VERSION} build ${APP_BUILD_NUMBER}"
 
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -35,6 +79,23 @@ jobs:
           mkdir -p "$HOME/private_keys"
           echo "${ASC_PRIVATE_KEY_BASE64}" | base64 --decode > "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
           chmod 600 "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+
+      - name: Validate production AdMob identifiers
+        run: |
+          set -euo pipefail
+          if [[ ! "${ADMOB_IOS_APP_ID}" =~ ^ca-app-pub-[0-9]{16}~[0-9]{10}$ ]]; then
+            echo "Missing or invalid ADMOB_IOS_APP_ID secret"
+            exit 1
+          fi
+          if [[ ! "${ADMOB_IOS_BANNER_UNIT_ID}" =~ ^ca-app-pub-[0-9]{16}/[0-9]{10}$ ]]; then
+            echo "Missing or invalid ADMOB_IOS_BANNER_UNIT_ID secret"
+            exit 1
+          fi
+          if [[ "${ADMOB_IOS_APP_ID}" == ca-app-pub-3940256099942544~* ]] || \
+             [[ "${ADMOB_IOS_BANNER_UNIT_ID}" == ca-app-pub-3940256099942544/* ]]; then
+            echo "Google demo AdMob identifiers are not allowed in a signed App Store archive"
+            exit 1
+          fi
 
       - name: Generate native Xcode project
         working-directory: native-ios
@@ -54,9 +115,51 @@ jobs:
             -authenticationKeyID "${ASC_KEY_ID}" \
             -authenticationKeyIssuerID "${ASC_ISSUER_ID}" \
             MARKETING_VERSION="${APP_VERSION}" \
-            CURRENT_PROJECT_VERSION="${GITHUB_RUN_NUMBER}" \
+            CURRENT_PROJECT_VERSION="${APP_BUILD_NUMBER}" \
+            ADMOB_IOS_APP_ID="${ADMOB_IOS_APP_ID}" \
+            ADMOB_IOS_BANNER_UNIT_ID="${ADMOB_IOS_BANNER_UNIT_ID}" \
             DEVELOPMENT_TEAM="${APPLE_TEAM_ID}" \
             CODE_SIGN_STYLE=Automatic
+
+      - name: Verify archived candidate
+        run: |
+          set -euo pipefail
+          ARCHIVE_PATH="build/appstore/AudioRecorder.xcarchive"
+          APP_BUNDLE="${ARCHIVE_PATH}/Products/Applications/AudioRecorder.app"
+          APP_PLIST="${APP_BUNDLE}/Info.plist"
+          test -f "${APP_PLIST}"
+          test -f "${APP_BUNDLE}/PrivacyInfo.xcprivacy"
+          test -f "${APP_BUNDLE}/Assets.car"
+          test -f "${APP_BUNDLE}/embedded.mobileprovision"
+          find "${ARCHIVE_PATH}/dSYMs" -name '*.dSYM' -type d -print -quit | grep -q .
+          ARCHIVED_BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "${APP_PLIST}")"
+          ARCHIVED_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "${APP_PLIST}")"
+          ARCHIVED_BUILD="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "${APP_PLIST}")"
+          ARCHIVED_APP_ID="$(/usr/libexec/PlistBuddy -c 'Print :GADApplicationIdentifier' "${APP_PLIST}")"
+          ARCHIVED_BANNER_ID="$(/usr/libexec/PlistBuddy -c 'Print :ADMOBBannerUnitID' "${APP_PLIST}")"
+          if [[ "${ARCHIVED_BUNDLE_ID}" != "com.dmkr.audio.B2X6D3A9J9" ]] || \
+             [[ "${ARCHIVED_VERSION}" != "${APP_VERSION}" ]] || \
+             [[ "${ARCHIVED_BUILD}" != "${APP_BUILD_NUMBER}" ]]; then
+            echo "Archived identity, version, or build number is not the expected candidate"
+            exit 1
+          fi
+          if [[ "${ARCHIVED_APP_ID}" != "${ADMOB_IOS_APP_ID}" ]] || \
+             [[ "${ARCHIVED_BANNER_ID}" != "${ADMOB_IOS_BANNER_UNIT_ID}" ]]; then
+            echo "Archived app does not contain the expected production AdMob identifiers"
+            exit 1
+          fi
+          for LOCALE in ca de en es fr it pt; do
+            test -d "${APP_BUNDLE}/${LOCALE}.lproj"
+          done
+          codesign --verify --deep --strict --verbose=2 "${APP_BUNDLE}"
+          /usr/libexec/PlistBuddy -c 'Print :UIDeviceFamily' "${APP_PLIST}"
+
+      - name: Retain signed archive and dSYM
+        uses: actions/upload-artifact@v4
+        with:
+          name: AudioRecorder-appstore-archive-build-${{ inputs.build_number }}
+          path: build/appstore/AudioRecorder.xcarchive
+          retention-days: 7
 
       - name: Export IPA
         run: |
@@ -67,7 +170,7 @@ jobs:
           <plist version="1.0">
           <dict>
             <key>method</key>
-            <string>app-store</string>
+            <string>app-store-connect</string>
             <key>signingStyle</key>
             <string>automatic</string>
             <key>teamID</key>
@@ -91,7 +194,20 @@ jobs:
             -authenticationKeyIssuerID "${ASC_ISSUER_ID}"
           ls -lh build/appstore/export
 
+      - name: Validate exported IPA with App Store Connect
+        if: inputs.validate_with_app_store
+        run: |
+          set -euo pipefail
+          IPA_PATH="$(find build/appstore/export -name '*.ipa' -type f | head -n 1)"
+          test -n "${IPA_PATH}"
+          xcrun altool --validate-app \
+            --type ios \
+            --file "${IPA_PATH}" \
+            --apiKey "${ASC_KEY_ID}" \
+            --apiIssuer "${ASC_ISSUER_ID}"
+
       - name: Upload to App Store Connect
+        if: inputs.upload_to_app_store
         run: |
           set -euo pipefail
           IPA_PATH="$(find build/appstore/export -name '*.ipa' -type f | head -n 1)"
@@ -108,6 +224,6 @@ jobs:
       - name: Upload exported IPA artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AudioRecorder-appstore-ipa
+          name: AudioRecorder-appstore-ipa-build-${{ inputs.build_number }}
           path: build/appstore/export/*.ipa
           retention-days: 7
