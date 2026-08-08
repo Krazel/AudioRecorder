@@ -61,6 +61,7 @@ Este documento distingue hechos observados de decisiones del propietario. Un hec
 - App Store Connect se comprobó en vivo: app `6772278149`, bundle `com.dmkr.audio.B2X6D3A9J9`, cero builds, grupo interno `Testers` con un tester y un único usuario elegible. El build `1` está libre.
 - El run 31275686032 validó secrets, toolchain, configuración test y dependencias, pero Xcode recibió HTTP 401 al consultar equipos y no obtuvo perfil App Store. La clave actual sí autentica contra la API pública y lee el Bundle ID; el bloqueo queda acotado a firma/provisioning automático.
 - No se ejecutó validación Apple del IPA, upload ni distribución.
+- La API lista un certificado IOS_DEVELOPMENT válido y un perfil IOS_APP_STORE caducado de otra app; no hay certificado/perfil de distribución reutilizable para VoiceRecorder.
 
 ## Decisiones vigentes
 
