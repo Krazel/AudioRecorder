@@ -8,7 +8,7 @@
 - Repositorio en `main`, `HEAD` `35a7afadf6c0a53803f44aa1b5d9ff7b918a91c4`, sin diferencia de commits indicada frente a `origin/main`.
 - `origin` apunta a `https://github.com/Krazel/AudioRecorder.git`.
 - El árbol de trabajo contiene cambios locales sin commit que deben preservarse. Incluyen suscripciones, selector y textos de siete idiomas, enlaces legales, política de privacidad, manifiesto de tienda, procesamiento de audio fuera del actor de interfaz, manifiesto de privacidad, UMP/AdMob y salvaguardas de CI.
-- `artifact/` contiene una IPA construida desde el commit base y no valida los cambios locales actuales.
+- `artifact/` conserva binarios históricos sin seguimiento y no forma parte del candidato. La build GitHub Actions `31271758443` valida el commit `db0d870` de la rama `agent/prepare-ios-test-build`.
 - Android existe históricamente, pero su estado y sus diffs de trabajo e índice están vacíos. Permanece fuera de alcance.
 
 ## Estado iOS verificado
@@ -42,8 +42,10 @@
 - `Info.plist`, `PrivacyInfo.xcprivacy` y el JSON de tienda parsean correctamente; los siete archivos de traducción contienen exactamente las mismas 126 claves.
 - Los 50 identificadores SKAdNetwork son únicos y coinciden en orden con la lista oficial revisada; las versiones SPM están fijadas exactamente.
 - `git diff --check` no detecta errores.
+- La build macOS unsigned `31271758443` generó el proyecto, resolvió GMA 12.14.0/UMP 3.1.0, compiló Swift, empaquetó y subió el artefacto privado; la publicación de release quedó omitida.
+- La IPA final mide 6.600.734 bytes y tiene SHA-256 `EF4FBB659AC69EF99904BF88E19DF7143012E30FD74FDDB23446B79931C14C11`. Contiene GoogleMobileAds, UserMessagingPlatform, `PrivacyInfo.xcprivacy`, assets y las siete localizaciones.
 - Android se revalidó sin cambios.
-- Limitación: este ordenador Windows no dispone de Swift, Xcode ni XcodeGen; no se ha compilado el árbol local actual.
+- Este Windows no dispone de toolchain Apple, pero el mismo commit ya compila en el runner macOS. Permanecen pendientes archive firmado, privacy report agregado y pruebas en dispositivo.
 
 ## Pruebas pendientes
 
@@ -69,7 +71,7 @@
 - App Store Connect requiere comprobación humana de los seis productos elegidos; los productos 50/100/300 deben quedar fuera de venta y fuera de la versión 1.0.
 - Quedan pendientes privacidad, edad, categorías, derechos de contenido, acuerdos, fiscalidad, banco, contacto de revisión y metadatos localizados en App Store Connect.
 - Las notas de revisión deben describir fielmente el mecanismo de códigos manuales ocultos.
-- Deben decidirse y verificarse cumplimiento de exportación y familia de dispositivos; si el archive incluye iPad, también harán falta pruebas y material iPad.
+- Deben decidirse y verificarse cumplimiento de exportación y familia de dispositivos. La build superada mantiene un aviso porque solo declara orientación vertical mientras el destino puede incluir iPad; decidir iPhone-only, universal o pantalla completa antes del archive firmado.
 - Los cambios siguen solo en el árbol local. Un workflow de GitHub compilaría `origin/main`, no este candidato, hasta que exista autorización posterior para commit/push o se transfiera íntegramente el árbol a un Mac.
 - Cualquier publicación, subida o envío requiere aprobación expresa independiente.
 

@@ -16,7 +16,7 @@ Este documento distingue hechos observados de decisiones del propietario. Un hec
 ### F-002 — Estado del árbol — 2026-08-08
 
 - Hay cambios iOS, documentación y CI locales sin commit que deben preservarse.
-- También hay archivos sin seguimiento, entre ellos `artifact/`, `docs/`, el procesador del modo por sonido y el manifiesto de privacidad.
+- `artifact/` permanece sin seguimiento y se excluyó expresamente. La política, el procesador por sonido y el manifiesto de privacidad ya forman parte del commit candidato.
 - Android no presenta cambios en el árbol ni en el índice.
 
 ### F-003 — Línea base iOS — 2026-08-08
@@ -30,7 +30,7 @@ Este documento distingue hechos observados de decisiones del propietario. Un hec
 ### F-004 — Validación disponible — 2026-08-08
 
 - Han pasado las comprobaciones locales de manifiesto, localizaciones, capturas, plist, enlaces, estructura de concurrencia y puerta estática UMP/AdMob. Las siete tablas contienen las mismas 126 claves.
-- No existe toolchain Apple en este equipo Windows, por lo que la compilación actual y las pruebas en dispositivo siguen pendientes.
+- No existe toolchain Apple en este equipo Windows. El commit `db0d870` sí compiló correctamente en macOS mediante GitHub Actions; las pruebas en dispositivo y el archive firmado siguen pendientes.
 
 ### F-005 — Preparación UMP/AdMob — 2026-08-08
 
@@ -46,6 +46,14 @@ Este documento distingue hechos observados de decisiones del propietario. Un hec
 - El propietario tuvo que crear una cuenta nueva de AdMob y Google mantiene pendiente su verificación.
 - Mientras dure la verificación no están disponibles los dos IDs reales ni la configuración/publicación definitiva de mensajes UMP/CMP.
 - No se crearon recursos externos ni se inventaron identificadores.
+
+### F-007 — Build macOS unsigned verificada — 2026-08-08
+
+- Rama: `agent/prepare-ios-test-build`; commits `1c79d7d` y `db0d870`; draft PR `#1`.
+- GitHub Actions run `31271758443` completó generación, compilación, empaquetado y artefacto con publicación omitida.
+- IPA: 6.600.734 bytes; SHA-256 `EF4FBB659AC69EF99904BF88E19DF7143012E30FD74FDDB23446B79931C14C11`.
+- Se verificaron ambos frameworks Google, manifiesto de privacidad, assets y siete idiomas.
+- Los avisos de `allowBluetooth` y destino ambiguo quedaron corregidos. Permanece el aviso de orientaciones, ligado a la decisión pendiente sobre iPhone/iPad.
 
 ## Decisiones vigentes
 
