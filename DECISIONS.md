@@ -120,3 +120,13 @@ UMP y anuncios sin IDFA no implican solicitar seguimiento. No se añade ATT, `NS
 ### D-014 — Dependencias publicitarias reproducibles — 2026-08-08
 
 Google Mobile Ads queda fijado en 12.14.0 y UMP en 3.1.0 para la candidata actual. No se adopta una versión mayor sin generar el proyecto, compilar y ejecutar regresión en macOS/dispositivo. Los 50 SKAdNetwork IDs oficiales pueden mantenerse localmente sin activar ATT.
+
+### F-009 — Recursos de distribución manual — 2026-08-09
+
+- Apple creó el certificado `DISTRIBUTION` `2K3G3RTCS5` y el perfil `IOS_APP_STORE` `2J3LC3G5U8`/UUID `e8c5f848-9776-484a-a955-ee1196048faf` específicos de VoiceRecorder. El certificado y el perfil vencen en 2027-08-08.
+- El perfil corresponde al equipo, bundle y certificado esperados, no contiene dispositivos y declara `get-task-allow=false`.
+- El commit `66d3465` sustituyó el aprovisionamiento automático fallido por firma manual verificada. Los tres secretos de identidad todavía no se han transferido a GitHub y no se ha ejecutado ni subido una build nueva.
+
+### D-015 — Firma de distribución correcta — 2026-08-09
+
+El propietario autorizó crear todos los recursos Apple necesarios para firmar VoiceRecorder correctamente. Se usa un certificado Apple Distribution moderno y un perfil App Store exclusivo de la app; no se reutilizan perfiles caducados, no se revocan recursos previos y la subida a TestFlight permanece separada de la preparación y verificación de la build.
