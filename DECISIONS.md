@@ -193,3 +193,33 @@ El propietario decide probar en TestFlight interno una variante del icono 3 con 
 - El run `31288585155` subio iOS 1.0 (4) como `TestFlight Internal Only` con anuncios demo.
 - Apple la proceso como `VALID`, `IN_BETA_TESTING` e `INTERNAL_ONLY`; esta disponible para el grupo privado `Testers`.
 - No se envio a revision ni se publico en App Store.
+
+### D-023 - Siete niveles de apoyo para iOS 1.0 - 2026-08-09 (sustituye D-006)
+
+El propietario incorpora un séptimo nivel mensual de 49,99 EUR. La escala vigente es 0,99 / 3 / 5 / 10 / 15 / 30 / 49,99. Todos los niveles conceden exactamente el mismo beneficio, retirar anuncios mientras el derecho esté activo, y se configuran en el mismo nivel de grupo en App Store Connect. La app no presenta los importes altos como funciones superiores.
+
+### F-016 - Limpieza y alta definitiva de suscripciones - 2026-08-09
+
+- Por autorización expresa del propietario se eliminaron de App Store Connect los productos heredados `com.dmkr.audio.support.monthly.4999`, `.9999` y `.29999`. Apple no permite restaurarlos ni reutilizar esos identificadores.
+- Se creó `com.dmkr.audio.support.monthly.50`, referencia interna `Audio K Support Monthly 50 v2`, recurso Apple `6799674367`, duración mensual, precio base 49,99 EUR y disponibilidad mundial.
+- Los siete productos vigentes están en nivel 1 y sus 49 localizaciones remotas coinciden con el manifiesto.
+
+### F-017 - Preparación externa previa a la candidata pública - 2026-08-09
+
+- Las páginas de producto, soporte y privacidad están públicas. Soporte muestra `coderappskrazel@gmail.com`; `https://krazel.github.io/app-ads.txt` responde con la línea real del publicador de AdMob.
+- App Store Connect tiene precio gratuito, 175 territorios, clasificación 4+, publicación manual, contratos gratuito/pago activos, banco activo y fiscalidad estadounidense activa.
+- AdMob conserva los IDs reales correctos, pero la app aún no puede enlazarse con App Store hasta que exista ficha pública. El mensaje europeo permanece en borrador y no se ha publicado.
+- Permanecen sin resolver las declaraciones legales de derechos de contenido, DSA rechazado y DAC7, además del teléfono de revisión y una captura real actual de las siete suscripciones.
+
+### D-024 - Puertas finales de publicación - 2026-08-09
+
+La build pública siguiente será 1.0 (5), con IDs reales de AdMob. Puede compilarse y validarse sin upload para comprobar el archive. Publicar el mensaje UMP, subir la build, asociar build/suscripciones, responder declaraciones legales o pulsar `Añadir a revisión`/`Enviar a revisión` requieren autorización contemporánea del propietario. La publicación final de App Store permanece manual incluso después de una eventual aprobación de Apple.
+
+### F-018 - Limpieza de revisión y cumplimiento externo - 2026-08-09
+
+- Por decisión del propietario, las siete suscripciones no conservan capturas privadas ni notas opcionales de revisión. Se eliminaron mediante la API oficial las cinco capturas antiguas que aún existían; las otras dos ya estaban vacías. No se creó ni subió ninguna captura simulada.
+- App Store Connect permite `Añadir a revisión` para la suscripción de 49,99 EUR sin captura privada. Las capturas públicas de la ficha, la descripción, palabras clave y URLs de soporte no forman parte de esta limpieza.
+- Derechos de contenido declara que la app accede a contenido de terceros y dispone de los derechos necesarios. DAC7 declara que ninguna app ofrece servicios personales y figura activo.
+- DSA está seleccionado como comerciante. Apple exige documentación identificativa para verificar la información pública de contacto; no se inventó ni cargó ningún documento.
+- El mensaje de Reglamentos europeos de AdMob está publicado para Voice Recorder en inglés y los otros seis idiomas. La app conserva UMP y el acceso de revocación/opciones de privacidad.
+- La versión 1.0 está configurada para publicación manual después de la aprobación de Apple.

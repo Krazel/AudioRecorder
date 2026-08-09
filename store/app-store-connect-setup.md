@@ -48,44 +48,34 @@ The owner must also create, associate, translate, and publish the applicable mes
 
 ## Subscription model for version 1.0
 
-All six products are optional monthly support levels. They provide the **same service**: ads are removed while the selected subscription remains active. The amount changes only the voluntary level of support.
+All seven products are optional monthly support levels. They provide the **same service**: ads are removed while the selected subscription remains active. The amount changes only the voluntary level of support.
 
-Because the service is identical, configure all six products at the **same subscription level** within the group. Do not describe higher prices as unlocking additional features.
+Because the service is identical, configure all seven products at the **same subscription level** within the group. Do not describe higher prices as unlocking additional features.
 
 | Product ID | Recorded ASC ID | Reference name | Duration | Target base price | Spanish display name | English display name |
 | --- | --- | --- | --- | ---: | --- | --- |
-| `com.dmkr.audio.support.monthly.099` | `6777118434` | `Audio K Support Monthly 0.99` | 1 month | 0.99 | Apoyo Básico mensual | Basic Support Monthly |
-| `com.dmkr.audio.support.monthly.299` | `6777118297` | `Audio K Support Monthly 3` | 1 month | 3.00 | Apoyo Amigo mensual | Friend Support Monthly |
-| `com.dmkr.audio.support.monthly.499` | `6777118235` | `Audio K Support Monthly 5` | 1 month | 5.00 | Apoyo Especial mensual | Special Support Monthly |
-| `com.dmkr.audio.support.monthly.999` | `6777163959` | `Audio K Support Monthly 10` | 1 month | 10.00 | Apoyo Generoso mensual | Generous Support Monthly |
-| `com.dmkr.audio.support.monthly.1499` | `6777165706` | `Audio K Support Monthly 15` | 1 month | 15.00 | Gran Apoyo mensual | Great Support Monthly |
-| `com.dmkr.audio.support.monthly.2999` | `6777165727` | `Audio K Support Monthly 30` | 1 month | 30.00 | Patrocinador mensual | Sponsor Support Monthly |
+| `com.dmkr.audio.support.monthly.099` | `6777118434` | `Audio K Support Monthly 0.99` | 1 month | 0.99 | Sin anuncios | No ads |
+| `com.dmkr.audio.support.monthly.299` | `6777118297` | `Audio K Support Monthly 3` | 1 month | 3.00 | Sin anuncios | No ads |
+| `com.dmkr.audio.support.monthly.499` | `6777118235` | `Audio K Support Monthly 5` | 1 month | 5.00 | Sin anuncios | No ads |
+| `com.dmkr.audio.support.monthly.999` | `6777163959` | `Audio K Support Monthly 10` | 1 month | 10.00 | Sin anuncios | No ads |
+| `com.dmkr.audio.support.monthly.1499` | `6777165706` | `Audio K Support Monthly 15` | 1 month | 15.00 | Sin anuncios | No ads |
+| `com.dmkr.audio.support.monthly.2999` | `6777165727` | `Audio K Support Monthly 30` | 1 month | 30.00 | Sin anuncios | No ads |
+| `com.dmkr.audio.support.monthly.50` | `6799674367` | `Audio K Support Monthly 50 v2` | 1 month | 49.99 | Sin anuncios | No ads |
 
 The manifest contains subscription metadata for `es-ES`, `en-US`, `fr-FR`, `de-DE`, `it`, `pt-PT`, and `ca`. Every localized description states that the contribution is voluntary and removes ads only while active.
 
-### Products not included in version 1.0
-
-These previously created products are intentionally absent from the local manifest and must not be attached to the 1.0 submission:
-
-- `com.dmkr.audio.support.monthly.4999`
-- `com.dmkr.audio.support.monthly.9999`
-- `com.dmkr.audio.support.monthly.29999`
-
-Do not delete product identifiers merely to clean the account: deletion can make identifiers unavailable for reuse. Verify in App Store Connect that these products are not cleared for sale and are not added to the review submission.
-
 ## Subscription checklist
 
-- [ ] Confirm that the group and all six intended products exist with the recorded identifiers.
-- [ ] Put all six products at the same subscription level because their service is equivalent.
+- [ ] Confirm that the group and all seven intended products exist with the recorded identifiers.
+- [ ] Put all seven products at the same subscription level because their service is equivalent.
 - [ ] Confirm one-month duration and the intended local price schedule for each product.
-- [ ] Confirm availability and cleared-for-sale status only for the six intended products.
+- [ ] Confirm availability and cleared-for-sale status for the seven intended products.
 - [ ] Confirm all seven localizations against `store-manifest.json`.
-- [ ] Upload and inspect a current review screenshot for every product.
-- [ ] Confirm the review note accurately says that the selected monthly support level removes ads while active.
-- [ ] Confirm the app lists only these six identifiers and handles purchase, restore, renewal, expiration, revocation, and switching between equal-service products.
+- [x] Keep the optional review screenshot empty for every product unless App Review later requests one.
+- [x] Keep optional subscription review notes empty by owner decision.
+- [ ] Confirm the app lists only these seven identifiers and handles purchase, restore, renewal, expiration, revocation, and switching between equal-service products.
 - [ ] Test every product in StoreKit testing or the App Store sandbox on a real device.
 - [ ] Attach the intended subscriptions to version 1.0. Apple's first subscription must be submitted with a new app version.
-- [ ] Ensure the 50, 100, and 300 products are not for sale and are not attached to review.
 
 ## Required subscription disclosure in the app
 
@@ -116,10 +106,10 @@ Use Apple's displayed localized product price rather than hard-coding a currency
 - [ ] Generate or inspect the archived app's privacy report/manifest and reconcile it with the App Store privacy answers.
 - [ ] Review the current Google Mobile Ads SDK disclosure. Depending on configuration, it may process IP/general location, device identifiers, advertising data, product interactions, crash data, performance data, and diagnostics.
 - [x] Integrate UMP locally so no ad request occurs before `canRequestAds`, with privacy options exposed when required.
-- [ ] In AdMob, create/associate/translate/publish the applicable regional messages, then test the real downloaded CMP.
+- [x] In AdMob, create, associate, translate, and publish the European regulations message for the seven supported languages.
 - [ ] Ensure tracking/IDFA answers and any App Tracking Transparency prompt match actual SDK behavior.
 - [ ] Confirm the production AdMob app and ad-unit identifiers; never use the internal demo build for external TestFlight or a public submission.
-- [ ] Complete age rating, content rights, advertising identifier questions, support contact, and review contact.
+- [x] Complete age rating, content rights, support contact, and review contact. ATT/IDFA remains intentionally disabled.
 - [ ] In App Review notes, describe every mechanism that removes ads, including any retained manual code mechanism; do not present hidden functionality misleadingly.
 - [ ] Confirm Paid Apps Agreement, banking, and tax status before attempting to sell subscriptions.
 
@@ -139,7 +129,7 @@ Official references:
 - [ ] Paid agreement, banking, and tax confirmed active.
 - [ ] Final signed build uploaded and selected for version 1.0.
 - [ ] Required screenshots and localized metadata reviewed in App Store Connect.
-- [ ] Six intended subscriptions attached to the version and added to review.
+- [ ] Seven intended subscriptions attached to the version and added to review.
 - [ ] App Review contact information, demo instructions if needed, and accurate review notes completed.
 - [ ] Final device smoke test completed using the exact release build.
 - [ ] Owner gives express approval before pressing **Submit for Review**.
@@ -155,7 +145,7 @@ Official references:
 - [ ] Call, Siri, alarm, route change, Bluetooth connect/disconnect, and media-services recovery preserve completed audio and resume or stop truthfully.
 - [ ] Low-storage or write-failure behavior stops without claiming to keep recording and preserves any valid completed audio.
 - [ ] Playback, recording, sharing, and deletion are checked with VoiceOver and large Dynamic Type for blocking defects.
-- [ ] Sandbox StoreKit loads exactly six tiers, shows localized App Store prices, purchases one tier, restores it, and removes ads only while entitlement is active.
+- [ ] Sandbox StoreKit loads exactly seven tiers, shows localized App Store prices, purchases one tier, restores it, and removes ads only while entitlement is active.
 - [ ] Sandbox upgrade/downgrade/cancel/expire/revoke flows keep entitlement state correct and do not disable a valid retained manual unlock.
 - [ ] Privacy Policy, Terms of Use, subscription management, and support email links open on a real device.
 - [ ] Battery use and thermal behavior are observed during a 30-minute continuous recording and a 30-minute sound-activated recording.
@@ -166,7 +156,7 @@ Official references:
 - [ ] Configure, translate, associate, and publish the applicable AdMob privacy messages; test consent withdrawal and reconcile the final non-ATT configuration with App Privacy answers.
 - [ ] Run the unsigned macOS CI build for 1.0 with `publish_release=false`; inspect the generated app bundle and IPA before any publication.
 - [ ] Run the signed archive/export workflow with `upload_to_app_store=false`; validate the archive and aggregated privacy report before any upload.
-- [ ] Verify the six intended subscriptions in App Store Connect; keep the 50/100/300 products unavailable and unattached to version 1.0.
+- [ ] Verify the seven intended subscriptions in App Store Connect; the deleted legacy 50/100/300 identifiers must remain absent.
 - [ ] Confirm agreements, tax, banking, age rating, categories, App Privacy, review contact, localized metadata, and public privacy URL while signed out.
 - [ ] Describe the retained hidden manual unlock mechanism accurately in App Review notes.
 - [ ] Obtain separate express owner approval before uploading a build, publishing an IPA release, attaching items to review, or submitting for review.

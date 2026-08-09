@@ -15,7 +15,8 @@ enum AppMonetizationConfig {
         "com.dmkr.audio.support.monthly.499",
         "com.dmkr.audio.support.monthly.999",
         "com.dmkr.audio.support.monthly.1499",
-        "com.dmkr.audio.support.monthly.2999"
+        "com.dmkr.audio.support.monthly.2999",
+        "com.dmkr.audio.support.monthly.50"
     ]
     static let privacyPolicyURL = URL(string: "https://krazel.github.io/audio-recorder/privacy/")!
     static let termsOfUseURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!

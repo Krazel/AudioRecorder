@@ -2,7 +2,24 @@
 
 Última revalidación: 2026-08-09.
 
-> Estado vigente: iOS 1.0 (build 1) está activa en TestFlight interno (`IN_BETA_TESTING`) y vinculada al grupo `Testers`. Sigue siendo `INTERNAL_ONLY`; no se envió a App Review ni a distribución externa. Las secciones cronológicas anteriores son históricas y quedan sustituidas cuando contradigan la actualización final del 2026-08-09.
+> Estado vigente: iOS 1.0 build 4 está activa en TestFlight interno con anuncios demo. La candidata pública siguiente será la build 5, con IDs reales de AdMob y siete niveles mensuales de apoyo. No se ha subido esa candidata, no se ha añadido ninguna build a la versión 1.0 y no se ha enviado nada a App Review. Las secciones cronológicas anteriores son históricas cuando contradigan esta actualización.
+
+## Actualización de cierre para candidata pública - 2026-08-09
+
+- El repositorio sigue en `agent/prepare-ios-test-build`; Android no tiene diferencias y `artifact/` permanece sin seguimiento e intacto.
+- El código y el manifiesto iOS contienen exactamente siete productos mensuales: 0,99 / 3 / 5 / 10 / 15 / 30 / 49,99. Todos muestran `Sin anuncios` y `Apoyo mensual` en español, con equivalentes en `ca/de/en/es/fr/it/pt`, y conceden el mismo derecho mientras están activos.
+- App Store Connect contiene exactamente esos siete productos en el grupo `22136463`. El nuevo nivel de 49,99 usa `com.dmkr.audio.support.monthly.50` y recurso Apple `6799674367`. Los productos heredados 50/100/300 anteriores se eliminaron por autorización expresa del propietario y sus identificadores no pueden reutilizarse.
+- Los siete productos están configurados en el mismo nivel 1, como exige su servicio equivalente. Las 49 localizaciones remotas coinciden con `store/store-manifest.json`; el nuevo nivel está disponible en los 175 territorios y su precio base en España es 49,99 EUR.
+- La ficha 1.0 conserva publicación manual, precio gratuito y disponibilidad mundial. Marketing y soporte apuntan a `https://krazel.github.io/audio-recorder/` y `/support/`; la política apunta a `/privacy/`.
+- La web pública ya muestra el correo `coderappskrazel@gmail.com`. El `app-ads.txt` raíz responde 200 con el publicador real `pub-3425091654264901`.
+- App Store Connect tiene clasificación 4+, acuerdos gratuito y de pago activos, banco activo y formularios fiscales activos. Mac con Apple Silicon y Vision Pro están deshabilitados; la app sigue siendo solo iPhone.
+- Los datos obligatorios de contacto de App Review están guardados de forma privada en App Store Connect y no se reproducen en el repositorio. El contacto público se limita al alias `coderappskrazel@gmail.com`.
+- Las siete suscripciones están sin notas opcionales y sin capturas privadas de revisión. La API oficial eliminó las cinco capturas antiguas que aún existían; las otras dos ya estaban vacías. App Store Connect mantiene habilitado `Añadir a revisión` sin esas capturas.
+- AdMob conserva los IDs reales `ca-app-pub-3425091654264901~2340753104` y `ca-app-pub-3425091654264901/5497133550`. La app aún figura `Debe revisarse` porque todavía no puede enlazarse a una ficha pública. El mensaje europeo UMP está publicado, asociado a Voice Recorder y cubre inglés más los otros seis idiomas.
+- Derechos de contenido está guardado como contenido de terceros con los derechos necesarios. DAC7 está activo con la respuesta de que ninguna app ofrece servicios personales. DSA está declarado como comerciante, pero Apple exige cargar documentación identificativa para verificar la dirección y continúa pendiente de esa acción humana.
+- Validación local actual: manifiesto JSON, plist XML, 50 SKAdNetwork IDs, siete IDs coincidentes entre Swift/manifiesto, 127 claves idénticas en las siete localizaciones, scripts Node y `git diff --check` correctos. La puerta UMP/AdMob y las correcciones estructurales de segundo plano/rendimiento permanecen presentes. La prueba sostenida en iPhone sigue pendiente.
+
+Próximo paso técnico: completar la verificación documental DSA y, una vez versionados los cambios iOS con autorización expresa, ejecutar build 5 con `ad_configuration=production`, validación de Apple activada y upload desactivado. La versión 1.0 está configurada para publicación manual; asociar una build, añadir suscripciones o enviar a revisión sigue requiriendo autorización expresa.
 
 ## Resumen operativo
 
@@ -139,6 +156,6 @@ Proximo paso: instalar y probar la build 2 desde TestFlight en un iPhone real. A
 - El run [31288585155](https://github.com/Krazel/AudioRecorder/actions/runs/31288585155) compilo, firmo, verifico, valido con Apple y subio iOS `1.0` build `4` con anuncios demo y exportacion `TestFlight Internal Only`.
 - App Store Connect confirma `processingState=VALID`, `internalBuildState=IN_BETA_TESTING`, `externalBuildState=NOT_APPLICABLE`, `buildAudienceType=INTERNAL_ONLY` y `usesNonExemptEncryption=false`.
 - La build 4 esta disponible automaticamente para el grupo interno `Testers`. No hubo TestFlight externo, App Review ni publicacion publica.
-- La inspeccion de AdMob en el navegador integrado sigue bloqueada por un fallo del controlador local; se abrio una pesta�a nueva, pero no se modifico ningun recurso de AdMob.
+- La inspeccion de AdMob en el navegador integrado sigue bloqueada por un fallo del controlador local; se abrio una pestaña nueva, pero no se modifico ningun recurso de AdMob.
 
 Proximo paso: instalar la build 4 desde TestFlight y comparar el icono blanco con el negro conservado. Antes de una candidata publica con AdMob real, verificar que el mensaje europeo de privacidad figure como publicado.
