@@ -223,3 +223,12 @@ La build pública siguiente será 1.0 (5), con IDs reales de AdMob. Puede compil
 - DSA está seleccionado como comerciante. Apple exige documentación identificativa para verificar la información pública de contacto; no se inventó ni cargó ningún documento.
 - El mensaje de Reglamentos europeos de AdMob está publicado para Voice Recorder en inglés y los otros seis idiomas. La app conserva UMP y el acceso de revocación/opciones de privacidad.
 - La versión 1.0 está configurada para publicación manual después de la aprobación de Apple.
+
+### F-019 - Build pública 1.0 (5) subida y validada - 2026-08-09
+
+- Con autorización expresa del propietario se creó y publicó el commit `213f86b` en `agent/prepare-ios-test-build` y se ejecutó el run `31322723025` con `ad_configuration=production`, validación Apple y upload activados.
+- El workflow superó firma manual, archive, comprobación de identidad 1.0 (5), IDs AdMob reales/no demo, siete idiomas, iPhone-only, exportación y validación. La subida terminó correctamente y no ejecutó App Review.
+- App Store Connect muestra el recurso `2dfc3587-512f-41ff-ae92-998d78e53a9a` como binario validado, `APP_STORE_ELIGIBLE` y `Lista para enviar`; cifrado no exento `No`, iOS mínimo 16.0 y familia iPhone.
+- La build 5 está visible para el grupo interno `Testers`, pero no está seleccionada en la versión 1.0 ni incluida en una revisión. La build 4 demo permanece separada como beta interna.
+- La publicación final sigue siendo manual. Completar DSA, seleccionar build/suscripciones y pulsar `Añadir a revisión` o `Enviar a revisión` continúan siendo pasos separados.
+- Artefactos privados: `AudioRecorder-production-ipa-build-5` (`sha256:61dda1c3a4788f6d6c5ccacd9c90aa0e8900e4a7986e93c3ca62bbf2076e44bb`) y `AudioRecorder-production-archive-build-5` (`sha256:138859a63c6353ac2753814bbcd06e4c5cf5a765e836970cbfd96d3a81a9b870`), con caducidad 2026-08-16.

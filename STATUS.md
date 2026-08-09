@@ -2,7 +2,7 @@
 
 Última revalidación: 2026-08-09.
 
-> Estado vigente: iOS 1.0 build 4 está activa en TestFlight interno con anuncios demo. La candidata pública siguiente será la build 5, con IDs reales de AdMob y siete niveles mensuales de apoyo. No se ha subido esa candidata, no se ha añadido ninguna build a la versión 1.0 y no se ha enviado nada a App Review. Las secciones cronológicas anteriores son históricas cuando contradigan esta actualización.
+> Estado vigente: iOS 1.0 build 5, con IDs reales de AdMob y siete niveles mensuales de apoyo, está subida y validada por Apple como `APP_STORE_ELIGIBLE` / `Lista para enviar`. Sigue sin seleccionarse en la versión 1.0 y no se ha añadido ni enviado nada a App Review. La publicación final permanece manual. La build 4 con anuncios demo continúa disponible en TestFlight interno. Las secciones cronológicas anteriores son históricas cuando contradigan esta actualización.
 
 ## Actualización de cierre para candidata pública - 2026-08-09
 
@@ -19,7 +19,7 @@
 - Derechos de contenido está guardado como contenido de terceros con los derechos necesarios. DAC7 está activo con la respuesta de que ninguna app ofrece servicios personales. DSA está declarado como comerciante, pero Apple exige cargar documentación identificativa para verificar la dirección y continúa pendiente de esa acción humana.
 - Validación local actual: manifiesto JSON, plist XML, 50 SKAdNetwork IDs, siete IDs coincidentes entre Swift/manifiesto, 127 claves idénticas en las siete localizaciones, scripts Node y `git diff --check` correctos. La puerta UMP/AdMob y las correcciones estructurales de segundo plano/rendimiento permanecen presentes. La prueba sostenida en iPhone sigue pendiente.
 
-Próximo paso técnico: completar la verificación documental DSA y, una vez versionados los cambios iOS con autorización expresa, ejecutar build 5 con `ad_configuration=production`, validación de Apple activada y upload desactivado. La versión 1.0 está configurada para publicación manual; asociar una build, añadir suscripciones o enviar a revisión sigue requiriendo autorización expresa.
+La candidata pública se generó desde el commit `213f86b` mediante el run `31322723025`. Pasaron firma, archive, verificación, exportación, validación de Apple y upload. Apple muestra build `2dfc3587-512f-41ff-ae92-998d78e53a9a`, versión 1.0 (5), binario validado, iPhone, iOS 16+, siete idiomas y cifrado no exento `No`. Los artefactos privados se conservan siete días. Próximo paso humano: completar la verificación documental DSA. Después, seleccionar la build 5 y las siete suscripciones para la versión 1.0 y revisar el envío; no se ha ejecutado ninguna de esas acciones.
 
 ## Resumen operativo
 
