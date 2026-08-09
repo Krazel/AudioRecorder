@@ -20,10 +20,10 @@ This file describes the intended release configuration. It deliberately does **n
 - Privacy policy source: `docs/PRIVACY.md`
 - Standalone GitHub Pages version: `docs/privacy.html`
 - Provisional privacy URL for the app and App Store Connect:
-  `https://github.com/Krazel/AudioRecorder/blob/main/docs/PRIVACY.md`
+  `https://krazel.github.io/audio-recorder/privacy/`
 - Optional GitHub Pages URL, only after Pages is enabled and the address has been tested:
   `https://krazel.github.io/AudioRecorder/privacy.html`
-- Support URL: `https://github.com/Krazel/AudioRecorder/issues`
+- Support URL: `https://krazel.github.io/audio-recorder/support/`
 - Marketing URL: `https://github.com/Krazel/AudioRecorder`
 - Apple standard EULA: `https://www.apple.com/legal/internet-services/itunes/dev/stdeula/`
 

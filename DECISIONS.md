@@ -1,6 +1,6 @@
 # VoiceRecorder / AudioRecorder — hechos y decisiones
 
-Última actualización: 2026-08-08.
+Última actualización: 2026-08-09.
 
 Este documento distingue hechos observados de decisiones del propietario. Un hecho puede cambiar al evolucionar el repositorio; una decisión permanece vigente hasta que el propietario la sustituya expresamente.
 
@@ -142,3 +142,32 @@ El propietario autorizó transferir la identidad a los secretos cifrados del env
 ### D-017 — VoiceRecorder 1.0 es iPhone-only — 2026-08-09
 
 La versión 1.0 se distribuye únicamente para iPhone y conserva orientación vertical. Esta decisión sigue la definición histórica del MVP, textos, artefactos y capturas existentes, todos exclusivos de iPhone; evita declarar soporte iPad no diseñado ni probado. Cualquier ampliación futura a iPad requerirá diseño, capturas, cuatro orientaciones para multitarea y pruebas específicas.
+### F-011 — Build 1 procesada para TestFlight interno — 2026-08-09
+
+- El run `31283035466` subió iOS 1.0 (1) con anuncios demo como `TestFlight Internal Only`; Apple la procesó con estado `VALID` y audiencia `INTERNAL_ONLY`.
+- El grupo interno `Testers` distribuye automáticamente todas las builds elegibles (`hasAccessToAllBuilds=true`) y contiene un tester. La build 1 permanece bloqueada con `internalBuildState=MISSING_EXPORT_COMPLIANCE`; no se respondió ninguna declaración legal. No se envió a App Review ni a testers externos.
+- App Store Connect confirma marketing version `1.0` y build number `1`. El campo `usesNonExemptEncryption` sigue sin declarar.
+
+### F-012 — Baseline y propuestas de icono — 2026-08-09
+
+- El asset de producción actual es un icono cósmico con átomo/órbitas y permanece sin cambios.
+- Existen cuatro previews originales y sin texto en `docs/icon-proposals/`: record-wave, mic-arcs, ribbon-dot y meter-dot. La recomendación técnica provisional es `03-ribbon-dot.png`.
+- Las páginas públicas de privacidad y soporte responden HTTP 200. El código iOS local y las siete fichas de tienda usan ya las URLs limpias; la build 1 todavía contiene el enlace histórico de privacidad de GitHub.
+
+### D-018 — Aprobación visual antes de cambiar el icono — 2026-08-09
+
+El icono de producción no se reemplaza hasta que el propietario apruebe expresamente una imagen concreta. Las propuestas son únicamente previews; tras la aprobación se preparará el asset final 1024 x 1024 y se generará una build nueva, manteniendo la versión visible 1.0 e incrementando el número de build.
+
+### F-013 — Build 1 activa en TestFlight interno — 2026-08-09
+
+- El propietario confirmó que VoiceRecorder no implementa cifrado propio/no exento. App Store Connect refleja `usesNonExemptEncryption=false`, `internalBuildState=IN_BETA_TESTING` y relación efectiva con el grupo interno `Testers`.
+- `native-ios/Resources/Info.plist` declara `ITSAppUsesNonExemptEncryption=false` para evitar repetir la pregunta en builds futuras mientras la implementación no cambie.
+- La build sigue marcada `INTERNAL_ONLY`; `externalBuildState=NOT_APPLICABLE`. No hubo App Review ni distribución externa.
+
+### D-019 — Clasificación de cifrado — 2026-08-09
+
+El propietario confirma que la app no usa cifrado propio/no exento. Se declara `usesNonExemptEncryption=false` para la build 1 y `ITSAppUsesNonExemptEncryption=false` para builds futuras. Si se añade criptografía propia o cambia el uso de cifrado, esta decisión debe reauditarse antes de distribuir.
+
+### D-020 — Icono iOS variante 3 aprobado — 2026-08-09
+
+El propietario aprueba `03-ribbon-dot.png` como icono iOS. El asset de producción se sustituye por una exportación opaca 1024 x 1024. El icono cósmico anterior se conserva byte por byte en `docs/icon-proposals/00-original-cosmic-backup.png`. Esta decisión sustituye la espera visual de D-018.

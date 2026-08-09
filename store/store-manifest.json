@@ -14,7 +14,7 @@
         "promotionalText": "Graba, organiza y comparte audio. Todas las funciones de grabacion son gratis.",
         "description": "Grabadora de Voz Pro - Audio K es una grabadora sencilla para guardar notas de voz, reuniones, ideas y audio del dia a dia.\n\nTodas las funciones principales son gratis: grabar audio, elegir calidad, separar archivos por intervalos, usar grabacion por sonido, reproducir grabaciones, marcar favoritos, renombrar archivos, eliminar grabaciones y compartirlas manualmente con otras apps.\n\nFunciones principales:\n\n- Grabacion de audio desde el microfono.\n- Segmentacion configurable: 5, 15, 30, 60 o 120 minutos.\n- Calidad muy baja, baja, media o alta.\n- Modo todo o modo por sonido.\n- Sensibilidad ajustable para grabacion por sonido.\n- Biblioteca local de grabaciones.\n- Reproduccion integrada.\n- Favoritos y seleccion multiple.\n- Renombrar, eliminar y compartir archivos.\n- Opcion de grabar al abrir la app.\n- Contacto directo para bugs o feedback.\n\nLa app guarda las grabaciones en el dispositivo y permite compartirlas manualmente mediante la hoja nativa del sistema.",
         "keywords": "grabadora,audio,voz,notas,reuniones,microfono",
-        "supportUrl": "https://github.com/Krazel/AudioRecorder/issues",
+        "supportUrl": "https://krazel.github.io/audio-recorder/support/",
         "marketingUrl": "https://github.com/Krazel/AudioRecorder",
         "whatsNew": "",
         "screenshots": {
@@ -31,7 +31,7 @@
         "promotionalText": "Record, organize, and share audio. All recording features are free.",
         "description": "Voice Recorder Pro - Audio K is a simple recorder for voice notes, meetings, ideas, and everyday audio.\n\nAll main features are free: record audio, choose quality, split files by interval, use sound-activated recording, play recordings, mark favorites, rename files, delete recordings, and share them manually with other apps.\n\nMain features:\n\n- Audio recording from the microphone.\n- Configurable split intervals: 5, 15, 30, 60, or 120 minutes.\n- Very low, low, medium, or high quality.\n- Continuous mode or sound mode.\n- Adjustable sound-mode sensitivity.\n- Local recordings library.\n- Built-in playback.\n- Favorites and multi-selection.\n- Rename, delete, and share files.\n- Option to start recording when the app opens.\n- Direct contact for bugs or feedback.\n\nThe app stores recordings on the device and lets you share them manually using the native system share sheet.",
         "keywords": "recorder,audio,voice,notes,meetings,microphone",
-        "supportUrl": "https://github.com/Krazel/AudioRecorder/issues",
+        "supportUrl": "https://krazel.github.io/audio-recorder/support/",
         "marketingUrl": "https://github.com/Krazel/AudioRecorder",
         "whatsNew": "",
         "screenshots": {
@@ -48,7 +48,7 @@
         "promotionalText": "Enregistrez, organisez et partagez votre audio. Les fonctions principales sont gratuites.",
         "description": "Enregistreur Pro - Audio K est une application simple pour enregistrer des notes vocales, reunions, idees et sons du quotidien.\n\nToutes les fonctions principales sont gratuites: enregistrer, choisir la qualite, separer les fichiers par intervalles, utiliser le mode par son, ecouter les enregistrements, ajouter des favoris, renommer, supprimer et partager manuellement avec d autres apps.\n\nFonctions principales:\n\n- Enregistrement audio depuis le micro.\n- Intervalles configurables: 5, 15, 30, 60 ou 120 minutes.\n- Qualite tres basse, basse, moyenne ou haute.\n- Mode continu ou mode par son.\n- Sensibilite reglable pour le mode par son.\n- Bibliotheque locale.\n- Lecture integree.\n- Favoris et selection multiple.\n- Renommer, supprimer et partager.\n- Option de demarrer l enregistrement a l ouverture.\n- Contact direct pour bugs ou avis.\n\nLes enregistrements restent sur l appareil et peuvent etre partages manuellement avec la feuille de partage native.",
         "keywords": "enregistreur,audio,voix,notes,reunions,micro",
-        "supportUrl": "https://github.com/Krazel/AudioRecorder/issues",
+        "supportUrl": "https://krazel.github.io/audio-recorder/support/",
         "marketingUrl": "https://github.com/Krazel/AudioRecorder",
         "whatsNew": "",
         "screenshots": {
@@ -65,7 +65,7 @@
         "promotionalText": "Audio aufnehmen, ordnen und teilen. Die Aufnahmefunktionen sind kostenlos.",
         "description": "Diktiergeraet Pro - Audio K ist ein einfacher Recorder fuer Sprachnotizen, Meetings, Ideen und Audio im Alltag.\n\nAlle wichtigen Funktionen sind kostenlos: Audio aufnehmen, Qualitaet waehlen, Dateien nach Intervallen teilen, soundaktivierte Aufnahme nutzen, Aufnahmen abspielen, Favoriten setzen, Dateien umbenennen, loeschen und manuell mit anderen Apps teilen.\n\nHauptfunktionen:\n\n- Audioaufnahme ueber das Mikrofon.\n- Konfigurierbare Intervalle: 5, 15, 30, 60 oder 120 Minuten.\n- Sehr niedrige, niedrige, mittlere oder hohe Qualitaet.\n- Daueraufnahme oder Sound-Modus.\n- Einstellbare Empfindlichkeit im Sound-Modus.\n- Lokale Aufnahmebibliothek.\n- Integrierte Wiedergabe.\n- Favoriten und Mehrfachauswahl.\n- Umbenennen, loeschen und teilen.\n- Option zum Aufnehmen beim App-Start.\n- Direkter Kontakt fuer Fehler oder Feedback.\n\nDie App speichert Aufnahmen auf dem Geraet und teilt sie manuell ueber das native Teilen-Menue.",
         "keywords": "recorder,audio,stimme,notizen,meetings,mikrofon",
-        "supportUrl": "https://github.com/Krazel/AudioRecorder/issues",
+        "supportUrl": "https://krazel.github.io/audio-recorder/support/",
         "marketingUrl": "https://github.com/Krazel/AudioRecorder",
         "whatsNew": "",
         "screenshots": {
@@ -82,7 +82,7 @@
         "promotionalText": "Registra, organizza e condividi audio. Le funzioni di registrazione sono gratuite.",
         "description": "Registratore Pro - Audio K e una app semplice per salvare note vocali, riunioni, idee e audio quotidiano.\n\nTutte le funzioni principali sono gratuite: registrare audio, scegliere la qualita, dividere file per intervalli, usare la registrazione attivata dal suono, riprodurre registrazioni, aggiungere preferiti, rinominare file, eliminare registrazioni e condividerle manualmente con altre app.\n\nFunzioni principali:\n\n- Registrazione audio dal microfono.\n- Intervalli configurabili: 5, 15, 30, 60 o 120 minuti.\n- Qualita molto bassa, bassa, media o alta.\n- Modalita continua o per suono.\n- Sensibilita regolabile.\n- Libreria locale.\n- Riproduzione integrata.\n- Preferiti e selezione multipla.\n- Rinomina, elimina e condividi.\n- Opzione per registrare all apertura.\n- Contatto diretto per bug o feedback.\n\nLa app salva le registrazioni sul dispositivo e permette di condividerle manualmente con il menu nativo.",
         "keywords": "registratore,audio,voce,note,riunioni,microfono",
-        "supportUrl": "https://github.com/Krazel/AudioRecorder/issues",
+        "supportUrl": "https://krazel.github.io/audio-recorder/support/",
         "marketingUrl": "https://github.com/Krazel/AudioRecorder",
         "whatsNew": "",
         "screenshots": {
@@ -99,7 +99,7 @@
         "promotionalText": "Grave, organize e partilhe audio. As funcoes de gravacao sao gratuitas.",
         "description": "Gravador Voz Pro - Audio K e uma app simples para guardar notas de voz, reunioes, ideias e audio do dia a dia.\n\nTodas as funcoes principais sao gratis: gravar audio, escolher qualidade, dividir ficheiros por intervalos, usar gravacao por som, reproduzir gravacoes, marcar favoritos, renomear ficheiros, apagar gravacoes e partilhar manualmente com outras apps.\n\nFuncoes principais:\n\n- Gravacao de audio pelo microfone.\n- Intervalos configuraveis: 5, 15, 30, 60 ou 120 minutos.\n- Qualidade muito baixa, baixa, media ou alta.\n- Modo continuo ou modo por som.\n- Sensibilidade ajustavel.\n- Biblioteca local.\n- Reproducao integrada.\n- Favoritos e selecao multipla.\n- Renomear, apagar e partilhar.\n- Opcao de gravar ao abrir a app.\n- Contacto direto para bugs ou feedback.\n\nA app guarda as gravacoes no dispositivo e permite partilha manual pelo menu nativo do sistema.",
         "keywords": "gravador,audio,voz,notas,reunioes,microfone",
-        "supportUrl": "https://github.com/Krazel/AudioRecorder/issues",
+        "supportUrl": "https://krazel.github.io/audio-recorder/support/",
         "marketingUrl": "https://github.com/Krazel/AudioRecorder",
         "whatsNew": "",
         "screenshots": {
@@ -116,7 +116,7 @@
         "promotionalText": "Grava, organitza i comparteix audio. Les funcions de gravacio son gratis.",
         "description": "Gravadora Pro - Audio K es una app senzilla per guardar notes de veu, reunions, idees i audio del dia a dia.\n\nTotes les funcions principals son gratis: gravar audio, triar qualitat, separar fitxers per intervals, usar gravacio per so, reproduir gravacions, marcar preferits, reanomenar fitxers, eliminar gravacions i compartir-les manualment amb altres apps.\n\nFuncions principals:\n\n- Gravacio d audio des del microfon.\n- Intervals configurables: 5, 15, 30, 60 o 120 minuts.\n- Qualitat molt baixa, baixa, mitjana o alta.\n- Mode tot o mode per so.\n- Sensibilitat ajustable.\n- Biblioteca local de gravacions.\n- Reproduccio integrada.\n- Preferits i seleccio multiple.\n- Reanomenar, eliminar i compartir.\n- Opcio de gravar en obrir l app.\n- Contacte directe per bugs o feedback.\n\nL app desa les gravacions al dispositiu i permet compartir-les manualment amb el full natiu del sistema.",
         "keywords": "gravadora,audio,veu,notes,reunions,microfon",
-        "supportUrl": "https://github.com/Krazel/AudioRecorder/issues",
+        "supportUrl": "https://krazel.github.io/audio-recorder/support/",
         "marketingUrl": "https://github.com/Krazel/AudioRecorder",
         "whatsNew": "",
         "screenshots": {
