@@ -131,3 +131,14 @@ Pr√≥ximo paso: probar la build 1 ya activa en TestFlight. Los cambios locales po
 - El nombre visible en App Store/TestFlight esta localizado por idioma o tienda; en espanol se muestra `Grabadora de Voz Pro - Audio K`. El nombre bajo el icono de la app permanece en ingles en las siete localizaciones.
 
 Proximo paso: instalar y probar la build 2 desde TestFlight en un iPhone real. AdMob real y el CMP de produccion siguen pendientes antes de cualquier candidata publica.
+
+## Build 4 con icono blanco activa en TestFlight interno - 2026-08-09
+
+- El propietario solicito probar una variante del icono con fondo blanco conservando el icono negro anterior.
+- El commit `dafe2d5` instala el icono blanco opaco de 1024 x 1024 y conserva una copia exacta del negro en `docs/icon-proposals/06-black-production-backup.png`.
+- El run [31288585155](https://github.com/Krazel/AudioRecorder/actions/runs/31288585155) compilo, firmo, verifico, valido con Apple y subio iOS `1.0` build `4` con anuncios demo y exportacion `TestFlight Internal Only`.
+- App Store Connect confirma `processingState=VALID`, `internalBuildState=IN_BETA_TESTING`, `externalBuildState=NOT_APPLICABLE`, `buildAudienceType=INTERNAL_ONLY` y `usesNonExemptEncryption=false`.
+- La build 4 esta disponible automaticamente para el grupo interno `Testers`. No hubo TestFlight externo, App Review ni publicacion publica.
+- La inspeccion de AdMob en el navegador integrado sigue bloqueada por un fallo del controlador local; se abrio una pesta§a nueva, pero no se modifico ningun recurso de AdMob.
+
+Proximo paso: instalar la build 4 desde TestFlight y comparar el icono blanco con el negro conservado. Antes de una candidata publica con AdMob real, verificar que el mensaje europeo de privacidad figure como publicado.

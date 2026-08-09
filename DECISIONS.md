@@ -182,3 +182,14 @@ El propietario aprueba `03-ribbon-dot.png` como icono iOS. El asset de producci√
 ### D-021 - Titulo localizado de la ficha - 2026-08-09
 
 Se conserva la localizacion del nombre de la ficha de App Store/TestFlight para los siete idiomas existentes. En espanol puede mostrarse `Grabadora de Voz Pro - Audio K`; esto es intencional y depende del idioma o storefront. No se altera el nombre bajo el icono de la app, que permanece en ingles en las siete localizaciones actuales.
+
+### D-022 - Prueba interna del icono blanco - 2026-08-09
+
+El propietario decide probar en TestFlight interno una variante del icono 3 con fondo blanco. El icono negro anterior se conserva byte por byte y puede restaurarse. Esta prueba visual no decide por si sola el icono de la candidata publica.
+
+### F-015 - Build 4 activa en TestFlight interno - 2026-08-09
+
+- El commit `dafe2d5` contiene la variante blanca y la copia negra.
+- El run `31288585155` subio iOS 1.0 (4) como `TestFlight Internal Only` con anuncios demo.
+- Apple la proceso como `VALID`, `IN_BETA_TESTING` e `INTERNAL_ONLY`; esta disponible para el grupo privado `Testers`.
+- No se envio a revision ni se publico en App Store.
