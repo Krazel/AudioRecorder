@@ -117,6 +117,7 @@
 "Idioma" = "Langue";
 "Idioma de la aplicacion" = "Langue de l'application";
 "Suscripcion mensual" = "Abonnement mensuel";
+"Apoyo mensual" = "Soutien mensuel";
 "al mes" = "par mois";
 "Cada opcion es una suscripcion mensual renovable. El pago se carga a tu cuenta de Apple y se renueva automaticamente cada mes, salvo que la canceles al menos 24 horas antes del final del periodo actual." = "Chaque option est un abonnement mensuel renouvelable. Le paiement est débité de votre compte Apple et se renouvelle automatiquement chaque mois, sauf résiliation au moins 24 heures avant la fin de la période en cours.";
 "Gestionar o cancelar suscripcion" = "Gérer ou annuler l'abonnement";

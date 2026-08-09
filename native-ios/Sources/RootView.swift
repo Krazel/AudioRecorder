@@ -60,9 +60,7 @@ private struct AutoStartRecorderView: View {
                     case .active:
                         await recorder.recoverActiveRecordingIfNeeded()
                         await startIfNeeded()
-                    case .background:
-                        await recorder.checkpointForBackgroundIfNeeded()
-                    case .inactive:
+                    case .background, .inactive:
                         break
                     @unknown default:
                         break

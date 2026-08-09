@@ -217,8 +217,8 @@ struct SettingsView: View {
                         } label: {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(product.displayName)
-                                    Text(L("Suscripcion mensual"))
+                                    Text(L("Sin anuncios"))
+                                    Text(L("Apoyo mensual"))
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }

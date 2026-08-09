@@ -31,9 +31,7 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
     private var library: RecordingLibrary?
     private var uploadQueue: CloudUploadQueue?
     private var shouldResumeAfterInterruption = false
-    private var isCheckpointingSegment = false
     private var recoveryRetryTask: Task<Void, Never>?
-    private var lastBackgroundCheckpointAt = Date.distantPast
     private let persistedRecordingIntentKey = "RecorderService.persistedRecordingIntent"
 
     var shouldResumePersistedRecording: Bool {
@@ -127,47 +125,6 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         }
     }
 
-    func checkpointForBackgroundIfNeeded() async {
-        guard isRecording, !isInterrupted, !isCheckpointingSegment else { return }
-        let now = Date()
-        guard now.timeIntervalSince(lastBackgroundCheckpointAt) > 2 else { return }
-        lastBackgroundCheckpointAt = now
-        isCheckpointingSegment = true
-        defer { isCheckpointingSegment = false }
-        let backgroundTask = UIApplication.shared.beginBackgroundTask(withName: "AudioRecorderCheckpoint")
-        defer {
-            if backgroundTask != .invalid {
-                UIApplication.shared.endBackgroundTask(backgroundTask)
-            }
-        }
-
-        do {
-            switch currentSettings?.mode ?? activeSettings?.mode {
-            case .everything:
-                stopSystemRecorder(finalize: true)
-                completeCurrentSegment()
-                try configureAudioSession()
-                try startNewSegment()
-                try startSystemRecorder()
-            case .soundActivated:
-                stopEngine()
-                completeCurrentSegment()
-                try configureAudioSession()
-                try startNewSegment()
-                try startEngine()
-            case .none:
-                return
-            }
-            isRecording = true
-            isInterrupted = false
-            cancelRecoveryRetry()
-            lastError = nil
-        } catch {
-            scheduleRecoveryRetry(
-                message: String(format: L("No se pudo reactivar la grabacion: %@"), error.localizedDescription)
-            )
-        }
-    }
 
     private func requestMicrophonePermission() async throws {
         let session = AVAudioSession.sharedInstance()
@@ -521,15 +478,6 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
             }
         }
 
-        NotificationCenter.default.addObserver(
-            forName: UIApplication.didEnterBackgroundNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in
-                await self?.checkpointForBackgroundIfNeeded()
-            }
-        }
 
         NotificationCenter.default.addObserver(
             forName: AVAudioSession.interruptionNotification,
