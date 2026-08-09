@@ -171,3 +171,14 @@ El propietario confirma que la app no usa cifrado propio/no exento. Se declara `
 ### D-020 — Icono iOS variante 3 aprobado — 2026-08-09
 
 El propietario aprueba `03-ribbon-dot.png` como icono iOS. El asset de producción se sustituye por una exportación opaca 1024 x 1024. El icono cósmico anterior se conserva byte por byte en `docs/icon-proposals/00-original-cosmic-backup.png`. Esta decisión sustituye la espera visual de D-018.
+
+### F-014 - Build 2 activa en TestFlight interno - 2026-08-09
+
+- El run `31285797462` del commit `a237172` subio iOS 1.0 (2) con anuncios demo como `TestFlight Internal Only`.
+- Apple la proceso como `VALID`; esta `IN_BETA_TESTING`, con audiencia `INTERNAL_ONLY`, cifrado no exento declarado en falso y relacion efectiva con el grupo interno `Testers`.
+- La build incluye el icono variante 3 aprobado, las URLs limpias de privacidad y soporte y la declaracion persistente de cifrado.
+- No se habilito TestFlight externo, no se envio a Beta App Review o App Review y no se publico en App Store.
+
+### D-021 - Titulo localizado de la ficha - 2026-08-09
+
+Se conserva la localizacion del nombre de la ficha de App Store/TestFlight para los siete idiomas existentes. En espanol puede mostrarse `Grabadora de Voz Pro - Audio K`; esto es intencional y depende del idioma o storefront. No se altera el nombre bajo el icono de la app, que permanece en ingles en las siete localizaciones actuales.

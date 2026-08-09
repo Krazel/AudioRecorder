@@ -119,3 +119,15 @@ Obtener autorización para crear mediante la API un certificado Apple Distributi
 - Utilidad idempotente añadida localmente: `scripts/manage-testflight-internal.mjs`, con verificaciones de app, bundle, versión, build, audiencia, grupo interno y distribución automática. No muestra secretos.
 
 Próximo paso: probar la build 1 ya activa en TestFlight. Los cambios locales posteriores (icono 3, URLs limpias e Info.plist de cifrado) requieren una build 2; no se subirá sin autorización separada.
+
+## Build 2 activa en TestFlight interno - 2026-08-09
+
+- El propietario autorizo expresamente crear y subir la build 2 exclusivamente a TestFlight interno.
+- El commit `a237172` contiene el icono iOS variante 3 aprobado, conserva el icono anterior en `docs/icon-proposals/00-original-cosmic-backup.png`, declara `ITSAppUsesNonExemptEncryption=false` y usa las URLs limpias de privacidad y soporte.
+- El run [31285797462](https://github.com/Krazel/AudioRecorder/actions/runs/31285797462) genero, firmo, verifico, valido con Apple y subio iOS `1.0` build `2` con anuncios demo oficiales y exportacion `TestFlight Internal Only`.
+- App Store Connect confirma el recurso `35de428c-9d56-475a-9444-f69e82c1ce57`, `processingState=VALID`, `internalBuildState=IN_BETA_TESTING`, `externalBuildState=NOT_APPLICABLE`, `buildAudienceType=INTERNAL_ONLY` y `usesNonExemptEncryption=false`.
+- La build 2 ya esta vinculada automaticamente al grupo interno privado `Testers`; el grupo tiene un tester y acceso automatico a todas las builds elegibles.
+- No hubo TestFlight externo, Beta App Review, App Review ni publicacion publica. Android y `artifact/` permanecen sin cambios.
+- El nombre visible en App Store/TestFlight esta localizado por idioma o tienda; en espanol se muestra `Grabadora de Voz Pro - Audio K`. El nombre bajo el icono de la app permanece en ingles en las siete localizaciones.
+
+Proximo paso: instalar y probar la build 2 desde TestFlight en un iPhone real. AdMob real y el CMP de produccion siguen pendientes antes de cualquier candidata publica.
