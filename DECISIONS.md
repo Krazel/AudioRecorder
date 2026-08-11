@@ -1,6 +1,6 @@
 # VoiceRecorder / AudioRecorder — hechos y decisiones
 
-Última actualización: 2026-08-09.
+Última actualización: 2026-08-11.
 
 Este documento distingue hechos observados de decisiones del propietario. Un hecho puede cambiar al evolucionar el repositorio; una decisión permanece vigente hasta que el propietario la sustituya expresamente.
 
@@ -232,3 +232,27 @@ La build pública siguiente será 1.0 (5), con IDs reales de AdMob. Puede compil
 - La build 5 está visible para el grupo interno `Testers`, pero no está seleccionada en la versión 1.0 ni incluida en una revisión. La build 4 demo permanece separada como beta interna.
 - La publicación final sigue siendo manual. Completar DSA, seleccionar build/suscripciones y pulsar `Añadir a revisión` o `Enviar a revisión` continúan siendo pasos separados.
 - Artefactos privados: `AudioRecorder-production-ipa-build-5` (`sha256:61dda1c3a4788f6d6c5ccacd9c90aa0e8900e4a7986e93c3ca62bbf2076e44bb`) y `AudioRecorder-production-archive-build-5` (`sha256:138859a63c6353ac2753814bbcd06e4c5cf5a765e836970cbfd96d3a81a9b870`), con caducidad 2026-08-16.
+
+### D-025 - La aprobación visual bloquea solo el acabado final - 2026-08-09
+
+La aprobación visual expresa sigue siendo obligatoria antes de fijar el layout final, el arte o icono final, las capturas de tienda, las animaciones visuales principales o la experiencia visual definitiva. Esta puerta no impide avanzar en motor, reglas, datos, contenido, arquitectura, navegación interna, persistencia, pruebas, build/CI, privacidad, tienda, documentación ni prototipos internos provisionales. Los prototipos deben identificarse como no definitivos y las piezas estructurales o técnicas separables deben delegarse mientras se preparan las propuestas visuales. Esta decisión amplía y sustituye la interpretación restrictiva de D-005; no altera las aprobaciones visuales específicas ya registradas.
+
+### D-026 - Patrón de apoyo voluntario - 2026-08-09
+
+VoiceRecorder mantiene el apoyo voluntario dentro de Ajustes y conserva la aplicación utilizable gratuitamente. Los siete niveles mensuales son equivalentes: todos reconocen al usuario como supporter, agradecen su ayuda al mantenimiento y las actualizaciones y retiran anuncios mientras el derecho esté activo; no bloquean funciones principales ni se presentan como donaciones. Precio, duración, renovación, cancelación, restauración, privacidad y términos deben permanecer visibles antes de comprar. Las reseñas de App Store se gestionan por separado. Cualquier producto nuevo, configuración remota, build o envío de IAP a revisión continúa sujeto a autorización roja expresa.
+
+### D-027 - Skill obligatoria para lanzamientos iOS - 2026-08-09
+
+Toda organización o verificación de TestFlight, App Store Connect, App Review, AdMob, StoreKit/IAP, supporter subscriptions, privacidad, soporte, firma, workflows de subida, capturas, icono o checklist de publicación debe aplicar la skill durable `ios-app-launch` del Brain y sus referencias pertinentes. Esta guía estandariza el proceso, pero no autoriza crear productos, usar secretos nuevos, subir builds, aceptar acuerdos, enviar IAP o la app a revisión ni publicar; cada acción roja conserva su puerta de autorización expresa y contemporánea.
+
+### D-028 - Custodia canonica de aprobaciones visuales - 2026-08-11
+
+`design/APPROVALS.md` gobierna las referencias visuales completas aprobadas del producto iOS. Cada pantalla o estado registra ruta, dispositivo o lienzo, orientacion, idioma, fecha y SHA-256. Las propuestas no son maestras; una sustitucion aprobada se incorpora como nueva referencia vigente y la anterior se conserva marcada como reemplazada. Las imagenes de tienda toman direccion de arte de estas maestras, pero la captura base final siempre debe proceder de la build real y enlazarse con su build y referencia. La ausencia de una aprobacion se registra como tal y nunca se rellena por inferencia.
+
+### D-029 - Minimizacion y separacion de informacion publica - 2026-08-11
+
+La build, sus SDKs y `docs/IOS_DATA_INVENTORY.md` son la fuente de verdad para privacidad y App Store Privacy. Solo se solicitan permisos y campos imprescindibles. El contacto publico se limita al alias de soporte; nombre completo, domicilio, telefono, cuentas personales, repositorio y contacto privado de App Review no se publican salvo obligacion concreta de Apple o de la ley. Los campos opcionales permanecen vacios si no cumplen una funcion real. Esta minimizacion no permite omitir AdMob, UMP, StoreKit ni sus datos reales. La declaracion DSA trader es una obligacion territorial separada y debe resolverse verazmente en el canal de Apple.
+
+### F-020 - Exposicion historica del contacto privado - 2026-08-11
+
+El commit remoto `213f86b` incluyo en `STATUS.md` el nombre completo y telefono privados usados para App Review. La version de trabajo ya los sustituye por una referencia no identificativa, pero un commit posterior no borraria el historial. No se reescribe ni fuerza el remoto sin autorizacion expresa porque alteraria historia compartida. Este hecho no afecta al binario iOS, pero requiere una decision material de saneamiento del repositorio.

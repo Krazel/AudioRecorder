@@ -1,8 +1,37 @@
 # VoiceRecorder / AudioRecorder — estado actual
 
-Última revalidación: 2026-08-09.
+Última revalidación: 2026-08-11.
 
-> Estado vigente: iOS 1.0 build 5, con IDs reales de AdMob y siete niveles mensuales de apoyo, está subida y validada por Apple como `APP_STORE_ELIGIBLE` / `Lista para enviar`. Sigue sin seleccionarse en la versión 1.0 y no se ha añadido ni enviado nada a App Review. La publicación final permanece manual. La build 4 con anuncios demo continúa disponible en TestFlight interno. Las secciones cronológicas anteriores son históricas cuando contradigan esta actualización.
+> Estado vigente: Apple rechazó temporalmente el envío iOS 1.0 (5) bajo Guideline 2.1, `Information Needed - New App Submission`. El mensaje no identifica un defecto concreto del binario: solicita un vídeo de pantalla en un iPhone físico con el iOS más reciente y respuestas completas sobre dispositivos probados, propósito, acceso, servicios externos, regiones y contenido regulado/protegido. No se ha respondido ni reenviado todavía. La publicación final permanece manual.
+
+## Manifiesto visual canonico - 2026-08-11
+
+- Existe `design/APPROVALS.md` como indice durable de maestras visuales, variantes provisionales y evidencia de runtime, con ruta, lienzo/dispositivo, orientacion, idioma, fecha y SHA-256.
+- La maestra aprobada registrada es el icono negro `IOS-ICON-BLACK-001`, conservado en `design/approved/ios/app-icon/ribbon-dot-black-1024.png`.
+- La candidata 1.0 (5) contiene el icono blanco, registrado honestamente como `PROVISIONAL_IN_BUILD`: el propietario autorizo probarlo en TestFlight, pero no consta una aprobacion expresa que sustituya al icono negro como maestra final.
+- Las capturas reales historicas de Record listo, Record grabando y Archivos quedan inventariadas solo como evidencia de runtime, no como maestras aprobadas. Ajustes y apoyo/suscripciones no tienen una imagen completa aprobada registrada. Esto no altera el binario ni el envio actual; cualquier sustitucion visual futura debe cerrar esas aprobaciones antes de presentarse como final.
+- Las propuestas siguen separadas en `docs/icon-proposals/`; `artifact/` y Android permanecen intactos.
+
+## Auditoria de minimizacion y exactitud - 2026-08-11
+
+- `docs/IOS_DATA_INVENTORY.md` registra permisos, almacenamiento local, transmisiones iniciadas por el usuario, StoreKit, Google Mobile Ads/UMP, retencion/control y separacion entre contacto publico y privado para la build 1.0 (5).
+- El unico permiso sensible es microfono, solicitado al iniciar una grabacion. No existen permisos ATT, ubicacion, camara, fotos, contactos, salud, calendario, movimiento o notificaciones, ni cuenta/login o servidor del desarrollador.
+- El manifiesto de tienda local deja vacios los campos opcionales de subtitulo, texto promocional, palabras clave y URL de marketing. Mantiene los campos necesarios de nombre, descripcion, soporte, privacidad y capturas. No se ha modificado App Store Connect.
+- Las copias locales `docs/PRIVACY.md` y `docs/privacy.html` se ajustaron a la build real: banner condicionado por UMP/estado sin anuncios, categorias de Google, StoreKit, datos locales y retencion minima del correo de soporte. La pagina publica canonica vive en el repositorio compartido `krazel.github.io`; no se ha modificado ni publicado desde esta tarea y debe sincronizarse mediante una accion externa autorizada.
+- El nombre completo y telefono privados de App Review se retiraron de la version de trabajo de `STATUS.md`; solo permanece el alias publico `coderappskrazel@gmail.com`. Esos datos ya quedaron expuestos historicamente en el commit remoto `213f86b`. Eliminarlos del historial remoto requeriria una reescritura destructiva y autorizacion expresa; no se ha ejecutado.
+- La build 5 integra GMA 12.14.0 y UMP 3.1.0. La politica enumera IP/ubicacion aproximada, identificadores, datos publicitarios, interaccion, fallos, rendimiento y diagnosticos, pero falta inspeccionar el informe de privacidad agregado del archive exacto y cotejar las respuestas vivas de App Store Privacy. El verificador central de GitHub devolvio `CENTRAL_RECHECK_REQUIRED`, por lo que esta tarea no accedio al artefacto ni pidio login al propietario.
+- El codigo conserva infraestructura inactiva de subida cloud/servidor y preferencias de endpoint/token. La build 5 fuerza `uploadAutomatically=false` y no expone controles, por lo que no transmite esos valores; deben eliminarse y limpiarse en la siguiente build de codigo, sin afirmar que esa limpieza ya existe en build 5.
+- `UIFileSharingEnabled` y apertura en sitio se conservan como acceso local controlado por el usuario a sus grabaciones; no constituyen recogida ni transmision al desarrollador.
+- DSA trader permanece como requisito territorial material: se resuelve verazmente en el canal dedicado de Apple y no se duplica en paginas publicas salvo lo que Apple o la ley exijan.
+
+## Solicitud de información de App Review - 2026-08-10
+
+- Apple pide que el vídeo comience lanzando la app y muestre el flujo normal: consentimiento UMP si aparece, permiso de micrófono, grabar/detener, archivos/reproducción/gestión, modo por sonido y acceso al flujo de suscripciones.
+- El segundo vídeo `VoiceRecorder Grabacion.mp4` fue revisado localmente: dura 56 segundos, es un MP4 vertical de 384 × 848 y muestra el lanzamiento desde la pantalla de inicio en un iPhone 11 con iOS 26.6, consentimiento UMP, permiso de micrófono, grabación, archivo creado, gestión/favorito, configuración del modo por sonido, los siete niveles, hoja de compra TestFlight cancelable, enlaces legales, opciones de privacidad y versión 1.0 build 5. Es apto para adjuntar a la respuesta; no se ha transmitido todavía.
+- La respuesta puede documentar de forma verificable que no hay cuentas ni login; las grabaciones se guardan localmente y solo se comparten por la hoja nativa; las funciones principales son gratuitas; las siete suscripciones mensuales equivalentes se encuentran en Ajustes y retiran anuncios; los servicios externos visibles son StoreKit, Google Mobile Ads y Google UMP.
+- Los dispositivos declarables ya están confirmados: iPhone X con iOS 16 e iPhone 11 con iOS 26.6. El vídeo físico real existe en Descargas y fue revisado; no falta ese material.
+- D-007 exige revelar privadamente a App Review la ruta no evidente del campo de códigos manuales y un código válido. El último borrador solicitado por el propietario lo omite; la omisión sigue siendo un riesgo de exactitud/revisión y no debe justificarse como minimización de datos públicos, porque las notas de App Review son privadas y funcionales.
+- Antes de reenviar, comprobar que la versión incluye la build 5 y que las siete suscripciones se añaden al envío inicial. Responder a Apple o volver a enviar continúa siendo una acción roja y no se ha ejecutado.
 
 ## Actualización de cierre para candidata pública - 2026-08-09
 

@@ -21,13 +21,13 @@ This file describes the intended release configuration. It deliberately does **n
 - Standalone GitHub Pages version: `docs/privacy.html`
 - Provisional privacy URL for the app and App Store Connect:
   `https://krazel.github.io/audio-recorder/privacy/`
-- Optional GitHub Pages URL, only after Pages is enabled and the address has been tested:
-  `https://krazel.github.io/AudioRecorder/privacy.html`
 - Support URL: `https://krazel.github.io/audio-recorder/support/`
-- Marketing URL: `https://github.com/Krazel/AudioRecorder`
+- Marketing URL: leave blank; it is optional and the product does not need to expose a repository or owner account.
+- Promotional text: leave blank unless a future release has a concrete, current message that is not already covered by its description.
+- Subtitle and keywords: leave blank under the owner's strict-minimization decision; they are optional and are not needed to explain or review the product.
 - Apple standard EULA: `https://www.apple.com/legal/internet-services/itunes/dev/stdeula/`
 
-The privacy URL will not be public until the new policy is committed and pushed to the public repository. Publishing or submitting requires the owner's express approval.
+The public privacy URL above is the only privacy-policy URL for this release. Publishing changes or submitting requires the owner's express approval.
 
 ## AdMob/UMP state prepared locally
 

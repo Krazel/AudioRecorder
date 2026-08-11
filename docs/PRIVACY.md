@@ -1,7 +1,7 @@
 # Privacy Policy / Política de privacidad
 
 **Voice Recorder Pro - Audio K**
-Last updated / Última actualización: 8 August 2026 / 8 de agosto de 2026
+Last updated / Última actualización: 11 August 2026 / 11 de agosto de 2026
 
 [English](#english) · [Español](#español)
 
@@ -16,7 +16,7 @@ This policy explains how **Voice Recorder Pro - Audio K** (the “App”) handle
 - The App uses the microphone only when you start or enable recording.
 - Recordings, file names, favorites, and recording settings are stored locally on your device.
 - The developer does not receive, listen to, or store your recordings.
-- Local data remains on your device until you delete it, clear the App's data, or uninstall the App, subject to any device backups managed by you or your platform provider.
+- Local data remains on your device until you delete it or uninstall the App, subject to any device backups managed by you or your platform provider.
 
 ### Sharing recordings
 
@@ -24,7 +24,7 @@ The App shares a recording only when you choose the share action. The operating 
 
 ### Advertising and Google Mobile Ads
 
-The free experience may display advertising through Google Mobile Ads (AdMob). Depending on the device, region, consent choices, and SDK configuration, Google Mobile Ads may process information such as:
+The App displays a banner through Google Mobile Ads (AdMob) when Google UMP permits ad requests and no active ad-removal entitlement is present. Google Mobile Ads may process information such as:
 
 - IP address, which may be used to estimate a general location;
 - device or advertising identifiers;
@@ -39,7 +39,7 @@ Optional subscriptions are processed by Apple through StoreKit. Apple handles yo
 
 ### Accounts and direct developer collection
 
-The App does not require an account. The developer does not directly collect your recordings, contacts, or payment card details. If you contact support by email, the developer receives the address, message, and attachments you choose to send and retains them only as long as reasonably necessary to answer the request, keep support records, or comply with legal obligations.
+The App does not require an account. The developer does not directly collect your recordings or payment card details. If you contact support by email, the developer receives the address, message, and attachments you choose to send and retains them only as long as needed to answer the request, or longer when a specific legal obligation requires it.
 
 ### Your choices and deletion
 
@@ -53,7 +53,7 @@ Because recordings are not sent to the developer, the developer cannot retrieve 
 
 ### Third-party services and international processing
 
-The developer requires Apple and Google services used by the App to protect user data to the same or an equivalent standard as this policy and Apple's requirements. Apple and Google may process information in countries other than your own according to their respective policies and legal safeguards. Their services, retention periods, and security practices are also governed by their own terms and privacy policies.
+The developer uses Apple and Google services only for the purposes described above and requires them to protect user data consistently with this policy and Apple's requirements. Apple and Google may process information in countries other than your own under their published policies, terms, and legal safeguards.
 
 ### Changes to this policy
 
@@ -74,7 +74,7 @@ Esta política explica cómo **Voice Recorder Pro - Audio K** (la «Aplicación�
 - La Aplicación utiliza el micrófono únicamente cuando inicias o habilitas una grabación.
 - Las grabaciones, los nombres de archivo, los favoritos y los ajustes de grabación se guardan localmente en tu dispositivo.
 - El desarrollador no recibe, escucha ni almacena tus grabaciones.
-- Los datos locales permanecen en tu dispositivo hasta que los eliminas, borras los datos de la Aplicación o desinstalas la Aplicación, sin perjuicio de las copias de seguridad del dispositivo que gestiones tú o el proveedor de tu plataforma.
+- Los datos locales permanecen en tu dispositivo hasta que los eliminas o desinstalas la Aplicación, sin perjuicio de las copias de seguridad del dispositivo que gestiones tú o el proveedor de tu plataforma.
 
 ### Compartir grabaciones
 
@@ -82,7 +82,7 @@ La Aplicación solo comparte una grabación cuando eliges la acción de comparti
 
 ### Publicidad y Google Mobile Ads
 
-La experiencia gratuita puede mostrar publicidad mediante Google Mobile Ads (AdMob). Según el dispositivo, la región, tus decisiones de consentimiento y la configuración del SDK, Google Mobile Ads puede tratar información como:
+La Aplicación muestra un banner mediante Google Mobile Ads (AdMob) cuando Google UMP permite solicitar anuncios y no existe un derecho activo que los retire. Google Mobile Ads puede tratar información como:
 
 - dirección IP, que puede utilizarse para estimar una ubicación general;
 - identificadores del dispositivo o publicitarios;
@@ -97,7 +97,7 @@ Las suscripciones opcionales son procesadas por Apple mediante StoreKit. Apple g
 
 ### Cuentas y recogida directa por el desarrollador
 
-La Aplicación no requiere una cuenta. El desarrollador no recoge directamente tus grabaciones, contactos ni datos completos de tarjetas de pago. Si contactas con soporte por correo electrónico, el desarrollador recibe la dirección, el mensaje y los archivos que decidas enviar, y los conserva solo durante el tiempo razonablemente necesario para responder, mantener un registro de soporte o cumplir obligaciones legales.
+La Aplicación no requiere una cuenta. El desarrollador no recoge directamente tus grabaciones ni datos completos de tarjetas de pago. Si contactas con soporte por correo electrónico, el desarrollador recibe la dirección, el mensaje y los archivos que decidas enviar, y los conserva solo durante el tiempo necesario para responder, o durante más tiempo cuando exista una obligación legal concreta.
 
 ### Tus opciones y eliminación
 
@@ -111,7 +111,7 @@ Como las grabaciones no se envían al desarrollador, este no puede recuperarlas 
 
 ### Servicios de terceros y tratamiento internacional
 
-El desarrollador exige que los servicios de Apple y Google utilizados por la Aplicación protejan los datos del usuario con un nivel igual o equivalente al descrito en esta política y al exigido por Apple. Apple y Google pueden tratar información en países distintos del tuyo conforme a sus respectivas políticas y garantías legales. Sus servicios, periodos de conservación y prácticas de seguridad también se rigen por sus propios términos y políticas de privacidad.
+El desarrollador utiliza los servicios de Apple y Google únicamente para los fines descritos y exige que protejan los datos de forma coherente con esta política y con los requisitos de Apple. Apple y Google pueden tratar información en países distintos del tuyo conforme a sus políticas, términos y garantías legales publicados.
 
 ### Cambios en esta política
 
