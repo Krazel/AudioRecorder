@@ -2,7 +2,7 @@
 
 Última revalidación: 2026-08-11.
 
-> Estado vigente: Apple rechazó temporalmente el envío iOS 1.0 (5) bajo Guideline 2.1, `Information Needed - New App Submission`. El mensaje no identifica un defecto concreto del binario: solicita un vídeo de pantalla en un iPhone físico con el iOS más reciente y respuestas completas sobre dispositivos probados, propósito, acceso, servicios externos, regiones y contenido regulado/protegido. No se ha respondido ni reenviado todavía. La publicación final permanece manual.
+> Estado vigente: Apple rechazó temporalmente el envío iOS 1.0 (5) bajo Guideline 2.1, `Information Needed - New App Submission`. El propietario confirma el 2026-08-11 que la respuesta, el vídeo/notas y el paso correspondiente de Apple ya estaban hechos. Esta tarea no abrió ni modificó App Store Connect; el estado posterior de revisión debe revalidarse en el siguiente acceso autorizado. La publicación final permanece manual.
 
 ## Manifiesto visual canonico - 2026-08-11
 
@@ -17,12 +17,14 @@
 - `docs/IOS_DATA_INVENTORY.md` registra permisos, almacenamiento local, transmisiones iniciadas por el usuario, StoreKit, Google Mobile Ads/UMP, retencion/control y separacion entre contacto publico y privado para la build 1.0 (5).
 - El unico permiso sensible es microfono, solicitado al iniciar una grabacion. No existen permisos ATT, ubicacion, camara, fotos, contactos, salud, calendario, movimiento o notificaciones, ni cuenta/login o servidor del desarrollador.
 - El manifiesto de tienda local deja vacios los campos opcionales de subtitulo, texto promocional, palabras clave y URL de marketing. Mantiene los campos necesarios de nombre, descripcion, soporte, privacidad y capturas. No se ha modificado App Store Connect.
-- Las copias locales `docs/PRIVACY.md` y `docs/privacy.html` se ajustaron a la build real: banner condicionado por UMP/estado sin anuncios, categorias de Google, StoreKit, datos locales y retencion minima del correo de soporte. La pagina publica canonica vive en el repositorio compartido `krazel.github.io`; no se ha modificado ni publicado desde esta tarea y debe sincronizarse mediante una accion externa autorizada.
-- El nombre completo y telefono privados de App Review se retiraron de la version de trabajo de `STATUS.md`; solo permanece el alias publico `coderappskrazel@gmail.com`. Esos datos ya quedaron expuestos historicamente en el commit remoto `213f86b`. Eliminarlos del historial remoto requeriria una reescritura destructiva y autorizacion expresa; no se ha ejecutado.
+- Las copias locales `docs/PRIVACY.md` y `docs/privacy.html` se ajustaron a la build real: banner condicionado por UMP/estado sin anuncios, categorias de Google, StoreKit, datos locales y retencion minima del correo de soporte. La pagina publica canonica vive en el repositorio compartido `krazel.github.io` y se sincronizo mediante la publicacion autorizada descrita abajo.
+- El propietario autorizo el saneamiento del historial. La rama remota `agent/prepare-ios-test-build` fue reescrita con lease exacto de `31a1f67` a `1a7678f`; tanto la rama como `refs/pull/1/head` apuntan a la historia nueva y ningun commit alcanzable desde `main..HEAD` contiene el nombre o telefono privados. GitHub puede conservar temporalmente vistas/cache por SHA aunque ya no existan referencias activas; una purga de cache por soporte queda fuera de esta tarea.
 - La build 5 integra GMA 12.14.0 y UMP 3.1.0. La politica enumera IP/ubicacion aproximada, identificadores, datos publicitarios, interaccion, fallos, rendimiento y diagnosticos, pero falta inspeccionar el informe de privacidad agregado del archive exacto y cotejar las respuestas vivas de App Store Privacy. El verificador central de GitHub devolvio `CENTRAL_RECHECK_REQUIRED`, por lo que esta tarea no accedio al artefacto ni pidio login al propietario.
 - El codigo conserva infraestructura inactiva de subida cloud/servidor y preferencias de endpoint/token. La build 5 fuerza `uploadAutomatically=false` y no expone controles, por lo que no transmite esos valores; deben eliminarse y limpiarse en la siguiente build de codigo, sin afirmar que esa limpieza ya existe en build 5.
 - `UIFileSharingEnabled` y apertura en sitio se conservan como acceso local controlado por el usuario a sus grabaciones; no constituyen recogida ni transmision al desarrollador.
 - DSA trader permanece como requisito territorial material: se resuelve verazmente en el canal dedicado de Apple y no se duplica en paginas publicas salvo lo que Apple o la ley exijan.
+- Las paginas publicas de privacidad y soporte se actualizaron en `krazel.github.io`, commit `3371a6d`, y ambas responden HTTPS 200 con el nombre exacto de la app; la politica muestra fecha 2026-08-11. Los cambios locales ajenos de Tarot existentes en ese repositorio se preservaron sin incluirlos en el commit.
+- Los cambios de minimizacion, inventario y aprobaciones visuales quedaron publicados en la rama saneada de AudioRecorder. No se modificaron remotamente los campos de App Store Connect desde esta tarea.
 
 ## Solicitud de información de App Review - 2026-08-10
 

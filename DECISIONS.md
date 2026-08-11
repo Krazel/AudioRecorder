@@ -255,4 +255,8 @@ La build, sus SDKs y `docs/IOS_DATA_INVENTORY.md` son la fuente de verdad para p
 
 ### F-020 - Exposicion historica del contacto privado - 2026-08-11
 
-El commit remoto `213f86b` incluyo en `STATUS.md` el nombre completo y telefono privados usados para App Review. La version de trabajo ya los sustituye por una referencia no identificativa, pero un commit posterior no borraria el historial. No se reescribe ni fuerza el remoto sin autorizacion expresa porque alteraria historia compartida. Este hecho no afecta al binario iOS, pero requiere una decision material de saneamiento del repositorio.
+El commit remoto `213f86b` incluyo en `STATUS.md` el nombre completo y telefono privados usados para App Review. Con autorizacion expresa del propietario, se reconstruyeron ese commit y sus dos descendientes, se verifico que la nueva historia no contiene esos datos y se actualizo con `--force-with-lease` la rama `agent/prepare-ios-test-build` desde `31a1f67` hasta `1a7678f`. `refs/pull/1/head` tambien apunta a `1a7678f`. La reescritura elimina referencias activas de rama/PR, aunque GitHub puede conservar temporalmente caches accesibles por el SHA antiguo; una solicitud de purga a soporte seria una accion externa adicional.
+
+### F-021 - Politica y soporte publicos minimizados - 2026-08-11
+
+El repositorio compartido `krazel.github.io` publico el commit `3371a6d` con cambios limitados a `audio-recorder/privacy/index.html` y `audio-recorder/support/index.html`. Ambas URLs responden HTTPS 200, usan el nombre exacto `Voice Recorder Pro - Audio K`, publican solo el alias `coderappskrazel@gmail.com` y describen almacenamiento local, StoreKit, AdMob/UMP, controles y retencion sin servicios hipoteticos. No se tocaron los cambios locales ajenos de Tarot ni App Store Connect.
