@@ -1,6 +1,6 @@
 # VoiceRecorder iOS — visual approval manifest
 
-Last verified: 2026-08-11.
+Last verified: 2026-08-13.
 
 This file is the canonical index of complete visual references that govern the real iOS app. It does not grant approval by itself: an entry is `CURRENT` only when the owner explicitly approved that exact visual. Proposals stay under `docs/icon-proposals/` and store exports stay under `store/`; neither becomes a master merely by existing or being used in a build.
 
@@ -28,7 +28,7 @@ The existing application predates the canonical-master rule. No explicit owner a
 | Record — recording | `NO_APPROVED_MASTER_RECORDED` | `store/app-store/es-ES/iphone-67-real/02-grabando-real.png` | 1290 × 2796 px, iPhone 6.7-inch store capture | Portrait | Spanish (`es-ES`) | 2026-05-22 | `6e1f36ae5a459984a42eef865aa63c559b2eccfaae28004d7c9df1491a05ba60` |
 | Files — list | `NO_APPROVED_MASTER_RECORDED` | `store/app-store/es-ES/iphone-67-real/03-archivos-real.png` | 1290 × 2796 px, iPhone 6.7-inch store capture | Portrait | Spanish (`es-ES`) | 2026-05-22 | `ce824d9062c33b4dca1dc578b0dbe89ae150f5dafcc223d77bd547b45fd656c6` |
 | Settings — base | `NO_APPROVED_MASTER_RECORDED` | — | iPhone | Portrait | Seven supported localizations | — | — |
-| Settings — support/subscriptions expanded | `NO_APPROVED_MASTER_RECORDED` | — | iPhone | Portrait | Seven supported localizations | — | — |
+| Settings — support/subscriptions expanded | `NO_APPROVED_MASTER_RECORDED` | `store/app-review/build-5/subscriptions-seven-levels-real.png` | 1290 × 2796 px, real frame from build 5 device recording | Portrait | Spanish (`es-ES`) | 2026-08-10 | `34dd93ff0b548f92d9cf3ec0b6237704e8072854dd86e032ab7766fd78e6d532` |
 | Google UMP consent / privacy options | `SDK_OWNED_UI` | — | iPhone | Portrait | Region/configuration dependent | — | — |
 
 ## Store-image provenance rule
@@ -37,4 +37,5 @@ The existing application predates the canonical-master rule. No explicit owner a
 - The final base screenshot must come from the real release-candidate build at an accepted App Store device size.
 - Each store-ready export must record the originating build, runtime capture path, governing approval ID, locale, dimensions, date, and SHA-256 here or in a directly linked child manifest.
 - Existing files under `store/app-store/` are legacy exports/runtime evidence unless a later row explicitly promotes them. They are not approved masters by implication.
+- `store/app-review/build-5/subscriptions-seven-levels-real.png` is private App Review evidence extracted from the owner's real device recording at 36.9 seconds. It is not synthetic artwork, a public store screenshot, or an approved visual master.
 - Android assets and all files under `artifact/` are outside this manifest and remain untouched.

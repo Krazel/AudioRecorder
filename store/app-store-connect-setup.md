@@ -33,11 +33,12 @@ The public privacy URL above is the only privacy-policy URL for this release. Pu
 
 - The iOS integration requests UMP consent information on every launch and gates Mobile Ads plus banner loading behind `canRequestAds`.
 - The privacy-options action is exposed only when UMP reports it as required.
+- The next public candidate completes the UMP flow, requests Apple's ATT permission when its status is undetermined, and waits for the result before Google Mobile Ads starts. Authorized users may receive personalized advertising and measurement using IDFA; denied/restricted users remain fully functional and receive ads without IDFA or tracking.
 - Local/unsigned builds and the authorized internal TestFlight beta may use Google's exact demo App ID and banner ID. The beta workflow exports that configuration as `TestFlight Internal Only`, so Apple prevents external testing or customer distribution from that build.
 - Any public candidate requires a newly generated archive with separate production values; the production workflow path rejects the demo publisher.
 - Google Mobile Ads is pinned to `12.14.0` and UMP to `3.1.0` until a major-version migration can be compiled and regression-tested on macOS.
 - `Info.plist` contains the 50 SKAdNetwork identifiers from Google's official iOS quick-start example checked on 2026-08-08.
-- No ATT/IDFA prompt, test-device hash, forced geography, consent reset, tracking domain, or invented console value is embedded in the release configuration.
+- No test-device hash, forced geography, consent reset, invented tracking domain, or invented console value is embedded in the release configuration. `NSUserTrackingUsageDescription` and the ATT framework are present and localized in all seven languages. App Store Privacy must disclose Google SDK collection and the categories used for tracking when ATT is authorized.
 
 After AdMob account verification, the only required advertising values are:
 
@@ -71,8 +72,8 @@ The manifest contains subscription metadata for `es-ES`, `en-US`, `fr-FR`, `de-D
 - [ ] Confirm one-month duration and the intended local price schedule for each product.
 - [ ] Confirm availability and cleared-for-sale status for the seven intended products.
 - [ ] Confirm all seven localizations against `store-manifest.json`.
-- [x] Keep the optional review screenshot empty for every product unless App Review later requests one.
-- [x] Keep optional subscription review notes empty by owner decision.
+- [x] App Review requested a subscription screenshot on 2026-08-13. Use only the real build 5 frame at `store/app-review/build-5/subscriptions-seven-levels-real.png`; it shows all seven products and is private review evidence, not public store artwork.
+- [ ] Upload that real review screenshot to each of the seven subscriptions before adding them to review. Review notes can remain concise, but must explain that every product is a monthly subscription which removes ads while active.
 - [ ] Confirm the app lists only these seven identifiers and handles purchase, restore, renewal, expiration, revocation, and switching between equal-service products.
 - [ ] Test every product in StoreKit testing or the App Store sandbox on a real device.
 - [ ] Attach the intended subscriptions to version 1.0. Apple's first subscription must be submitted with a new app version.
@@ -107,9 +108,11 @@ Use Apple's displayed localized product price rather than hard-coding a currency
 - [ ] Review the current Google Mobile Ads SDK disclosure. Depending on configuration, it may process IP/general location, device identifiers, advertising data, product interactions, crash data, performance data, and diagnostics.
 - [x] Integrate UMP locally so no ad request occurs before `canRequestAds`, with privacy options exposed when required.
 - [x] In AdMob, create, associate, translate, and publish the European regulations message for the seven supported languages.
-- [ ] Ensure tracking/IDFA answers and any App Tracking Transparency prompt match actual SDK behavior.
+- [x] The build 6 source candidate retains UMP and requests ATT after UMP but before starting Google Mobile Ads. The purpose string is present in `Info.plist` and all seven `InfoPlist.strings` localizations.
+- [ ] Optional but recommended: in AdMob Privacy & messaging, create, associate, translate, and publish the IDFA explainer for this app. The app directly requests ATT after UMP with a status guard, so the Apple system prompt does not depend on this optional AdMob explainer.
+- [ ] Reconcile App Store Privacy against the build 6 archive: disclose all six Google categories; mark coarse location, device ID, product interaction, advertising data, and performance data as used for tracking, but not non-user-related crash data.
 - [ ] Confirm the production AdMob app and ad-unit identifiers; never use the internal demo build for external TestFlight or a public submission.
-- [x] Complete age rating, content rights, support contact, and review contact. ATT/IDFA remains intentionally disabled.
+- [x] Complete age rating, content rights, support contact, and review contact. ATT/IDFA is intentionally enabled only after the system authorization flow.
 - [ ] In App Review notes, describe every mechanism that removes ads, including any retained manual code mechanism; do not present hidden functionality misleadingly.
 - [ ] Confirm Paid Apps Agreement, banking, and tax status before attempting to sell subscriptions.
 
@@ -129,7 +132,7 @@ Official references:
 - [ ] Paid agreement, banking, and tax confirmed active.
 - [ ] Final signed build uploaded and selected for version 1.0.
 - [ ] Required screenshots and localized metadata reviewed in App Store Connect.
-- [ ] Seven intended subscriptions attached to the version and added to review.
+- [ ] Seven intended subscriptions and their group attached to version 1.0 (6) and added to review with the real screenshot requested by Apple.
 - [ ] App Review contact information, demo instructions if needed, and accurate review notes completed.
 - [ ] Final device smoke test completed using the exact release build.
 - [ ] Owner gives express approval before pressing **Submit for Review**.
@@ -153,7 +156,7 @@ Official references:
 ### Actions requiring owner approval, credentials, or external systems
 
 - [ ] The internal beta may use the exact Google demo pair. Wait for AdMob verification before generating any public candidate; then register/confirm the iOS app, create/confirm its banner unit, and provide the two production IDs.
-- [ ] Configure, translate, associate, and publish the applicable AdMob privacy messages; test consent withdrawal and reconcile the final non-ATT configuration with App Privacy answers.
+- [ ] Configure, translate, associate, and publish the applicable AdMob privacy and IDFA messages; test UMP withdrawal plus ATT authorize/deny outcomes and reconcile the archive with App Privacy answers.
 - [ ] Run the unsigned macOS CI build for 1.0 with `publish_release=false`; inspect the generated app bundle and IPA before any publication.
 - [ ] Run the signed archive/export workflow with `upload_to_app_store=false`; validate the archive and aggregated privacy report before any upload.
 - [ ] Verify the seven intended subscriptions in App Store Connect; the deleted legacy 50/100/300 identifiers must remain absent.
@@ -212,6 +215,6 @@ A successful no-upload run retains:
 - the signed `.xcarchive`, including its dSYM;
 - checks for bundle/version/build identity, the selected AdMob IDs, signature, distribution provisioning identity/entitlements, privacy manifest, asset catalog, seven localizations, dSYM, and the archive's `UIDeviceFamily`.
 
-The final privacy report still has to be generated or inspected with Xcode Organizer. VoiceRecorder 1.0 is explicitly iPhone-only (`TARGETED_DEVICE_FAMILY=1`) and portrait; ATT and export-compliance classification remain explicit owner decisions.
+The final privacy report still has to be generated or inspected with Xcode Organizer. VoiceRecorder 1.0 is explicitly iPhone-only (`TARGETED_DEVICE_FAMILY=1`) and portrait. ATT is now an explicit build 6 decision; export-compliance classification remains unchanged unless the implementation changes.
 
 Do not put private keys or secret values in this document or in the manifest.

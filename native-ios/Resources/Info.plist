@@ -29,7 +29,9 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>La app necesita usar el microfono para grabar audio y crear segmentos.</string>
+	<string>The app needs microphone access to record audio and create segments.</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>Your permission allows the app to use a device identifier to deliver and measure personalized ads.</string>
 	<key>SKAdNetworkItems</key>
 	<array>
 		<dict>

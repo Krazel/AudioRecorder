@@ -24,7 +24,7 @@
 	<key>NSPrivacyCollectedDataTypes</key>
 	<array/>
 	<key>NSPrivacyTracking</key>
-	<false/>
+	<true/>
 	<key>NSPrivacyTrackingDomains</key>
 	<array/>
 </dict>

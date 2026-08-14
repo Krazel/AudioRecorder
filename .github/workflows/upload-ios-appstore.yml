@@ -307,6 +307,23 @@ jobs:
         working-directory: native-ios
         run: xcodegen generate
 
+      - name: Verify ATT-gated AdMob source configuration
+        run: |
+          set -euo pipefail
+          CONSENT_SOURCE="native-ios/Sources/AdConsentManager.swift"
+          grep -Fq 'import AppTrackingTransparency' "${CONSENT_SOURCE}"
+          grep -Fq 'ATTrackingManager.requestTrackingAuthorization' "${CONSENT_SOURCE}"
+          if grep -Fq 'setPublisherFirstPartyIDEnabled(false)' "${CONSENT_SOURCE}" || \
+             grep -Fq 'publisherPrivacyPersonalizationState = .disabled' "${CONSENT_SOURCE}"; then
+            echo "The ATT candidate must not force the previous non-tracking AdMob configuration"
+            exit 1
+          fi
+          grep -Fq '<key>NSUserTrackingUsageDescription</key>' native-ios/Resources/Info.plist
+          for LOCALE in ca de en es fr it pt; do
+            TRACKING_COPY="$(plutil -extract NSUserTrackingUsageDescription raw -o - "native-ios/Resources/${LOCALE}.lproj/InfoPlist.strings")"
+            test -n "${TRACKING_COPY}"
+          done
+
       - name: Archive signed app
         run: |
           set -euo pipefail
@@ -343,6 +360,7 @@ jobs:
           ARCHIVED_BUILD="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "${APP_PLIST}")"
           ARCHIVED_APP_ID="$(/usr/libexec/PlistBuddy -c 'Print :GADApplicationIdentifier' "${APP_PLIST}")"
           ARCHIVED_BANNER_ID="$(/usr/libexec/PlistBuddy -c 'Print :ADMOBBannerUnitID' "${APP_PLIST}")"
+          ARCHIVED_PRIVACY_TRACKING="$(/usr/libexec/PlistBuddy -c 'Print :NSPrivacyTracking' "${APP_BUNDLE}/PrivacyInfo.xcprivacy")"
           if [[ "${ARCHIVED_BUNDLE_ID}" != "com.dmkr.audio.B2X6D3A9J9" ]] || \
              [[ "${ARCHIVED_VERSION}" != "${APP_VERSION}" ]] || \
              [[ "${ARCHIVED_BUILD}" != "${APP_BUILD_NUMBER}" ]]; then
@@ -354,6 +372,18 @@ jobs:
             echo "Archived app does not contain the selected AdMob configuration"
             exit 1
           fi
+          if [[ "${ARCHIVED_PRIVACY_TRACKING}" != "true" ]]; then
+            echo "Archived privacy manifest must declare tracking enabled"
+            exit 1
+          fi
+          if ! /usr/libexec/PlistBuddy -c 'Print :NSUserTrackingUsageDescription' "${APP_PLIST}" >/dev/null 2>&1; then
+            echo "Archived app is missing the ATT tracking-purpose string"
+            exit 1
+          fi
+          for LOCALE in ca de en es fr it pt; do
+            TRACKING_COPY="$(plutil -extract NSUserTrackingUsageDescription raw -o - "${APP_BUNDLE}/${LOCALE}.lproj/InfoPlist.strings")"
+            test -n "${TRACKING_COPY}"
+          done
           for LOCALE in ca de en es fr it pt; do
             test -d "${APP_BUNDLE}/${LOCALE}.lproj"
           done

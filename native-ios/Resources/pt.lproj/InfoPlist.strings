@@ -1,3 +1,4 @@
 CFBundleDisplayName = "Voice Recorder Pro - Audio K";
 CFBundleName = "VoiceRecorderPro";
 NSMicrophoneUsageDescription = "A app precisa de acesso ao microfone para gravar audio e criar segmentos.";
+NSUserTrackingUsageDescription = "A tua permissao permite que a app use um identificador do dispositivo para apresentar e medir anuncios personalizados.";

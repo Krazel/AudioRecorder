@@ -27,6 +27,7 @@ targets:
         excludes:
           - Info.plist
     dependencies:
+      - sdk: AppTrackingTransparency.framework
       - package: GoogleMobileAds
       - package: GoogleUserMessagingPlatform
     settings:

@@ -1,21 +1,29 @@
 # VoiceRecorder / AudioRecorder — estado actual
 
-Última revalidación: 2026-08-11.
+Última revalidación: 2026-08-13.
 
-> Estado vigente: Apple rechazó temporalmente el envío iOS 1.0 (5) bajo Guideline 2.1, `Information Needed - New App Submission`. El propietario confirma el 2026-08-11 que la respuesta, el vídeo/notas y el paso correspondiente de Apple ya estaban hechos. Esta tarea no abrió ni modificó App Store Connect; el estado posterior de revisión debe revalidarse en el siguiente acceso autorizado. La publicación final permanece manual.
+> Estado vigente: Apple mantiene rechazado el envío iOS 1.0 (5), submission `eb006012-2ca3-4b97-97d2-15564d5dc176`, tras la revisión del 2026-08-13 en un iPad Air 11-inch (M3). Los cuatro puntos concretos son App Privacy marcada como tracking sin ATT, suscripciones no enviadas, referencia de precio/gratuidad en el subtítulo y ausencia del enlace EULA en la descripción. La corrección local para 1.0 (6) está en preparación; no se ha modificado App Store Connect, subido otra build ni reenviado a revisión.
+
+## Corrección del rechazo de App Review - 2026-08-13
+
+- La fuente de build 6 mantiene UMP y `canRequestAds`, solicita ATT después de UMP y espera la respuesta antes de iniciar Google Mobile Ads. Si se autoriza, AdMob puede usar IDFA para anuncios personalizados y medición; si se rechaza, la app sigue funcionando y AdMob sirve anuncios sin IDFA ni tracking.
+- El manifiesto local ya carecía de subtítulo en los siete idiomas. Las siete descripciones ahora incluyen el enlace funcional a la EULA estándar de Apple. También deja de seleccionar la tercera captura antigua que decía `free`/`gratis`, conservando los archivos y las dos capturas restantes de cada idioma.
+- Se extrajo del vídeo físico real de build 5 una captura 1290 × 2796 que muestra los siete productos: `store/app-review/build-5/subscriptions-seven-levels-real.png`, SHA-256 `34dd93ff0b548f92d9cf3ec0b6237704e8072854dd86e032ab7766fd78e6d532`. Es evidencia privada de revisión, no imagen pública ni arte inventado.
+- `store/app-review/REJECTION-2026-08-13.md` contiene el mapa de App Privacy, los pasos externos y la respuesta final preparada. `docs/IOS_DATA_INVENTORY.md` y `store/app-store-connect-setup.md` ya reflejan ATT, el comportamiento condicionado por la respuesta y la captura que Apple exige ahora.
+- Sigue pendiente validar la compilación real con Xcode/macOS, generar el privacy report agregado y después, con autorización roja contemporánea: publicar la política actualizada, subir 1.0 (6), corregir App Privacy y metadatos remotos, cargar la captura en los siete productos, añadir grupo/productos al envío y reenviar. La publicación final permanece manual.
 
 ## Manifiesto visual canonico - 2026-08-11
 
 - Existe `design/APPROVALS.md` como indice durable de maestras visuales, variantes provisionales y evidencia de runtime, con ruta, lienzo/dispositivo, orientacion, idioma, fecha y SHA-256.
 - La maestra aprobada registrada es el icono negro `IOS-ICON-BLACK-001`, conservado en `design/approved/ios/app-icon/ribbon-dot-black-1024.png`.
 - La candidata 1.0 (5) contiene el icono blanco, registrado honestamente como `PROVISIONAL_IN_BUILD`: el propietario autorizo probarlo en TestFlight, pero no consta una aprobacion expresa que sustituya al icono negro como maestra final.
-- Las capturas reales historicas de Record listo, Record grabando y Archivos quedan inventariadas solo como evidencia de runtime, no como maestras aprobadas. Ajustes y apoyo/suscripciones no tienen una imagen completa aprobada registrada. Esto no altera el binario ni el envio actual; cualquier sustitucion visual futura debe cerrar esas aprobaciones antes de presentarse como final.
+- Las capturas reales historicas de Record listo, Record grabando y Archivos quedan inventariadas solo como evidencia de runtime, no como maestras aprobadas. Ajustes/apoyo dispone ahora de evidencia real privada extraída del vídeo de build 5, pero sigue sin tener una imagen completa aprobada como maestra. Esto no altera el binario ni autoriza una sustitución visual futura.
 - Las propuestas siguen separadas en `docs/icon-proposals/`; `artifact/` y Android permanecen intactos.
 
 ## Auditoria de minimizacion y exactitud - 2026-08-11
 
-- `docs/IOS_DATA_INVENTORY.md` registra permisos, almacenamiento local, transmisiones iniciadas por el usuario, StoreKit, Google Mobile Ads/UMP, retencion/control y separacion entre contacto publico y privado para la build 1.0 (5).
-- El unico permiso sensible es microfono, solicitado al iniciar una grabacion. No existen permisos ATT, ubicacion, camara, fotos, contactos, salud, calendario, movimiento o notificaciones, ni cuenta/login o servidor del desarrollador.
+- `docs/IOS_DATA_INVENTORY.md` registra permisos, almacenamiento local, transmisiones iniciadas por el usuario, StoreKit, Google Mobile Ads/UMP, retencion/control y separacion entre contacto publico y privado para la fuente candidata 1.0 (6), todavía no archivada ni subida.
+- Los permisos sensibles son micrófono, solicitado al iniciar una grabación, y ATT, solicitado tras UMP antes de iniciar anuncios con capacidad de tracking. No existen permisos de ubicación, cámara, fotos, contactos, salud, calendario, movimiento o notificaciones, ni cuenta/login o servidor del desarrollador.
 - El manifiesto de tienda local deja vacios los campos opcionales de subtitulo, texto promocional, palabras clave y URL de marketing. Mantiene los campos necesarios de nombre, descripcion, soporte, privacidad y capturas. No se ha modificado App Store Connect.
 - Las copias locales `docs/PRIVACY.md` y `docs/privacy.html` se ajustaron a la build real: banner condicionado por UMP/estado sin anuncios, categorias de Google, StoreKit, datos locales y retencion minima del correo de soporte. La pagina publica canonica vive en el repositorio compartido `krazel.github.io` y se sincronizo mediante la publicacion autorizada descrita abajo.
 - El propietario autorizo el saneamiento del historial. La rama remota `agent/prepare-ios-test-build` fue reescrita con lease exacto de `31a1f67` a `1a7678f`; tanto la rama como `refs/pull/1/head` apuntan a la historia nueva y ningun commit alcanzable desde `main..HEAD` contiene el nombre o telefono privados. GitHub puede conservar temporalmente vistas/cache por SHA aunque ya no existan referencias activas; una purga de cache por soporte queda fuera de esta tarea.
@@ -74,7 +82,7 @@ La candidata pública se generó desde el commit `213f86b` mediante el run `3132
 - UMP solicita una actualización en cada arranque, presenta el formulario si es necesario y no inicializa Mobile Ads ni crea el banner hasta que `canRequestAds` sea verdadero. La inicialización y la carga tienen guardas contra duplicados.
 - Ajustes muestra `Opciones de privacidad` únicamente cuando UMP devuelve que son obligatorias; la presentación se inicia solo por una acción explícita del usuario.
 - Los IDs de demostración de Google permanecen como valores locales para desarrollo/unsigned. `Info.plist` y el código admiten inyección separada del App ID y del Banner ad unit ID reales.
-- `Info.plist` contiene los 50 `SKAdNetworkIdentifier` del ejemplo oficial de Google vigente el 2026-08-08; esta preparación no activa ATT.
+- `Info.plist` contiene los 50 `SKAdNetworkIdentifier` del ejemplo oficial de Google vigente el 2026-08-08. Esos identificadores no activan ATT por sí mismos; ATT se incorpora de forma separada y explícita en la candidata 1.0 (6).
 - Google Mobile Ads queda fijado exactamente en 12.14.0 y UMP en 3.1.0 para que la resolución sea reproducible; el salto mayor a GMA 13 se reserva para compilación y regresión en Mac.
 - El workflow firmado ofrece dos configuraciones explícitas: `test`, con el par demo oficial y exportación `TestFlight Internal Only`; y `production`, con secretos AdMob reales y rechazo del publicador demo.
 - La configuración `test` exige confirmación adicional antes de cualquier upload y la opción de exportación de Apple impide usar esa build para TestFlight externo o para clientes. La configuración pública debe generar un archive nuevo con IDs reales.
@@ -123,7 +131,7 @@ La candidata pública se generó desde el commit `213f86b` mediante el run `3132
 - La API muestra un único certificado iOS Development válido y un perfil IOS_APP_STORE antiguo, caducado y de otra app. No existe material de distribución reutilizable para VoiceRecorder.
 - Los runs 31275416194, 31275507646 y 31275610317 diagnosticaron y resolvieron únicamente la codificación BOM del secret. Ninguno ejecutó upload.
 - Solo hay un usuario en App Store Connect. Para la segunda persona habrá que invitar primero su Apple Account como usuario con acceso a la app y después añadirla al grupo interno; falta su dirección de cuenta.
-- ATT/IDFA no se ha activado. Requiere una decisión expresa separada; si se adopta habrá que añadir su texto, localizarlo y probar el permiso antes de cargar anuncios personalizados.
+- ATT/IDFA está implementado en la fuente candidata 1.0 (6), con texto base y localizaciones `ca/de/en/es/fr/it/pt`. Falta compilar y probar desde instalación limpia ambos resultados antes de cargar anuncios: autorizar permite IDFA/tracking; rechazar mantiene la app funcional y los anuncios sin IDFA/tracking.
 - La política debe publicarse y verificarse desde una sesión cerrada antes de usar su URL pública.
 - App Store Connect requiere comprobación humana de los seis productos elegidos; los productos 50/100/300 deben quedar fuera de venta y fuera de la versión 1.0.
 - Quedan pendientes privacidad, edad, categorías, derechos de contenido, acuerdos, fiscalidad, banco, contacto de revisión y metadatos localizados en App Store Connect.

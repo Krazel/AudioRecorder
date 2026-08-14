@@ -1,7 +1,7 @@
 # Privacy Policy / Política de privacidad
 
 **Voice Recorder Pro - Audio K**
-Last updated / Última actualización: 11 August 2026 / 11 de agosto de 2026
+Last updated / Última actualización: 13 August 2026 / 13 de agosto de 2026
 
 [English](#english) · [Español](#español)
 
@@ -24,10 +24,10 @@ The App shares a recording only when you choose the share action. The operating 
 
 ### Advertising and Google Mobile Ads
 
-The App displays a banner through Google Mobile Ads (AdMob) when Google UMP permits ad requests and no active ad-removal entitlement is present. Google Mobile Ads may process information such as:
+The App displays a banner through Google Mobile Ads (AdMob) when Google UMP permits ad requests and no active ad-removal entitlement is present. Before Google Mobile Ads starts, the App requests Apple's App Tracking Transparency (ATT) permission. If you allow tracking, Google may use the advertising identifier (IDFA) and the data described below for personalized advertising and advertising measurement across apps or websites. If you decline, the App remains fully usable and Google Mobile Ads does not receive IDFA or perform that tracking. Google Mobile Ads may process information such as:
 
 - IP address, which may be used to estimate a general location;
-- device or advertising identifiers;
+- device identifiers, including IDFA only when ATT is authorized;
 - ads viewed and interactions with ads or the App;
 - crash reports, performance information, and other diagnostics.
 
@@ -82,10 +82,10 @@ La Aplicación solo comparte una grabación cuando eliges la acción de comparti
 
 ### Publicidad y Google Mobile Ads
 
-La Aplicación muestra un banner mediante Google Mobile Ads (AdMob) cuando Google UMP permite solicitar anuncios y no existe un derecho activo que los retire. Google Mobile Ads puede tratar información como:
+La Aplicación muestra un banner mediante Google Mobile Ads (AdMob) cuando Google UMP permite solicitar anuncios y no existe un derecho activo que los retire. Antes de iniciar Google Mobile Ads, la Aplicación solicita el permiso de Transparencia en el Seguimiento de Aplicaciones (ATT) de Apple. Si autorizas el seguimiento, Google puede utilizar el identificador publicitario (IDFA) y los datos descritos a continuación para publicidad personalizada y medición publicitaria entre aplicaciones o sitios web. Si lo rechazas, la Aplicación sigue siendo plenamente utilizable y Google Mobile Ads no recibe el IDFA ni realiza ese seguimiento. Google Mobile Ads puede tratar información como:
 
 - dirección IP, que puede utilizarse para estimar una ubicación general;
-- identificadores del dispositivo o publicitarios;
+- identificadores del dispositivo, incluido el IDFA únicamente cuando ATT está autorizado;
 - anuncios vistos e interacciones con los anuncios o con la Aplicación;
 - informes de fallos, información de rendimiento y otros diagnósticos.
 

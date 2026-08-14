@@ -1,6 +1,8 @@
+import AppTrackingTransparency
 import Combine
 import Foundation
 import GoogleMobileAds
+import UIKit
 import UserMessagingPlatform
 
 @MainActor
@@ -12,6 +14,7 @@ final class AdConsentManager: ObservableObject {
     @Published private(set) var privacyOptionsErrorMessage: String?
 
     private var didRequestConsentInformation = false
+    private var didRequestTrackingAuthorization = false
     private var isMobileAdsStarting = false
 
     func prepareForAds() async {
@@ -22,6 +25,7 @@ final class AdConsentManager: ObservableObject {
             try await ConsentInformation.shared.requestConsentInfoUpdate(with: RequestParameters())
         } catch {
             refreshConsentState()
+            await requestTrackingAuthorizationIfNeeded()
             await startMobileAdsIfAllowed()
             return
         }
@@ -36,6 +40,7 @@ final class AdConsentManager: ObservableObject {
         }
 
         refreshConsentState()
+        await requestTrackingAuthorizationIfNeeded()
         await startMobileAdsIfAllowed()
     }
 
@@ -47,6 +52,7 @@ final class AdConsentManager: ObservableObject {
         do {
             try await ConsentForm.presentPrivacyOptionsForm(from: nil)
             refreshConsentState()
+            await requestTrackingAuthorizationIfNeeded()
             await startMobileAdsIfAllowed()
         } catch {
             privacyOptionsErrorMessage = L("No se pudieron abrir las opciones de privacidad.")
@@ -61,6 +67,30 @@ final class AdConsentManager: ObservableObject {
         let consentInformation = ConsentInformation.shared
         canRequestAds = consentInformation.canRequestAds
         isPrivacyOptionsRequired = consentInformation.privacyOptionsRequirementStatus == .required
+    }
+
+    private func requestTrackingAuthorizationIfNeeded() async {
+        guard canRequestAds, !didRequestTrackingAuthorization else { return }
+        await waitUntilApplicationIsActive()
+
+        guard ATTrackingManager.trackingAuthorizationStatus == .notDetermined else { return }
+        didRequestTrackingAuthorization = true
+
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            ATTrackingManager.requestTrackingAuthorization { _ in
+                continuation.resume()
+            }
+        }
+    }
+
+    private func waitUntilApplicationIsActive() async {
+        guard UIApplication.shared.applicationState != .active else { return }
+
+        for await _ in NotificationCenter.default.notifications(
+            named: UIApplication.didBecomeActiveNotification
+        ) {
+            break
+        }
     }
 
     private func startMobileAdsIfAllowed() async {

@@ -115,7 +115,7 @@ La verificación de cuenta, el alta de la app/unidad publicitaria y la configura
 
 ### D-013 — ATT separado de UMP — 2026-08-08
 
-UMP y anuncios sin IDFA no implican solicitar seguimiento. No se añade ATT, `NSUserTrackingUsageDescription` ni un mensaje IDFA sin una decisión expresa posterior y su correspondiente revisión de privacidad y pruebas.
+UMP y anuncios sin IDFA no implican solicitar seguimiento. No se añade ATT, `NSUserTrackingUsageDescription` ni un mensaje IDFA sin una decisión expresa posterior y su correspondiente revisión de privacidad y pruebas. Esa decisión posterior se tomó el 2026-08-13 y queda registrada en D-030 para la candidata 1.0 (6).
 
 ### D-014 — Dependencias publicitarias reproducibles — 2026-08-08
 
@@ -260,3 +260,11 @@ El commit remoto `213f86b` incluyo en `STATUS.md` el nombre completo y telefono 
 ### F-021 - Politica y soporte publicos minimizados - 2026-08-11
 
 El repositorio compartido `krazel.github.io` publico el commit `3371a6d` con cambios limitados a `audio-recorder/privacy/index.html` y `audio-recorder/support/index.html`. Ambas URLs responden HTTPS 200, usan el nombre exacto `Voice Recorder Pro - Audio K`, publican solo el alias `coderappskrazel@gmail.com` y describen almacenamiento local, StoreKit, AdMob/UMP, controles y retencion sin servicios hipoteticos. No se tocaron los cambios locales ajenos de Tarot ni App Store Connect.
+
+### D-030 - ATT y tracking condicionado para la candidata 1.0 (6) - 2026-08-13
+
+Por decisión expresa posterior del propietario, la ruta transitoria sin tracking no se entrega. La candidata 1.0 (6) conserva UMP y anuncios reales, solicita ATT después del flujo UMP y espera su resolución antes de iniciar Google Mobile Ads. Si el usuario autoriza, AdMob puede usar IDFA para publicidad personalizada y medición; App Store Privacy declara las categorías aplicables como usadas para tracking. Si rechaza o tiene el permiso restringido, la app sigue plenamente utilizable y AdMob no recibe IDFA ni puede realizar tracking. El prompt, su orden y ambos resultados deben probarse desde instalaciones limpias antes del reenvío.
+
+### D-031 - Captura privada obligatoria para las primeras suscripciones - 2026-08-13
+
+La decisión anterior de dejar vacía la captura opcional de revisión queda sustituida para este envío porque Apple la exigió expresamente bajo Guideline 2.1(b). Se usa únicamente evidencia real de la build: `store/app-review/build-5/subscriptions-seven-levels-real.png`, extraída del vídeo físico del propietario y registrada en `design/APPROVALS.md` como evidencia no aprobada, no como arte público. Debe cargarse en los siete productos antes de añadirlos a revisión; no se admite ninguna captura inventada.
