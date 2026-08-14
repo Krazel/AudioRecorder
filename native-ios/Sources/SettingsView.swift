@@ -12,7 +12,6 @@ struct SettingsView: View {
     @Environment(\.openURL) private var openURL
 
     @State private var supportExpanded = false
-    @State private var unlockCodeVisible = false
     @State private var confirmingDeleteAllFiles = false
 
     private let segmentOptions = [5, 15, 30, 60, 120]
@@ -195,12 +194,6 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                .contentShape(Rectangle())
-                .onLongPressGesture(minimumDuration: 1.1) {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        unlockCodeVisible.toggle()
-                    }
-                }
 
                 if monetization.isLoadingProducts {
                     ProgressView(L("Cargando opciones"))
@@ -261,30 +254,6 @@ struct SettingsView: View {
                     Label(L("Condiciones de uso"), systemImage: "doc.text")
                 }
 
-                if monetization.isManualUnlockActive {
-                    Button(role: .destructive) {
-                        monetization.disableManualUnlock()
-                    } label: {
-                        Label(L("Volver a mostrar anuncios"), systemImage: "rectangle.badge.xmark")
-                    }
-                }
-
-                if unlockCodeVisible {
-                    HStack {
-                        TextField("", text: $monetization.unlockCode, prompt: Text(""))
-                            .textInputAutocapitalization(.characters)
-                            .autocorrectionDisabled()
-                        Button {
-                            _ = monetization.applyUnlockCode()
-                            unlockCodeVisible = false
-                        } label: {
-                            Image(systemName: "checkmark.circle.fill")
-                        }
-                        .buttonStyle(.borderless)
-                        .disabled(monetization.unlockCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    }
-                    .transition(.opacity)
-                }
             }
         } header: {
             Text(L("Apoyar la app"))

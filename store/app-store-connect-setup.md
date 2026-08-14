@@ -113,7 +113,7 @@ Use Apple's displayed localized product price rather than hard-coding a currency
 - [ ] Reconcile App Store Privacy against the build 6 archive: disclose all six Google categories; mark coarse location, device ID, product interaction, advertising data, and performance data as used for tracking, but not non-user-related crash data.
 - [ ] Confirm the production AdMob app and ad-unit identifiers; never use the internal demo build for external TestFlight or a public submission.
 - [x] Complete age rating, content rights, support contact, and review contact. ATT/IDFA is intentionally enabled only after the system authorization flow.
-- [ ] In App Review notes, describe every mechanism that removes ads, including any retained manual code mechanism; do not present hidden functionality misleadingly.
+- [x] StoreKit subscriptions are the only mechanism that removes ads in build 6; there is no hidden code mechanism to disclose.
 - [ ] Confirm Paid Apps Agreement, banking, and tax status before attempting to sell subscriptions.
 
 The privacy policy states the verified product design: recordings stay on the device, sharing is initiated by the user, no account is required, Apple processes StoreKit payments, and Google Mobile Ads may process advertising and technical data. If implementation or SDK configuration changes, update both the policy and App Store privacy answers before release.

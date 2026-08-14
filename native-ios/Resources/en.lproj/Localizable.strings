@@ -53,7 +53,6 @@
 "Sin anuncios activo" = "No ads active";
 "Activo" = "Active";
 "Restaurar compras" = "Restore purchases";
-"Volver a mostrar anuncios" = "Show ads again";
 "Enviar bugs o feedback" = "Send bugs or feedback";
 "Version" = "Version";
 "Anuncio" = "Ad";
@@ -94,8 +93,6 @@
 "Compras restauradas." = "Purchases restored.";
 "No hay una suscripcion activa para restaurar." = "There is no active subscription to restore.";
 "No se han podido restaurar las compras." = "Purchases could not be restored.";
-"Codigo no valido." = "Invalid code.";
-"Codigo aplicado. Los anuncios se han quitado." = "Code applied. Ads have been removed.";
 "Los anuncios vuelven a estar activos." = "Ads are active again.";
 "No se pudo reactivar la grabacion: %@" = "Could not reactivate recording: %@";
 "No se pudo recuperar el audio del sistema: %@" = "Could not recover system audio: %@";

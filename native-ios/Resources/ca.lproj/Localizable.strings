@@ -53,7 +53,6 @@
 "Sin anuncios activo" = "Sense anuncis actiu";
 "Activo" = "Actiu";
 "Restaurar compras" = "Restaurar compres";
-"Volver a mostrar anuncios" = "Tornar a mostrar anuncis";
 "Enviar bugs o feedback" = "Enviar errors o feedback";
 "Version" = "Versio";
 "Anuncio" = "Anunci";
@@ -94,8 +93,6 @@
 "Compras restauradas." = "Compres restaurades.";
 "No hay una suscripcion activa para restaurar." = "No hi ha cap subscripcio activa per restaurar.";
 "No se han podido restaurar las compras." = "No s han pogut restaurar les compres.";
-"Codigo no valido." = "Codi no valid.";
-"Codigo aplicado. Los anuncios se han quitado." = "Codi aplicat. Els anuncis s han tret.";
 "Los anuncios vuelven a estar activos." = "Els anuncis tornen a estar actius.";
 "No se pudo reactivar la grabacion: %@" = "No s ha pogut reactivar la gravacio: %@";
 "No se pudo recuperar el audio del sistema: %@" = "No s ha pogut recuperar l audio del sistema: %@";

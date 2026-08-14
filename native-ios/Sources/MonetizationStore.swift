@@ -4,7 +4,6 @@ import StoreKit
 enum AppMonetizationConfig {
     static let adsEnabled = true
     static let supportEmail = "coderappskrazel@gmail.com"
-    static let activeManualUnlockGeneration = 2
     static var adMobIOSBannerUnitID: String {
         (Bundle.main.object(forInfoDictionaryKey: "ADMOBBannerUnitID") as? String)?
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -21,16 +20,6 @@ enum AppMonetizationConfig {
     static let privacyPolicyURL = URL(string: "https://krazel.github.io/audio-recorder/privacy/")!
     static let termsOfUseURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
     static let manageSubscriptionsURL = URL(string: "https://apps.apple.com/account/subscriptions")!
-    static let manualUnlockCodes: [ManualUnlockCode] = [
-        ManualUnlockCode(value: "AK-7M4Q-26", generation: 2),
-        ManualUnlockCode(value: "KZ-82QX-AK", generation: 2),
-        ManualUnlockCode(value: "VRP-39L-AK", generation: 2)
-    ]
-}
-
-struct ManualUnlockCode {
-    let value: String
-    let generation: Int
 }
 
 @MainActor
@@ -38,7 +27,6 @@ final class MonetizationStore: ObservableObject {
     @Published private(set) var products: [Product] = []
     @Published private(set) var isLoadingProducts = false
     @Published private(set) var purchaseMessage: String?
-    @Published var unlockCode = ""
     @Published var adsRemoved: Bool {
         didSet { defaults.set(adsRemoved, forKey: adsRemovedKey) }
     }
@@ -46,7 +34,6 @@ final class MonetizationStore: ObservableObject {
     private let defaults = UserDefaults.standard
     private let adsRemovedKey = "audio.native.adsRemoved.v1"
     private let adsRemovedSourceKey = "audio.native.adsRemovedSource.v1"
-    private let manualUnlockGenerationKey = "audio.native.manualUnlockGeneration.v1"
     private var transactionUpdatesTask: Task<Void, Never>?
 
     var monetizationEnabled: Bool {
@@ -57,13 +44,9 @@ final class MonetizationStore: ObservableObject {
         monetizationEnabled && !adsRemoved
     }
 
-    var isManualUnlockActive: Bool {
-        adsRemoved && defaults.string(forKey: adsRemovedSourceKey) == AdsRemovedSource.manual.rawValue
-    }
-
     init() {
         adsRemoved = defaults.object(forKey: adsRemovedKey) as? Bool ?? false
-        validateManualUnlockGeneration()
+        removeLegacyManualUnlockIfNeeded()
         transactionUpdatesTask = listenForTransactions()
     }
 
@@ -120,33 +103,6 @@ final class MonetizationStore: ObservableObject {
         }
     }
 
-    func applyUnlockCode() -> Bool {
-        let normalized = unlockCode
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .uppercased()
-
-        guard let code = AppMonetizationConfig.manualUnlockCodes.first(where: { $0.value == normalized }),
-              code.generation == AppMonetizationConfig.activeManualUnlockGeneration else {
-            purchaseMessage = L("Codigo no valido.")
-            return false
-        }
-        adsRemoved = true
-        defaults.set(AdsRemovedSource.manual.rawValue, forKey: adsRemovedSourceKey)
-        defaults.set(code.generation, forKey: manualUnlockGenerationKey)
-        unlockCode = ""
-        purchaseMessage = L("Codigo aplicado. Los anuncios se han quitado.")
-        return true
-    }
-
-    func disableManualUnlock() {
-        guard isManualUnlockActive else { return }
-        adsRemoved = false
-        defaults.removeObject(forKey: adsRemovedSourceKey)
-        defaults.removeObject(forKey: manualUnlockGenerationKey)
-        unlockCode = ""
-        purchaseMessage = L("Los anuncios vuelven a estar activos.")
-    }
-
     func clearMessage() {
         purchaseMessage = nil
     }
@@ -185,7 +141,6 @@ final class MonetizationStore: ObservableObject {
             adsRemoved = false
             defaults.removeObject(forKey: adsRemovedSourceKey)
         }
-        validateManualUnlockGeneration()
     }
 
     private func listenForTransactions() -> Task<Void, Never> {
@@ -201,13 +156,11 @@ final class MonetizationStore: ObservableObject {
         }
     }
 
-    private func validateManualUnlockGeneration() {
-        guard defaults.string(forKey: adsRemovedSourceKey) == AdsRemovedSource.manual.rawValue else { return }
-        let generation = defaults.integer(forKey: manualUnlockGenerationKey)
-        guard generation != AppMonetizationConfig.activeManualUnlockGeneration else { return }
+    private func removeLegacyManualUnlockIfNeeded() {
+        guard defaults.string(forKey: adsRemovedSourceKey) == "manual" else { return }
         adsRemoved = false
         defaults.removeObject(forKey: adsRemovedSourceKey)
-        defaults.removeObject(forKey: manualUnlockGenerationKey)
+        defaults.removeObject(forKey: "audio.native.manualUnlockGeneration.v1")
     }
 
     private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
@@ -225,6 +178,5 @@ private enum StoreError: Error {
 }
 
 private enum AdsRemovedSource: String {
-    case manual
     case subscription
 }

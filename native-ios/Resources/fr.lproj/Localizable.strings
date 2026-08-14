@@ -53,7 +53,6 @@
 "Sin anuncios activo" = "Sans annonces actif";
 "Activo" = "Actif";
 "Restaurar compras" = "Restaurer les achats";
-"Volver a mostrar anuncios" = "Afficher les annonces a nouveau";
 "Enviar bugs o feedback" = "Envoyer bugs ou avis";
 "Version" = "Version";
 "Anuncio" = "Annonce";
@@ -94,8 +93,6 @@
 "Compras restauradas." = "Achats restaures.";
 "No hay una suscripcion activa para restaurar." = "Aucun abonnement actif a restaurer.";
 "No se han podido restaurar las compras." = "Les achats n ont pas pu etre restaures.";
-"Codigo no valido." = "Code non valide.";
-"Codigo aplicado. Los anuncios se han quitado." = "Code applique. Les annonces ont ete supprimees.";
 "Los anuncios vuelven a estar activos." = "Les annonces sont de nouveau actives.";
 "No se pudo reactivar la grabacion: %@" = "Impossible de reactiver l enregistrement : %@";
 "No se pudo recuperar el audio del sistema: %@" = "Impossible de recuperer l audio du systeme : %@";

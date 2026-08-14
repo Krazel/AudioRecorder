@@ -89,9 +89,9 @@ No se implementa ninguna pantalla nueva sin una imagen o mockup previamente apro
 
 La escala preparada para 1.0 contiene seis niveles mensuales: 0,99 / 3 / 5 / 10 / 15 / 30. Todos conceden el mismo beneficio mientras el derecho está activo. Los niveles 50/100/300 quedan excluidos de la versión local 1.0.
 
-### D-007 — Códigos manuales retenidos — 2026-08-08
+### D-007 — Códigos manuales retenidos — 2026-08-08 (sustituida por D-032)
 
-Los códigos manuales ocultos que retiran anuncios permanecen en la build pública por decisión informada del propietario. Deben describirse fielmente en las notas de App Review; no se permite ocultarlos de forma engañosa.
+Esta decisión histórica queda sustituida por D-032 antes de la candidata pública 1.0 (6).
 
 ### D-008 — Publicación bajo autorización expresa — 2026-08-08
 
@@ -268,3 +268,7 @@ Por decisión expresa posterior del propietario, la ruta transitoria sin trackin
 ### D-031 - Captura privada obligatoria para las primeras suscripciones - 2026-08-13
 
 La decisión anterior de dejar vacía la captura opcional de revisión queda sustituida para este envío porque Apple la exigió expresamente bajo Guideline 2.1(b). Se usa únicamente evidencia real de la build: `store/app-review/build-5/subscriptions-seven-levels-real.png`, extraída del vídeo físico del propietario y registrada en `design/APPROVALS.md` como evidencia no aprobada, no como arte público. Debe cargarse en los siete productos antes de añadirlos a revisión; no se admite ninguna captura inventada.
+
+### D-032 - StoreKit como única vía para retirar anuncios - 2026-08-15
+
+La decisión D-007 queda sustituida para la candidata pública 1.0 (6). Antes de hacer público el repositorio se retiran de iOS los códigos manuales y su acceso oculto: quedarían expuestos en el código fuente y constituyen un mecanismo propio de desbloqueo incompatible con la revisión de compras integradas. Desde esta candidata, los anuncios solo se retiran mediante una suscripción verificada por StoreKit. Al actualizar, cualquier desbloqueo manual histórico se invalida de forma explícita; una suscripción vigente se conserva o restaura normalmente.

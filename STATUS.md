@@ -4,6 +4,12 @@
 
 > Estado vigente: Apple mantiene rechazado el envío iOS 1.0 (5), submission `eb006012-2ca3-4b97-97d2-15564d5dc176`, tras la revisión del 2026-08-13 en un iPad Air 11-inch (M3). Los cuatro puntos concretos son App Privacy marcada como tracking sin ATT, suscripciones no enviadas, referencia de precio/gratuidad en el subtítulo y ausencia del enlace EULA en la descripción. La corrección local para 1.0 (6) está en preparación; no se ha modificado App Store Connect, subido otra build ni reenviado a revisión.
 
+## Preparación de repositorio público y build 6 - 2026-08-15
+
+- El propietario autorizó hacer público `Krazel/AudioRecorder` para usar GitHub Actions y completar la build 1.0 (6). La auditoría de ramas, etiquetas y archivos versionados no encontró claves privadas, certificados, perfiles, tokens ni contraseñas; los secretos de Apple y AdMob permanecen en el environment protegido `app-store-production`.
+- Antes del cambio de visibilidad se retiró de iOS el mecanismo de códigos manuales y su acceso oculto. StoreKit pasa a ser la única vía para retirar anuncios; los desbloqueos manuales históricos se invalidan al actualizar y las suscripciones verificadas siguen funcionando.
+- El primer intento de build 6, run `31849082511`, no llegó a asignar un runner ni a ejecutar pasos porque GitHub indicó un pago fallido o límite de gasto. No consumió el número de build en Apple. El siguiente paso es hacer público el repositorio y relanzar el mismo workflow desde la candidata actualizada.
+
 ## Corrección del rechazo de App Review - 2026-08-13
 
 - La fuente de build 6 mantiene UMP y `canRequestAds`, solicita ATT después de UMP y espera la respuesta antes de iniciar Google Mobile Ads. Si se autoriza, AdMob puede usar IDFA para anuncios personalizados y medición; si se rechaza, la app sigue funcionando y AdMob sirve anuncios sin IDFA ni tracking.
@@ -40,7 +46,7 @@
 - El segundo vídeo `VoiceRecorder Grabacion.mp4` fue revisado localmente: dura 56 segundos, es un MP4 vertical de 384 × 848 y muestra el lanzamiento desde la pantalla de inicio en un iPhone 11 con iOS 26.6, consentimiento UMP, permiso de micrófono, grabación, archivo creado, gestión/favorito, configuración del modo por sonido, los siete niveles, hoja de compra TestFlight cancelable, enlaces legales, opciones de privacidad y versión 1.0 build 5. Es apto para adjuntar a la respuesta; no se ha transmitido todavía.
 - La respuesta puede documentar de forma verificable que no hay cuentas ni login; las grabaciones se guardan localmente y solo se comparten por la hoja nativa; las funciones principales son gratuitas; las siete suscripciones mensuales equivalentes se encuentran en Ajustes y retiran anuncios; los servicios externos visibles son StoreKit, Google Mobile Ads y Google UMP.
 - Los dispositivos declarables ya están confirmados: iPhone X con iOS 16 e iPhone 11 con iOS 26.6. El vídeo físico real existe en Descargas y fue revisado; no falta ese material.
-- D-007 exige revelar privadamente a App Review la ruta no evidente del campo de códigos manuales y un código válido. El último borrador solicitado por el propietario lo omite; la omisión sigue siendo un riesgo de exactitud/revisión y no debe justificarse como minimización de datos públicos, porque las notas de App Review son privadas y funcionales.
+- La candidata build 6 ya no contiene el antiguo campo oculto ni códigos manuales; no requieren instrucciones ni credenciales en las notas de revisión.
 - Antes de reenviar, comprobar que la versión incluye la build 5 y que las siete suscripciones se añaden al envío inicial. Responder a Apple o volver a enviar continúa siendo una acción roja y no se ha ejecutado.
 
 ## Actualización de cierre para candidata pública - 2026-08-09
@@ -73,10 +79,10 @@ La candidata pública se generó desde el commit `213f86b` mediante el run `3132
 
 - Versión de marketing 1.0, build base 1, deployment target iOS 16.
 - Idiomas conservados: `ca/de/en/es/fr/it/pt`; las siete tablas tienen las mismas 126 claves.
-- Seis suscripciones mensuales locales: 0,99 / 3 / 5 / 10 / 15 / 30, con el mismo beneficio de retirar anuncios mientras exista derecho activo.
-- Los códigos manuales ocultos permanecen por decisión expresa del propietario.
+- Siete suscripciones mensuales locales: 0,99 / 3 / 5 / 10 / 15 / 30 / 49,99, con el mismo beneficio de retirar anuncios mientras exista derecho activo.
+- StoreKit es la única vía de retirada de anuncios en la candidata pública; el mecanismo manual histórico se ha eliminado.
 - La pantalla de apoyo muestra precio localizado de StoreKit, periodicidad mensual, renovación/cancelación, restauración, gestión de suscripción, Política de privacidad y EULA estándar de Apple.
-- StoreKit recalcula derechos tras actualizaciones de transacción para no invalidar por error un desbloqueo manual vigente.
+- StoreKit recalcula derechos tras actualizaciones de transacción y restaura las suscripciones verificadas.
 - El modo por sonido copia el buffer del tap y realiza análisis y escritura en una cola serial dedicada; la recuperación conserva el estado del segmento y un fallo de escritura detiene la grabación de forma veraz.
 - `PrivacyInfo.xcprivacy` declara `CA92.1` para preferencias privadas y `C617.1` para metadatos de archivos del contenedor.
 - UMP solicita una actualización en cada arranque, presenta el formulario si es necesario y no inicializa Mobile Ads ni crea el banner hasta que `canRequestAds` sea verdadero. La inicialización y la carga tienen guardas contra duplicados.
@@ -112,12 +118,12 @@ La candidata pública se generó desde el commit `213f86b` mediante el run `3132
 - Resolución y compilación reales de Google Mobile Ads 12.x y UMP 3.x; Windows no puede validar importación, enlace ni APIs Swift.
 - Archivo firmado e inspección automatizada del archive con `ad_configuration=test`, `validate_with_app_store=false` y `upload_to_app_store=false`. Generar o inspeccionar además el privacy report agregado en Xcode Organizer; la validación externa sigue separada y desactivada por defecto.
 - Prueba UMP/AdMob en dispositivo de prueba: instalación limpia EEE/Reino Unido, aceptar/rechazar, reapertura, opciones de privacidad, fuera de zona regulada, primer arranque sin red y sesión con consentimiento previo. Confirmar cero solicitudes antes de `canRequestAds`.
-- Verificar que una suscripción o código manual activo elimina el banner y que su pérdida lo reactiva solo si UMP permite anuncios.
+- Verificar que una suscripción activa elimina el banner y que su pérdida lo reactiva solo si UMP permite anuncios.
 - Prueba real en iOS 16 y una versión actual: grabación continua y por sonido, rotación, segundo plano/bloqueo, reproducción, renombrado, favoritos, compartir y borrar.
 - Interrupciones por llamada, Siri y alarma; cambios Bluetooth/ruta; reset de servicios multimedia; falta de espacio y fallo de escritura.
 - Fluidez, cola de audio, batería y temperatura durante 30 minutos en modo continuo y 30 minutos por sonido.
 - Selector completo y persistencia de `ca/de/en/es/fr/it/pt` en dispositivo.
-- StoreKit Sandbox: compra, restauración, upgrade/downgrade, cancelación, expiración y revocación; interacción con desbloqueo manual.
+- StoreKit Sandbox: compra, restauración, upgrade/downgrade, cancelación, expiración y revocación.
 - VoiceOver, Dynamic Type y apertura real de enlaces legales, suscripciones y soporte.
 
 ## Bloqueos humanos o externos
@@ -135,7 +141,7 @@ La candidata pública se generó desde el commit `213f86b` mediante el run `3132
 - La política debe publicarse y verificarse desde una sesión cerrada antes de usar su URL pública.
 - App Store Connect requiere comprobación humana de los seis productos elegidos; los productos 50/100/300 deben quedar fuera de venta y fuera de la versión 1.0.
 - Quedan pendientes privacidad, edad, categorías, derechos de contenido, acuerdos, fiscalidad, banco, contacto de revisión y metadatos localizados en App Store Connect.
-- Las notas de revisión deben describir fielmente el mecanismo de códigos manuales ocultos.
+- Las notas de revisión deben indicar que las suscripciones verificadas por StoreKit son la única vía para retirar anuncios.
 - Deben decidirse y verificarse cumplimiento de exportación y familia de dispositivos. La build superada mantiene un aviso porque solo declara orientación vertical mientras el destino puede incluir iPad; decidir iPhone-only, universal o pantalla completa antes del archive firmado.
 - GitHub ejecuta ya el workflow actualizado de la rama. Ninguna ejecución de firma activó validación externa ni upload.
 - Cualquier publicación, subida o envío requiere aprobación expresa independiente.
