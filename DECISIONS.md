@@ -272,3 +272,11 @@ La decisión anterior de dejar vacía la captura opcional de revisión queda sus
 ### D-032 - StoreKit como única vía para retirar anuncios - 2026-08-15
 
 La decisión D-007 queda sustituida para la candidata pública 1.0 (6). Antes de hacer público el repositorio se retiran de iOS los códigos manuales y su acceso oculto: quedarían expuestos en el código fuente y constituyen un mecanismo propio de desbloqueo incompatible con la revisión de compras integradas. Desde esta candidata, los anuncios solo se retiran mediante una suscripción verificada por StoreKit. Al actualizar, cualquier desbloqueo manual histórico se invalida de forma explícita; una suscripción vigente se conserva o restaura normalmente.
+
+### F-022 - Repositorio público y build 6 validada - 2026-08-15
+
+Tras una auditoría de ramas, etiquetas e historia alcanzable, `Krazel/AudioRecorder` pasó a visibilidad pública sin exponer secretos. La candidata iOS 1.0 (6) se generó desde `fdcdb3f` mediante el run `31850317905`; superó firma, archive, comprobaciones ATT/AdMob, validación de Apple y upload. Apple la procesa como `VALID` y la versión conserva publicación manual.
+
+### F-023 - Correcciones remotas del rechazo y envío conjunto - 2026-08-15
+
+Se sincronizaron las siete descripciones con EULA, se vaciaron subtítulos y texto promocional, se eliminaron las terceras capturas públicas con referencias a `free`/`gratis`, se corrigió App Privacy y se cargó la captura privada real en los siete productos. Tras una primera asociación separada, el propietario autorizó cancelar y rearmar el envío. La submission `7e9fd837-4419-498a-a40a-7e8fbbd4422e` contiene exactamente la versión iOS 1.0 (6), la versión del grupo y las siete versiones de suscripción; los nueve elementos quedaron `WAITING_FOR_REVIEW`. La publicación final permanece manual.
