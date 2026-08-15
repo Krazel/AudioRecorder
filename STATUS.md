@@ -9,12 +9,13 @@
 - Las siete suscripciones tienen nivel 1, 49 localizaciones coherentes, precios y disponibilidad configurados, y una captura privada real procesada con estado `COMPLETE` en cada producto.
 - Tras autorización expresa, se canceló el envío separado anterior y se rearmó una única submission `7e9fd837-4419-498a-a40a-7e8fbbd4422e` con exactamente nueve elementos: versión iOS 1.0 (6), versión del grupo y siete versiones de suscripción.
 - El primer envío de esa submission entró en `INVALID_BINARY` porque la declaración de App Store Connect `usesIdfa` había quedado sin valor aunque el binario integra ATT/AdMob. La build nunca estuvo corrupta: Apple la mantuvo `VALID`, `APP_STORE_ELIGIBLE`, sin errores ni avisos de carga.
-- El 2026-08-15 se corrigió `usesIdfa=true`, coherente con el binario y App Privacy. Al resolver el único elemento rechazado, la versión volvió inmediatamente a `READY_FOR_REVIEW`. Los nueve elementos se reenviaron a las 10:59:44 UTC y la submission completa quedó `WAITING_FOR_REVIEW`.
+- El 2026-08-15 se corrigió `usesIdfa=true`, coherente con el binario y App Privacy. Al resolver el único elemento rechazado, la versión volvió inmediatamente a `READY_FOR_REVIEW`, pero el reenvío de las 10:59:44 UTC regresó de forma automática a `INVALID_BINARY`: el booleano general no completó la declaración detallada de finalidades IDFA que la interfaz de App Store Connect exige.
+- El ítem rechazado se ha vuelto a marcar como resuelto para dejar la versión editable/lista. No se ha reenviado una tercera vez. La API pública ya no expone el antiguo recurso detallado `idfaDeclarations`; el próximo paso mínimo es completar en la interfaz autenticada que la app sirve anuncios, respeta ATT y no atribuye instalaciones ni acciones a anuncios previos, verificar el estado y solo entonces reenviar.
 - La app no está publicada; la publicación posterior a una eventual aprobación permanece manual.
 
 Última revalidación: 2026-08-15.
 
-> Estado vigente: envío corregido en espera de revisión de Apple. No hace falta una build 7. El rechazo histórico de 1.0 (5) y el `INVALID_BINARY` transitorio de 1.0 (6) ya están resueltos y no describen el estado operativo actual.
+> Estado vigente: no hace falta una build 7, pero el envío aún no está de nuevo en cola. La versión está preparada para corregir la declaración detallada IDFA en la interfaz autenticada de App Store Connect; después se debe verificar y reenviar el mismo conjunto de nueve elementos. La publicación permanece manual.
 
 ## Preparación de repositorio público y build 6 - 2026-08-15
 
