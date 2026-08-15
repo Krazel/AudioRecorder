@@ -1,18 +1,20 @@
 # VoiceRecorder / AudioRecorder — estado actual
 
-## Estado de App Store Connect - 2026-08-15 12:29 CEST
+## Estado de App Store Connect - 2026-08-15 13:00 CEST
 
 - `Krazel/AudioRecorder` es público. La auditoría previa no encontró secretos, certificados, perfiles ni claves privadas alcanzables desde ramas o etiquetas; los secretos siguen protegidos fuera del repositorio.
 - La candidata iOS 1.0 (6), commit `fdcdb3f`, se construyó, firmó, validó y subió mediante GitHub Actions run `31850317905`. Apple la marca `VALID`, iOS 16+, y está seleccionada en la versión 1.0 con publicación manual.
 - App Store Connect tiene subtítulo y texto promocional vacíos en los siete idiomas, dos capturas públicas reales por idioma, enlace EULA en las siete descripciones y la política pública actualizada.
 - App Privacy conserva ATT/tracking para las categorías publicitarias aplicables. El archive exacto confirma el manifiesto de la app, Google Mobile Ads y UMP; `Device ID` es la categoría del SDK marcada para tracking y los datos de fallos/rendimiento no lo son.
 - Las siete suscripciones tienen nivel 1, 49 localizaciones coherentes, precios y disponibilidad configurados, y una captura privada real procesada con estado `COMPLETE` en cada producto.
-- Tras autorización expresa, se canceló el envío separado anterior y se rearmó una única submission `7e9fd837-4419-498a-a40a-7e8fbbd4422e` con exactamente nueve elementos: versión iOS 1.0 (6), versión del grupo y siete versiones de suscripción. Los nueve quedaron `WAITING_FOR_REVIEW` el 2026-08-15 a las 10:28:49 UTC.
+- Tras autorización expresa, se canceló el envío separado anterior y se rearmó una única submission `7e9fd837-4419-498a-a40a-7e8fbbd4422e` con exactamente nueve elementos: versión iOS 1.0 (6), versión del grupo y siete versiones de suscripción.
+- El primer envío de esa submission entró en `INVALID_BINARY` porque la declaración de App Store Connect `usesIdfa` había quedado sin valor aunque el binario integra ATT/AdMob. La build nunca estuvo corrupta: Apple la mantuvo `VALID`, `APP_STORE_ELIGIBLE`, sin errores ni avisos de carga.
+- El 2026-08-15 se corrigió `usesIdfa=true`, coherente con el binario y App Privacy. Al resolver el único elemento rechazado, la versión volvió inmediatamente a `READY_FOR_REVIEW`. Los nueve elementos se reenviaron a las 10:59:44 UTC y la submission completa quedó `WAITING_FOR_REVIEW`.
 - La app no está publicada; la publicación posterior a una eventual aprobación permanece manual.
 
 Última revalidación: 2026-08-15.
 
-> Estado vigente: envío corregido en espera de revisión de Apple. El rechazo histórico de 1.0 (5) permanece documentado más abajo, pero ya no describe el estado operativo actual.
+> Estado vigente: envío corregido en espera de revisión de Apple. No hace falta una build 7. El rechazo histórico de 1.0 (5) y el `INVALID_BINARY` transitorio de 1.0 (6) ya están resueltos y no describen el estado operativo actual.
 
 ## Preparación de repositorio público y build 6 - 2026-08-15
 

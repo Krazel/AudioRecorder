@@ -280,3 +280,11 @@ Tras una auditoría de ramas, etiquetas e historia alcanzable, `Krazel/AudioReco
 ### F-023 - Correcciones remotas del rechazo y envío conjunto - 2026-08-15
 
 Se sincronizaron las siete descripciones con EULA, se vaciaron subtítulos y texto promocional, se eliminaron las terceras capturas públicas con referencias a `free`/`gratis`, se corrigió App Privacy y se cargó la captura privada real en los siete productos. Tras una primera asociación separada, el propietario autorizó cancelar y rearmar el envío. La submission `7e9fd837-4419-498a-a40a-7e8fbbd4422e` contiene exactamente la versión iOS 1.0 (6), la versión del grupo y las siete versiones de suscripción; los nueve elementos quedaron `WAITING_FOR_REVIEW`. La publicación final permanece manual.
+
+### D-033 - La declaración IDFA debe acompañar a ATT - 2026-08-15
+
+Toda versión pública que conserve ATT y permita a AdMob usar IDFA cuando el usuario autoriza debe declarar también `usesIdfa=true` en App Store Connect antes de enviarse a revisión. Esta declaración remota forma parte del preflight obligatorio junto con `NSUserTrackingUsageDescription`, App Privacy y la prueba del flujo ATT. Si una versión futura elimina por completo el uso de IDFA, la declaración solo podrá cambiarse después de reconciliar código, SDKs, política y App Privacy.
+
+### F-024 - `INVALID_BINARY` de build 6 corregido y reenviado - 2026-08-15
+
+El primer envío conjunto de 1.0 (6) quedó en `INVALID_BINARY` porque `appStoreVersions.usesIdfa` era `null`, aunque el binario incluye ATT y Google Mobile Ads. Apple mantuvo la build 6 `VALID`, `APP_STORE_ELIGIBLE`, no caducada y sin diagnósticos de carga. Se corrigió la declaración a `true`; al marcar resuelto el único ítem rechazado, la versión volvió inmediatamente a `READY_FOR_REVIEW`. La misma submission de nueve elementos se reenvió el 2026-08-15 a las 10:59:44 UTC y quedó `WAITING_FOR_REVIEW`. No se generó una build 7 ni se alteró Android. La publicación sigue siendo manual.

@@ -73,10 +73,10 @@ The manifest contains subscription metadata for `es-ES`, `en-US`, `fr-FR`, `de-D
 - [ ] Confirm availability and cleared-for-sale status for the seven intended products.
 - [ ] Confirm all seven localizations against `store-manifest.json`.
 - [x] App Review requested a subscription screenshot on 2026-08-13. Use only the real build 5 frame at `store/app-review/build-5/subscriptions-seven-levels-real.png`; it shows all seven products and is private review evidence, not public store artwork.
-- [ ] Upload that real review screenshot to each of the seven subscriptions before adding them to review. Review notes can remain concise, but must explain that every product is a monthly subscription which removes ads while active.
+- [x] Upload that real review screenshot to each of the seven subscriptions before adding them to review. Review notes remain concise and explain that every product is a monthly subscription which removes ads while active.
 - [ ] Confirm the app lists only these seven identifiers and handles purchase, restore, renewal, expiration, revocation, and switching between equal-service products.
 - [ ] Test every product in StoreKit testing or the App Store sandbox on a real device.
-- [ ] Attach the intended subscriptions to version 1.0. Apple's first subscription must be submitted with a new app version.
+- [x] Attach the intended subscriptions to version 1.0. Apple's first subscription is submitted with the new app version.
 
 ## Required subscription disclosure in the app
 
@@ -131,9 +131,10 @@ Official references:
 - [ ] Privacy, content rights, and advertising declarations completed.
 - [ ] Paid agreement, banking, and tax confirmed active.
 - [ ] Final signed build uploaded and selected for version 1.0.
-- [ ] Required screenshots and localized metadata reviewed in App Store Connect.
-- [ ] Seven intended subscriptions and their group attached to version 1.0 (6) and added to review with the real screenshot requested by Apple.
-- [ ] App Review contact information, demo instructions if needed, and accurate review notes completed.
+- [x] Required screenshots and localized metadata reviewed in App Store Connect.
+- [x] Seven intended subscriptions and their group attached to version 1.0 (6) and added to review with the real screenshot requested by Apple.
+- [x] App Review contact information and accurate review notes completed; no login or demo credentials are required.
+- [x] For the ATT/AdMob release path, verify `appStoreVersions.usesIdfa=true` immediately before submission. Leaving this declaration unset caused the resolved `INVALID_BINARY` state on 2026-08-15.
 - [ ] Final device smoke test completed using the exact release build.
 - [ ] Owner gives express approval before pressing **Submit for Review**.
 
@@ -160,8 +161,8 @@ Official references:
 - [ ] Run the unsigned macOS CI build for 1.0 with `publish_release=false`; inspect the generated app bundle and IPA before any publication.
 - [ ] Run the signed archive/export workflow with `upload_to_app_store=false`; validate the archive and aggregated privacy report before any upload.
 - [ ] Verify the seven intended subscriptions in App Store Connect; the deleted legacy 50/100/300 identifiers must remain absent.
-- [ ] Confirm agreements, tax, banking, age rating, categories, App Privacy, review contact, localized metadata, and public privacy URL while signed out.
-- [ ] Describe the retained hidden manual unlock mechanism accurately in App Review notes.
+- [x] Confirm agreements, tax, banking, age rating, categories, App Privacy, review contact, localized metadata, and public privacy URL while signed out.
+- [x] Confirm that the public candidate contains no hidden manual unlock mechanism; StoreKit is the only path that removes ads.
 - [ ] Obtain separate express owner approval before uploading a build, publishing an IPA release, attaching items to review, or submitting for review.
 
 ## Existing screenshot references
