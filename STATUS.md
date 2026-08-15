@@ -1,22 +1,23 @@
 # VoiceRecorder / AudioRecorder — estado actual
 
-## Estado de App Store Connect - 2026-08-15 15:15 CEST
+## Estado de App Store Connect - 2026-08-15 15:38 CEST
 
 - `Krazel/AudioRecorder` es público. La auditoría previa no encontró secretos, certificados, perfiles ni claves privadas alcanzables desde ramas o etiquetas; los secretos siguen protegidos fuera del repositorio.
-- La candidata iOS 1.0 (6), commit `fdcdb3f`, se construyó, firmó, validó y subió mediante GitHub Actions run `31850317905`. Apple la marca `VALID`, iOS 16+, y está seleccionada en la versión 1.0 con publicación manual.
+- La build histórica iOS 1.0 (6), commit `fdcdb3f`, se construyó, firmó y subió mediante GitHub Actions run `31850317905`, pero Apple rechazó su manifiesto raíz con `ITMS-91064`.
 - App Store Connect tiene subtítulo y texto promocional vacíos en los siete idiomas, dos capturas públicas reales por idioma, enlace EULA en las siete descripciones y la política pública actualizada.
 - App Privacy conserva ATT/tracking para las categorías publicitarias aplicables. El archive exacto confirma el manifiesto de la app, Google Mobile Ads y UMP; `Device ID` es la categoría del SDK marcada para tracking y los datos de fallos/rendimiento no lo son.
 - Las siete suscripciones tienen nivel 1, 49 localizaciones coherentes, precios y disponibilidad configurados, y una captura privada real procesada con estado `COMPLETE` en cada producto.
-- Tras autorización expresa, se canceló el envío separado anterior y se rearmó una única submission `7e9fd837-4419-498a-a40a-7e8fbbd4422e` con exactamente nueve elementos: versión iOS 1.0 (6), versión del grupo y siete versiones de suscripción.
-- El primer envío de esa submission entró en `INVALID_BINARY` con `usesIdfa` sin valor aunque el binario integra ATT/AdMob. Se corrigió a `usesIdfa=true`, pero los reenvíos posteriores también regresaron automáticamente a `INVALID_BINARY`; por tanto, ya no se considera demostrado que ese campo fuera la causa completa.
-- La comprobación autenticada más reciente muestra la versión iOS 1.0 en `INVALID_BINARY` y el elemento de versión `REJECTED`. La build 6 separada permanece `VALID`, `APP_STORE_ELIGIBLE`, no caducada y sin errores, avisos ni diagnósticos de carga. El grupo y las siete suscripciones permanecen intactos y `READY_FOR_REVIEW` dentro del envío.
+- Tras autorización expresa, se conserva una única submission `7e9fd837-4419-498a-a40a-7e8fbbd4422e` con exactamente nueve elementos: versión iOS 1.0, versión del grupo y siete versiones de suscripción.
 - Apple comunicó el motivo exacto: `ITMS-91064`. El `PrivacyInfo.xcprivacy` de la build 6 contenía `NSPrivacyTracking=true` junto con `NSPrivacyTrackingDomains=[]`; Apple TN3181 define expresamente esa combinación como inválida. La firma, el ejecutable y la carga de la build 6 no estaban corruptos.
-- La candidata 1.0 (7) corrige el manifiesto raíz a `NSPrivacyTracking=false` sin `NSPrivacyTrackingDomains`. ATT, UMP, `usesIdfa=true`, App Privacy y el manifiesto propio de Google Mobile Ads permanecen separados y coherentes. El workflow valida semánticamente todos los manifiestos tanto en fuente como en archive e IPA exportada para impedir otra subida con claves incompatibles.
+- La candidata 1.0 (7), commit `3e74d38`, corrige el manifiesto raíz a `NSPrivacyTracking=false` sin `NSPrivacyTrackingDomains`. ATT, UMP, `usesIdfa=true`, App Privacy y el manifiesto propio de Google Mobile Ads permanecen separados y coherentes. El workflow valida semánticamente todos los manifiestos tanto en fuente como en archive e IPA exportada para impedir otra subida con claves incompatibles.
+- GitHub Actions run `31887343289` terminó correctamente: firma, archive, validadores de privacidad en fuente/archive/IPA, validación de Apple y upload pasaron. Apple procesó la build 7 como `VALID`, `APP_STORE_ELIGIBLE`, no caducada, iOS 16+, con ID `744404c3-5503-4e64-a796-bef3ce86cffe`.
+- La build 7 está seleccionada en la versión 1.0, `usesIdfa=true` y publicación `MANUAL`. El elemento rechazado se marcó resuelto y la misma submission se reenvió el 15 de agosto de 2026 a las 15:38 CEST.
+- App Store Connect muestra `Pendiente de revisión` para la submission y sus nueve elementos: app 1.0 (7), grupo y siete suscripciones. No se perdió ni recreó ningún producto.
 - La app no está publicada; la publicación posterior a una eventual aprobación permanece manual.
 
 Última revalidación: 2026-08-15.
 
-> Estado vigente: la corrección para `ITMS-91064` está en el commit `324ef91` y ya se subió a `origin/agent/prepare-ios-test-build`. Debe ejecutarse el workflow para 1.0 (7), pero el verificador central de GitHub devolvió `CENTRAL_RECHECK_REQUIRED` para la sesión compartida de `gh`; no se usará una autenticación alternativa por proyecto. Tras restaurar esa vía única se compilará, validará y subirá build 7; después se seleccionará, se resolverá únicamente el ítem rechazado y se reenviará la misma submission. La publicación permanece manual.
+> Estado vigente: la build 7 corregida está validada y los nueve elementos están pendientes de revisión. No queda ninguna acción inmediata: esperar la respuesta de Apple. Aunque Apple apruebe, la publicación permanece manual y no se hará pública automáticamente.
 
 ## Preparación de repositorio público y build 6 - 2026-08-15
 

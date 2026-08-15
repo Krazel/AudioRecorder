@@ -295,4 +295,8 @@ La candidata 1.0 (7) declara `NSPrivacyTracking=false` en el manifiesto de la ap
 
 ### F-025 - Corrección `ITMS-91064` publicada en la rama - 2026-08-15
 
-El commit `324ef91` contiene la corrección del manifiesto y el validador semántico de todos los `PrivacyInfo.xcprivacy` en fuente, archive e IPA exportada. Se subió a `origin/agent/prepare-ios-test-build`; Android y `artifact/` quedaron intactos. El workflow de build 7 aún no se ha disparado porque la comprobación canónica de la sesión compartida de GitHub devolvió `CENTRAL_RECHECK_REQUIRED`.
+El commit `324ef91` contiene la corrección del manifiesto y el validador semántico de todos los `PrivacyInfo.xcprivacy` en fuente, archive e IPA exportada. Se subió a `origin/agent/prepare-ios-test-build`; Android y `artifact/` quedaron intactos.
+
+### F-026 - Build 7 validada y envío completo reenviado - 2026-08-15
+
+El run `31887343289`, desde el commit `3e74d38`, superó firma, archive, validación semántica de privacidad en fuente/archive/IPA, validación de Apple y upload. Apple procesó 1.0 (7), recurso `744404c3-5503-4e64-a796-bef3ce86cffe`, como `VALID` y `APP_STORE_ELIGIBLE`. La build 7 sustituyó a la 6 en la versión 1.0; `usesIdfa=true` y publicación manual permanecen vigentes. Se resolvió el único ítem rechazado y se reenvió la submission existente `7e9fd837-4419-498a-a40a-7e8fbbd4422e` con sus nueve elementos originales. App Store Connect muestra la app 1.0 (7), el grupo y las siete suscripciones en `WAITING_FOR_REVIEW`. La app no está publicada.
