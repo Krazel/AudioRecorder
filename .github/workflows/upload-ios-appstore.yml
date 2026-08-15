@@ -323,6 +323,9 @@ jobs:
             TRACKING_COPY="$(plutil -extract NSUserTrackingUsageDescription raw -o - "native-ios/Resources/${LOCALE}.lproj/InfoPlist.strings")"
             test -n "${TRACKING_COPY}"
           done
+          python3 scripts/validate-privacy-manifests.py \
+            --app-manifest native-ios/Resources/PrivacyInfo.xcprivacy \
+            native-ios/Resources
 
       - name: Archive signed app
         run: |
@@ -360,7 +363,6 @@ jobs:
           ARCHIVED_BUILD="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "${APP_PLIST}")"
           ARCHIVED_APP_ID="$(/usr/libexec/PlistBuddy -c 'Print :GADApplicationIdentifier' "${APP_PLIST}")"
           ARCHIVED_BANNER_ID="$(/usr/libexec/PlistBuddy -c 'Print :ADMOBBannerUnitID' "${APP_PLIST}")"
-          ARCHIVED_PRIVACY_TRACKING="$(/usr/libexec/PlistBuddy -c 'Print :NSPrivacyTracking' "${APP_BUNDLE}/PrivacyInfo.xcprivacy")"
           if [[ "${ARCHIVED_BUNDLE_ID}" != "com.dmkr.audio.B2X6D3A9J9" ]] || \
              [[ "${ARCHIVED_VERSION}" != "${APP_VERSION}" ]] || \
              [[ "${ARCHIVED_BUILD}" != "${APP_BUILD_NUMBER}" ]]; then
@@ -372,10 +374,9 @@ jobs:
             echo "Archived app does not contain the selected AdMob configuration"
             exit 1
           fi
-          if [[ "${ARCHIVED_PRIVACY_TRACKING}" != "true" ]]; then
-            echo "Archived privacy manifest must declare tracking enabled"
-            exit 1
-          fi
+          python3 scripts/validate-privacy-manifests.py \
+            --app-manifest "${APP_BUNDLE}/PrivacyInfo.xcprivacy" \
+            "${APP_BUNDLE}"
           if ! /usr/libexec/PlistBuddy -c 'Print :NSUserTrackingUsageDescription' "${APP_PLIST}" >/dev/null 2>&1; then
             echo "Archived app is missing the ATT tracking-purpose string"
             exit 1
@@ -488,6 +489,9 @@ jobs:
           for LOCALE in ca de en es fr it pt; do
             test -d "$EXPORTED_APP/${LOCALE}.lproj"
           done
+          python3 scripts/validate-privacy-manifests.py \
+            --app-manifest "$EXPORTED_APP/PrivacyInfo.xcprivacy" \
+            "$EXPORTED_APP"
           EXECUTABLE_NAME="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$EXPORTED_PLIST")"
           EXECUTABLE_UUIDS="$(dwarfdump --uuid "$EXPORTED_APP/$EXECUTABLE_NAME" | awk '{ print $2 }' | sort)"
           DSYM_UUIDS="$(dwarfdump --uuid build/appstore/AudioRecorder.xcarchive/dSYMs/AudioRecorder.app.dSYM | awk '{ print $2 }' | sort)"

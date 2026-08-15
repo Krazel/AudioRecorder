@@ -1,6 +1,6 @@
 # VoiceRecorder / AudioRecorder — estado actual
 
-## Estado de App Store Connect - 2026-08-15 13:00 CEST
+## Estado de App Store Connect - 2026-08-15 15:15 CEST
 
 - `Krazel/AudioRecorder` es público. La auditoría previa no encontró secretos, certificados, perfiles ni claves privadas alcanzables desde ramas o etiquetas; los secretos siguen protegidos fuera del repositorio.
 - La candidata iOS 1.0 (6), commit `fdcdb3f`, se construyó, firmó, validó y subió mediante GitHub Actions run `31850317905`. Apple la marca `VALID`, iOS 16+, y está seleccionada en la versión 1.0 con publicación manual.
@@ -8,14 +8,15 @@
 - App Privacy conserva ATT/tracking para las categorías publicitarias aplicables. El archive exacto confirma el manifiesto de la app, Google Mobile Ads y UMP; `Device ID` es la categoría del SDK marcada para tracking y los datos de fallos/rendimiento no lo son.
 - Las siete suscripciones tienen nivel 1, 49 localizaciones coherentes, precios y disponibilidad configurados, y una captura privada real procesada con estado `COMPLETE` en cada producto.
 - Tras autorización expresa, se canceló el envío separado anterior y se rearmó una única submission `7e9fd837-4419-498a-a40a-7e8fbbd4422e` con exactamente nueve elementos: versión iOS 1.0 (6), versión del grupo y siete versiones de suscripción.
-- El primer envío de esa submission entró en `INVALID_BINARY` porque la declaración de App Store Connect `usesIdfa` había quedado sin valor aunque el binario integra ATT/AdMob. La build nunca estuvo corrupta: Apple la mantuvo `VALID`, `APP_STORE_ELIGIBLE`, sin errores ni avisos de carga.
-- El 2026-08-15 se corrigió `usesIdfa=true`, coherente con el binario y App Privacy. Al resolver el único elemento rechazado, la versión volvió inmediatamente a `READY_FOR_REVIEW`. Un primer reenvío hecho justo después regresó automáticamente a `INVALID_BINARY`, por lo que se volvió a resolver el ítem y se dejó propagar la corrección antes de intentarlo de nuevo.
-- Chrome confirmó que la interfaz vigente no contiene una pantalla adicional de finalidades IDFA y que Apple retiró el antiguo recurso detallado `idfaDeclarations` de la API pública. Con `usesIdfa=true` ya persistido, los nueve elementos se reenviaron el 2026-08-15 a las 12:06:58 UTC. La API y la interfaz autenticada confirman `WAITING_FOR_REVIEW` / `Pendiente de revisión` para la versión, el grupo y las siete suscripciones.
+- El primer envío de esa submission entró en `INVALID_BINARY` con `usesIdfa` sin valor aunque el binario integra ATT/AdMob. Se corrigió a `usesIdfa=true`, pero los reenvíos posteriores también regresaron automáticamente a `INVALID_BINARY`; por tanto, ya no se considera demostrado que ese campo fuera la causa completa.
+- La comprobación autenticada más reciente muestra la versión iOS 1.0 en `INVALID_BINARY` y el elemento de versión `REJECTED`. La build 6 separada permanece `VALID`, `APP_STORE_ELIGIBLE`, no caducada y sin errores, avisos ni diagnósticos de carga. El grupo y las siete suscripciones permanecen intactos y `READY_FOR_REVIEW` dentro del envío.
+- Apple comunicó el motivo exacto: `ITMS-91064`. El `PrivacyInfo.xcprivacy` de la build 6 contenía `NSPrivacyTracking=true` junto con `NSPrivacyTrackingDomains=[]`; Apple TN3181 define expresamente esa combinación como inválida. La firma, el ejecutable y la carga de la build 6 no estaban corruptos.
+- La candidata 1.0 (7) corrige el manifiesto raíz a `NSPrivacyTracking=false` sin `NSPrivacyTrackingDomains`. ATT, UMP, `usesIdfa=true`, App Privacy y el manifiesto propio de Google Mobile Ads permanecen separados y coherentes. El workflow valida semánticamente todos los manifiestos tanto en fuente como en archive e IPA exportada para impedir otra subida con claves incompatibles.
 - La app no está publicada; la publicación posterior a una eventual aprobación permanece manual.
 
 Última revalidación: 2026-08-15.
 
-> Estado vigente: no hace falta una build 7. El envío completo de nueve elementos está pendiente de revisión de Apple. La publicación permanece manual.
+> Estado vigente: la corrección local para `ITMS-91064` está preparada para 1.0 (7). Debe compilarse, validarse y subirse; después se seleccionará build 7, se resolverá únicamente el ítem rechazado y se reenviará la misma submission con el grupo y las siete suscripciones. La publicación permanece manual.
 
 ## Preparación de repositorio público y build 6 - 2026-08-15
 

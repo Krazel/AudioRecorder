@@ -108,7 +108,7 @@ Use Apple's displayed localized product price rather than hard-coding a currency
 - [ ] Review the current Google Mobile Ads SDK disclosure. Depending on configuration, it may process IP/general location, device identifiers, advertising data, product interactions, crash data, performance data, and diagnostics.
 - [x] Integrate UMP locally so no ad request occurs before `canRequestAds`, with privacy options exposed when required.
 - [x] In AdMob, create, associate, translate, and publish the European regulations message for the seven supported languages.
-- [x] The build 6 source candidate retains UMP and requests ATT after UMP but before starting Google Mobile Ads. The purpose string is present in `Info.plist` and all seven `InfoPlist.strings` localizations.
+- [x] The build 7 source candidate retains UMP and requests ATT after UMP but before starting Google Mobile Ads. The purpose string is present in `Info.plist` and all seven `InfoPlist.strings` localizations.
 - [ ] Optional but recommended: in AdMob Privacy & messaging, create, associate, translate, and publish the IDFA explainer for this app. The app directly requests ATT after UMP with a status guard, so the Apple system prompt does not depend on this optional AdMob explainer.
 - [ ] Reconcile App Store Privacy against the build 6 archive: disclose all six Google categories; mark coarse location, device ID, product interaction, advertising data, and performance data as used for tracking, but not non-user-related crash data.
 - [ ] Confirm the production AdMob app and ad-unit identifiers; never use the internal demo build for external TestFlight or a public submission.
@@ -134,7 +134,7 @@ Official references:
 - [x] Required screenshots and localized metadata reviewed in App Store Connect.
 - [x] Seven intended subscriptions and their group attached to version 1.0 (6) and added to review with the real screenshot requested by Apple.
 - [x] App Review contact information and accurate review notes completed; no login or demo credentials are required.
-- [x] For the ATT/AdMob release path, verify `appStoreVersions.usesIdfa=true` and confirm the persisted value before submission. Leaving it unset caused the 2026-08-15 `INVALID_BINARY`; the deprecated detailed `idfaDeclarations` resource and its old purpose screen are no longer part of the current App Store Connect flow.
+- [x] For the ATT/AdMob release path, verify `appStoreVersions.usesIdfa=true` and confirm the persisted value before submission. The 2026-08-15 rejections continued after this value persisted, so do not treat it as the complete cause; obtain Apple's exact notification code before changing or replacing the validated build. The deprecated detailed `idfaDeclarations` resource and its old purpose screen are no longer part of the current App Store Connect flow.
 - [ ] Final device smoke test completed using the exact release build.
 - [ ] Owner gives express approval before pressing **Submit for Review**.
 
@@ -214,7 +214,7 @@ A successful no-upload run retains:
 
 - the exported IPA;
 - the signed `.xcarchive`, including its dSYM;
-- checks for bundle/version/build identity, the selected AdMob IDs, signature, distribution provisioning identity/entitlements, privacy manifest, asset catalog, seven localizations, dSYM, and the archive's `UIDeviceFamily`.
+- checks for bundle/version/build identity, the selected AdMob IDs, signature, distribution provisioning identity/entitlements, every privacy manifest in source/archive/export, asset catalog, seven localizations, dSYM, and the archive's `UIDeviceFamily`.
 
 The final privacy report still has to be generated or inspected with Xcode Organizer. VoiceRecorder 1.0 is explicitly iPhone-only (`TARGETED_DEVICE_FAMILY=1`) and portrait. ATT is now an explicit build 6 decision; export-compliance classification remains unchanged unless the implementation changes.
 

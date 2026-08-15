@@ -1,6 +1,6 @@
 # VoiceRecorder iOS — release data inventory
 
-Last verified: 2026-08-13. Scope: the iOS 1.0 build 6 source candidate and its declared Google Mobile Ads 12.14.0, Google UMP 3.1.0, and Apple StoreKit integrations. Build 6 has not yet been archived or uploaded.
+Last verified: 2026-08-15. Scope: the iOS 1.0 build 7 source candidate and its declared Google Mobile Ads 12.14.0, Google UMP 3.1.0, and Apple StoreKit integrations. Build 7 is the packaging correction for Apple `ITMS-91064` after build 6 was rejected for an invalid root privacy-manifest key combination.
 
 This inventory is the source of truth for privacy copy and App Store Privacy answers. It describes the shipped build, not possible future features.
 
@@ -40,7 +40,9 @@ The app has no account, developer backend, cloud account, analytics SDK, social 
 
 Ads are enabled for free users and removed while an eligible subscription or valid manual unlock is active. UMP updates consent information and presents required consent/privacy options before the app requests ads.
 
-After the UMP consent flow finishes, the build 6 source candidate requests Apple's ATT authorization when its status is still undetermined and waits for the result before starting Google Mobile Ads. UMP and ATT are separate: UMP controls the applicable consent/privacy-message flow, while ATT is Apple's system permission for tracking and IDFA. If ATT is denied or restricted, the app remains fully usable and Google Mobile Ads may serve ads without sending IDFA; the app does not permit tracking without Apple's authorization.
+After the UMP consent flow finishes, the build 7 source candidate requests Apple's ATT authorization when its status is still undetermined and waits for the result before starting Google Mobile Ads. UMP and ATT are separate: UMP controls the applicable consent/privacy-message flow, while ATT is Apple's system permission for tracking and IDFA. If ATT is denied or restricted, the app remains fully usable and Google Mobile Ads may serve ads without sending IDFA; the app does not permit tracking without Apple's authorization.
+
+The app target's root privacy manifest declares `NSPrivacyTracking=false` and no `NSPrivacyTrackingDomains`, because first-party app code does not provide tracking domains. Google Mobile Ads and UMP retain their vendor manifests. This does not replace or weaken ATT, `usesIdfa=true`, or the App Store privacy disclosure; it prevents the invalid `true` plus empty-domain-array combination rejected as `ITMS-91064`.
 
 Google documents that its iOS Mobile Ads SDK may process:
 
