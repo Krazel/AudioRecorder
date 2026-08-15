@@ -134,7 +134,7 @@ Official references:
 - [x] Required screenshots and localized metadata reviewed in App Store Connect.
 - [x] Seven intended subscriptions and their group attached to version 1.0 (6) and added to review with the real screenshot requested by Apple.
 - [x] App Review contact information and accurate review notes completed; no login or demo credentials are required.
-- [ ] For the ATT/AdMob release path, verify `appStoreVersions.usesIdfa=true` and complete the App Store Connect IDFA-purpose screen: serves ads = yes, honors ATT/limited tracking = yes, attributes installations/actions to previous ads = no. Leaving the general declaration unset, then omitting the detailed purposes, caused two automatic `INVALID_BINARY` transitions on 2026-08-15.
+- [x] For the ATT/AdMob release path, verify `appStoreVersions.usesIdfa=true` and confirm the persisted value before submission. Leaving it unset caused the 2026-08-15 `INVALID_BINARY`; the deprecated detailed `idfaDeclarations` resource and its old purpose screen are no longer part of the current App Store Connect flow.
 - [ ] Final device smoke test completed using the exact release build.
 - [ ] Owner gives express approval before pressing **Submit for Review**.
 
