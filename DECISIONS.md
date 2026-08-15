@@ -292,3 +292,7 @@ El primer envío conjunto de 1.0 (6) quedó en `INVALID_BINARY` mientras `appSto
 ### D-034 - Manifiesto raíz sin dominios de tracking propios - 2026-08-15
 
 La candidata 1.0 (7) declara `NSPrivacyTracking=false` en el manifiesto de la app y elimina `NSPrivacyTrackingDomains`. No se inventan dominios de Google: Google Mobile Ads y UMP incluyen sus propios manifiestos, mientras ATT, la declaración remota `usesIdfa=true` y App Privacy siguen describiendo el uso condicionado de IDFA por el SDK. CI debe rechazar cualquier manifiesto con `tracking=true` y dominios ausentes/vacíos, o con dominios presentes sin `tracking=true`, tanto en fuente como en archive e IPA.
+
+### F-025 - Corrección `ITMS-91064` publicada en la rama - 2026-08-15
+
+El commit `324ef91` contiene la corrección del manifiesto y el validador semántico de todos los `PrivacyInfo.xcprivacy` en fuente, archive e IPA exportada. Se subió a `origin/agent/prepare-ios-test-build`; Android y `artifact/` quedaron intactos. El workflow de build 7 aún no se ha disparado porque la comprobación canónica de la sesión compartida de GitHub devolvió `CENTRAL_RECHECK_REQUIRED`.

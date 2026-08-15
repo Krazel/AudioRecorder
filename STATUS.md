@@ -16,7 +16,7 @@
 
 Última revalidación: 2026-08-15.
 
-> Estado vigente: la corrección local para `ITMS-91064` está preparada para 1.0 (7). Debe compilarse, validarse y subirse; después se seleccionará build 7, se resolverá únicamente el ítem rechazado y se reenviará la misma submission con el grupo y las siete suscripciones. La publicación permanece manual.
+> Estado vigente: la corrección para `ITMS-91064` está en el commit `324ef91` y ya se subió a `origin/agent/prepare-ios-test-build`. Debe ejecutarse el workflow para 1.0 (7), pero el verificador central de GitHub devolvió `CENTRAL_RECHECK_REQUIRED` para la sesión compartida de `gh`; no se usará una autenticación alternativa por proyecto. Tras restaurar esa vía única se compilará, validará y subirá build 7; después se seleccionará, se resolverá únicamente el ítem rechazado y se reenviará la misma submission. La publicación permanece manual.
 
 ## Preparación de repositorio público y build 6 - 2026-08-15
 
