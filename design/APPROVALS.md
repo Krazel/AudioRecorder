@@ -10,13 +10,14 @@ When a replacement is approved, add the new file without deleting the previous o
 
 | ID | Surface / state | Status | Approved reference | Device or canvas | Orientation | Language | Approval date | SHA-256 | Notes |
 |---|---|---|---|---|---|---|---|---|---|
-| `IOS-ICON-BLACK-001` | iOS app icon, black background | `CURRENT` | `design/approved/ios/app-icon/ribbon-dot-black-1024.png` | 1024 × 1024 px | Square | No text | 2026-08-09 | `c2ea4e285d00c52a2e98ef1968ba2a371ffe69f11014d12fe3a33bbd094b1c2f` | Exact 1024 px production export of owner-approved proposal 3. Approval recorded in `DECISIONS.md` D-020 and restored to the production AppIcon for build 8. |
+| `IOS-ICON-BLACK-001` | iOS app icon, black background | `SUPERSEDED_BY_IOS-ICON-WHITE-002` | `design/approved/ios/app-icon/ribbon-dot-black-1024.png` | 1024 × 1024 px | Square | No text | 2026-08-09 | `c2ea4e285d00c52a2e98ef1968ba2a371ffe69f11014d12fe3a33bbd094b1c2f` | Exact 1024 px production export of owner-approved proposal 3. Preserved as a recoverable approved predecessor after the owner reconfirmed the white version for build 9. |
+| `IOS-ICON-WHITE-002` | iOS app icon, white background | `CURRENT` | `design/approved/ios/app-icon/ribbon-dot-white-1024.png` | 1024 × 1024 px | Square | No text | 2026-08-18 | `8d8439197d1ee6f8dfc8438f84df8240791a8e79eacec526574c157b146e34d2` | Exact bytes of the previously tested white variant. The owner explicitly reconfirmed it after build 8 and authorized build 9 with this icon. |
 
 ## Historical visual trial not promoted to an approved master
 
 | ID | Surface / state | Status | Current implementation | Device or canvas | Orientation | Language | Date introduced | SHA-256 | Notes |
 |---|---|---|---|---|---|---|---|---|---|
-| `IOS-ICON-WHITE-TRIAL-001` | iOS app icon, white background | `SUPERSEDED_BY_APPROVED_MASTER` | `docs/icon-proposals/05-ribbon-dot-white-1024.png` | 1024 × 1024 px | Square | No text | 2026-08-09 | `8d8439197d1ee6f8dfc8438f84df8240791a8e79eacec526574c157b146e34d2` | Owner authorized a TestFlight trial, not a final replacement approval. It remains preserved, while build 8 restores `IOS-ICON-BLACK-001` without deleting this variant. |
+| `IOS-ICON-WHITE-TRIAL-001` | iOS app icon, white background | `PROMOTED_AS_IOS-ICON-WHITE-002` | `docs/icon-proposals/05-ribbon-dot-white-1024.png` | 1024 × 1024 px | Square | No text | 2026-08-09 | `8d8439197d1ee6f8dfc8438f84df8240791a8e79eacec526574c157b146e34d2` | Historical trial source preserved. On 2026-08-18 the owner explicitly promoted these exact bytes as the current production icon under `IOS-ICON-WHITE-002`. |
 
 ## Screen/state coverage audit
 

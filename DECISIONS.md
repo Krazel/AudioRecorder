@@ -312,3 +312,11 @@ La candidata 1.0 (8) no confía en `canRequestAds` ni en un mensaje IDFA remoto 
 ### F-028 - Build 8 validada y reenviada - 2026-08-18
 
 El run `32160772323`, desde el commit de aplicación `88bc460`, superó los XCTest de la puerta GDPR/ATT, firma, archive, validaciones de privacidad, exportación, validación de Apple y upload. Apple procesó 1.0 (8), recurso `8c9700dc-6582-42c4-aa07-cf857c1d43d5`, como `VALID` y `APP_STORE_ELIGIBLE`. La versión 1.0 selecciona build 8, conserva `usesIdfa=true` y publicación manual. Se actualizaron las notas privadas de revisión, se resolvió solo el ítem rechazado y se reenvió la submission `7e9fd837-4419-498a-a40a-7e8fbbd4422e` con la versión, el grupo y las siete suscripciones originales. La versión está `WAITING_FOR_REVIEW`; grupo y suscripciones permanecen `IN_REVIEW`. La app no está publicada.
+
+### D-036 - Icono blanco vigente y negro preservado - 2026-08-18
+
+El propietario confirmó expresamente que la candidata de producción debe usar la variante blanca ya probada, SHA-256 `8d8439197d1ee6f8dfc8438f84df8240791a8e79eacec526574c157b146e34d2`. Queda registrada como `IOS-ICON-WHITE-002` y se copia sin alteraciones al AppIcon. El icono negro `IOS-ICON-BLACK-001` permanece guardado y se marca sustituido, no eliminado.
+
+### F-029 - Envío de build 8 cancelado para reemplazo visual - 2026-08-18
+
+La submission `7e9fd837-4419-498a-a40a-7e8fbbd4422e` se canceló cuando aún estaba `WAITING_FOR_REVIEW`. Apple la movió a `COMPLETE`, dejó la versión y los nueve recursos relacionados en `DEVELOPER_REJECTED`/`REMOVED`, y no publicó nada. Los productos y el grupo no se borraron; deberán añadirse a una nueva submission con iOS 1.0 (9).

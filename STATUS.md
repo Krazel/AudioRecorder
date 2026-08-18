@@ -2,6 +2,8 @@
 
 ## Estado de App Store Connect - 2026-08-18
 
+- El propietario corrigió la decisión visual: el icono blanco `IOS-ICON-WHITE-002` es el vigente para producción y el negro queda preservado como predecesor. La submission de build 8 se canceló antes de empezar la revisión; App Store Connect la dejó `COMPLETE` y la versión `DEVELOPER_REJECTED` para poder seleccionar build 9.
+- Próximo candidato: iOS 1.0 (9), mismo código de consentimiento validado que build 8 y único cambio de producto el icono blanco aprobado. Debe recrearse una submission con la versión, el grupo y las siete suscripciones, actualizar las notas a build 9 y responder al mensaje de Apple.
 - La candidata iOS 1.0 (8), commit de aplicación `88bc460`, se compiló, probó, firmó, validó y subió mediante GitHub Actions run `32160772323`. Apple la procesó como `VALID`, `APP_STORE_ELIGIBLE` y no caducada; recurso de build `8c9700dc-6582-42c4-aa07-cf857c1d43d5`.
 - La versión 1.0 selecciona build 8, mantiene `usesIdfa=true` y `releaseType=MANUAL`. La submission existente `7e9fd837-4419-498a-a40a-7e8fbbd4422e` fue reenviada sin recrear ni retirar productos: versión en `WAITING_FOR_REVIEW`, grupo y siete suscripciones en `IN_REVIEW`, exactamente nueve elementos.
 - Las notas privadas de App Review describen la causa de build 7, la puerta TCF conservadora de build 8, las rutas regionales, el comportamiento tras rechazo y el precio mensual intencional de USD 44.99. La política pública corregida responde HTTP 200 con el texto de build 8.
@@ -12,7 +14,7 @@
 - La ayuda oficial de AdMob indica que publicar el mensaje IDFA puede hacer que el propio mensaje europeo se muestre inmediatamente antes de ATT. Para no repetir el rechazo, el mensaje IDFA permanece sin publicar y la app controla la solicitud ATT con la puerta anterior. Fuera del ámbito europeo puede solicitar ATT después de actualizar UMP.
 - Se añadieron pruebas unitarias para rechazo europeo, consentimiento completo, región ausente, propósitos incompletos y proveedor Google incompleto. El workflow ejecuta esas pruebas antes del archive e impide una subida de producción si no se confirma que el mensaje IDFA sigue sin publicar.
 - La política local y la copia pública de GitHub Pages describen la secuencia corregida.
-- El icono público definitivo volverá a la maestra negra aprobada `IOS-ICON-BLACK-001`; la variante blanca se conserva como prueba histórica y no se borra.
+- El icono público vigente es la maestra blanca `IOS-ICON-WHITE-002`; la maestra negra `IOS-ICON-BLACK-001` se conserva sin borrar.
 - Android y `artifact/` permanecen fuera de alcance e intactos. La publicación final continúa manual.
 
 ## Estado anterior de App Store Connect - 2026-08-15 15:38 CEST
