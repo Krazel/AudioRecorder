@@ -63,12 +63,7 @@ if (preReleaseVersion.data?.attributes?.version !== "1.0") {
 }
 
 const before = await snapshot();
-if (
-  before.submissionState === "WAITING_FOR_REVIEW" &&
-  before.versionState === "WAITING_FOR_REVIEW" &&
-  before.selectedBuildId === build.id &&
-  before.items.every((item) => item.relatedState === "WAITING_FOR_REVIEW")
-) {
+if (isSubmittedState(before, build.id)) {
   assertSubmissionShape(before, { requireWaiting: true });
   console.log(JSON.stringify({ status: "ALREADY_RESUBMITTED", build: publicBuild(build), ...before }, null, 2));
   process.exit(0);
@@ -147,13 +142,7 @@ await request("PATCH", `/v1/reviewSubmissions/${submissionId}`, {
 
 const submitted = await waitFor("submitted review", async () => {
   const current = await snapshot();
-  const allRelatedWaiting = current.items.every((item) => item.relatedState === "WAITING_FOR_REVIEW");
-  return (
-    current.submissionState === "WAITING_FOR_REVIEW" &&
-    current.versionState === "WAITING_FOR_REVIEW" &&
-    current.selectedBuildId === build.id &&
-    allRelatedWaiting
-  ) ? current : false;
+  return isSubmittedState(current, build.id) ? current : false;
 });
 assertSubmissionShape(submitted, { requireWaiting: true });
 
@@ -249,14 +238,41 @@ function assertSubmissionShape(value, options) {
     fail(`Subscription group version changed unexpectedly: ${JSON.stringify(groups[0])}`);
   }
   if (options.requireWaiting) {
-    if (value.submissionState !== "WAITING_FOR_REVIEW") fail("Submission is not waiting for review.");
-    if (value.versionState !== "WAITING_FOR_REVIEW") fail("App version is not waiting for review.");
-    if (value.items.some((item) => item.relatedState !== "WAITING_FOR_REVIEW")) {
-      fail("Not every related review resource is waiting for review.");
+    const submittedStates = new Set(["WAITING_FOR_REVIEW", "IN_REVIEW"]);
+    if (!submittedStates.has(value.submissionState)) fail("Submission is not in the review queue.");
+    if (!submittedStates.has(value.versionState)) fail("App version is not in the review queue.");
+    if (!submittedStates.has(appItems[0].relatedState)) {
+      fail("The app version review resource is not in the review queue.");
+    }
+    if (subscriptions.some((item) => !new Set(["WAITING_FOR_REVIEW", "IN_REVIEW"]).has(item.relatedState))) {
+      fail("A subscription review resource left the expected review states.");
+    }
+    if (!new Set(["WAITING_FOR_REVIEW", "IN_REVIEW"]).has(groups[0].relatedState)) {
+      fail("The subscription group review resource left the expected review states.");
     }
   } else if (!options.allowRejectedApp && value.items.some((item) => item.itemState !== "READY_FOR_REVIEW")) {
     fail("Not every submission item is ready for review.");
   }
+}
+
+function isSubmittedState(value, expectedBuildId) {
+  const submittedStates = new Set(["WAITING_FOR_REVIEW", "IN_REVIEW"]);
+  if (
+    !submittedStates.has(value.submissionState) ||
+    !submittedStates.has(value.versionState) ||
+    value.selectedBuildId !== expectedBuildId ||
+    value.items.some((item) => item.itemState !== "READY_FOR_REVIEW")
+  ) {
+    return false;
+  }
+  const appItem = value.items.find((item) => item.relatedType === "appStoreVersions");
+  const subscriptions = value.items.filter((item) => item.relatedType === "subscriptionVersions");
+  const groupItem = value.items.find((item) => item.relatedType === "subscriptionGroupVersions");
+  const acceptedStates = submittedStates;
+  return acceptedStates.has(appItem?.relatedState) &&
+    subscriptions.length === 7 &&
+    subscriptions.every((item) => acceptedStates.has(item.relatedState)) &&
+    acceptedStates.has(groupItem?.relatedState);
 }
 
 async function waitFor(label, check) {
