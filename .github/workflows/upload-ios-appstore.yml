@@ -20,6 +20,11 @@ on:
         required: true
         default: false
         type: boolean
+      confirm_admob_idfa_message_unpublished:
+        description: Required for production upload; confirms no AdMob IDFA message can automatically trigger ATT after a European refusal
+        required: true
+        default: false
+        type: boolean
       validate_with_app_store:
         description: Validate the exported IPA with App Store Connect without uploading it for testing
         required: true
@@ -293,6 +298,11 @@ jobs:
                 echo "Google demo identifiers are forbidden in the production configuration"
                 exit 1
               fi
+              if [[ "${{ inputs.upload_to_app_store }}" == "true" ]] && \
+                 [[ "${{ inputs.confirm_admob_idfa_message_unpublished }}" != "true" ]]; then
+                echo "A production upload requires the AdMob IDFA message to remain unpublished so the app can enforce its consent gate"
+                exit 1
+              fi
               ;;
             *)
               echo "Unknown AdMob configuration"
@@ -307,12 +317,24 @@ jobs:
         working-directory: native-ios
         run: xcodegen generate
 
-      - name: Verify ATT-gated AdMob source configuration
+      - name: Verify explicit GDPR-to-ATT consent gate
         run: |
           set -euo pipefail
           CONSENT_SOURCE="native-ios/Sources/AdConsentManager.swift"
+          grep -Fq 'import UserMessagingPlatform' "${CONSENT_SOURCE}"
+          grep -Fq 'ConsentInformation.shared.requestConsentInfoUpdate' "${CONSENT_SOURCE}"
+          grep -Fq 'ConsentForm.loadAndPresentIfRequired' "${CONSENT_SOURCE}"
+          grep -Fq 'consentInformation.canRequestAds' "${CONSENT_SOURCE}"
+          grep -Fq 'MobileAds.shared.start' "${CONSENT_SOURCE}"
           grep -Fq 'import AppTrackingTransparency' "${CONSENT_SOURCE}"
+          grep -Fq 'TrackingConsentEligibility.isATTRequestAllowed' "${CONSENT_SOURCE}"
           grep -Fq 'ATTrackingManager.requestTrackingAuthorization' "${CONSENT_SOURCE}"
+          grep -Fq 'IABTCF_gdprApplies' native-ios/Sources/TrackingConsentEligibility.swift
+          grep -Fq 'IABTCF_PurposeConsents' native-ios/Sources/TrackingConsentEligibility.swift
+          grep -Fq 'IABTCF_PurposeLegitimateInterests' native-ios/Sources/TrackingConsentEligibility.swift
+          grep -Fq 'IABTCF_VendorConsents' native-ios/Sources/TrackingConsentEligibility.swift
+          grep -Fq 'IABTCF_VendorLegitimateInterests' native-ios/Sources/TrackingConsentEligibility.swift
+          grep -Fq 'AppTrackingTransparency.framework' native-ios/project.yml
           if grep -Fq 'setPublisherFirstPartyIDEnabled(false)' "${CONSENT_SOURCE}" || \
              grep -Fq 'publisherPrivacyPersonalizationState = .disabled' "${CONSENT_SOURCE}"; then
             echo "The ATT candidate must not force the previous non-tracking AdMob configuration"
@@ -326,6 +348,25 @@ jobs:
           python3 scripts/validate-privacy-manifests.py \
             --app-manifest native-ios/Resources/PrivacyInfo.xcprivacy \
             native-ios/Resources
+
+      - name: Test GDPR-to-ATT consent decisions
+        run: |
+          set -euo pipefail
+          SIMULATOR_UDID="$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devices = json.load(sys.stdin).get("devices", {})
+          for runtime_devices in devices.values():
+              for device in runtime_devices:
+                  if device.get("isAvailable") and device.get("name", "").startswith("iPhone"):
+                      print(device["udid"])
+                      raise SystemExit(0)
+          raise SystemExit("No available iPhone simulator")
+          ')"
+          xcodebuild test \
+            -project native-ios/AudioRecorder.xcodeproj \
+            -scheme AudioRecorder \
+            -destination "platform=iOS Simulator,id=${SIMULATOR_UDID}" \
+            CODE_SIGNING_ALLOWED=NO
 
       - name: Archive signed app
         run: |

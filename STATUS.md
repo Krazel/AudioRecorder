@@ -1,6 +1,17 @@
 # VoiceRecorder / AudioRecorder — estado actual
 
-## Estado de App Store Connect - 2026-08-15 15:38 CEST
+## Estado de App Store Connect - 2026-08-18
+
+- Apple detuvo la revisión de iOS 1.0 (7) bajo 5.1.1(iv): en el flujo europeo, la app mostraba ATT inmediatamente después de que el usuario pulsara `Do not consent` en UMP.
+- Causa confirmada: `canRequestAds` permite iniciar algún modo de anuncios, incluidos limitados/no personalizados, pero la build 7 lo trataba incorrectamente como consentimiento para pedir tracking y llamaba directamente a `ATTrackingManager.requestTrackingAuthorization`.
+- La candidata local 1.0 (8) sustituye esa condición incorrecta por una puerta explícita y conservadora. En Europa solo solicita ATT cuando las señales TCF posteriores a UMP autorizan almacenamiento, perfil y selección de publicidad personalizada, las bases operativas y Google como proveedor 755. Rechazo, ausencia, error o valor malformado implican cero ATT. `canRequestAds` queda limitado a iniciar Google Mobile Ads.
+- La ayuda oficial de AdMob indica que publicar el mensaje IDFA puede hacer que el propio mensaje europeo se muestre inmediatamente antes de ATT. Para no repetir el rechazo, el mensaje IDFA permanece sin publicar y la app controla la solicitud ATT con la puerta anterior. Fuera del ámbito europeo puede solicitar ATT después de actualizar UMP.
+- Se añadieron pruebas unitarias para rechazo europeo, consentimiento completo, región ausente, propósitos incompletos y proveedor Google incompleto. El workflow ejecuta esas pruebas antes del archive e impide una subida de producción si no se confirma que el mensaje IDFA sigue sin publicar.
+- La política local ya describe la secuencia corregida; la copia pública de GitHub Pages deberá sincronizarse antes de reenviar la build 8.
+- El icono público definitivo volverá a la maestra negra aprobada `IOS-ICON-BLACK-001`; la variante blanca se conserva como prueba histórica y no se borra.
+- Android y `artifact/` permanecen fuera de alcance e intactos. La publicación final continúa manual.
+
+## Estado anterior de App Store Connect - 2026-08-15 15:38 CEST
 
 - `Krazel/AudioRecorder` es público. La auditoría previa no encontró secretos, certificados, perfiles ni claves privadas alcanzables desde ramas o etiquetas; los secretos siguen protegidos fuera del repositorio.
 - La build histórica iOS 1.0 (6), commit `fdcdb3f`, se construyó, firmó y subió mediante GitHub Actions run `31850317905`, pero Apple rechazó su manifiesto raíz con `ITMS-91064`.
@@ -17,7 +28,7 @@
 
 Última revalidación: 2026-08-15.
 
-> Estado vigente: la build 7 corregida está validada y los nueve elementos están pendientes de revisión. No queda ninguna acción inmediata: esperar la respuesta de Apple. Aunque Apple apruebe, la publicación permanece manual y no se hará pública automáticamente.
+> Estado histórico: la build 7 superó la validación binaria y se envió con nueve elementos, pero Apple detuvo después la revisión por el orden UMP/ATT descrito arriba.
 
 ## Preparación de repositorio público y build 6 - 2026-08-15
 

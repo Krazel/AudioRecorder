@@ -300,3 +300,11 @@ El commit `324ef91` contiene la corrección del manifiesto y el validador semán
 ### F-026 - Build 7 validada y envío completo reenviado - 2026-08-15
 
 El run `31887343289`, desde el commit `3e74d38`, superó firma, archive, validación semántica de privacidad en fuente/archive/IPA, validación de Apple y upload. Apple procesó 1.0 (7), recurso `744404c3-5503-4e64-a796-bef3ce86cffe`, como `VALID` y `APP_STORE_ELIGIBLE`. La build 7 sustituyó a la 6 en la versión 1.0; `usesIdfa=true` y publicación manual permanecen vigentes. Se resolvió el único ítem rechazado y se reenvió la submission existente `7e9fd837-4419-498a-a40a-7e8fbbd4422e` con sus nueve elementos originales. App Store Connect muestra la app 1.0 (7), el grupo y las siete suscripciones en `WAITING_FOR_REVIEW`. La app no está publicada.
+
+### F-027 - Rechazo por secuencia contradictoria GDPR/ATT - 2026-08-18
+
+Apple detuvo la revisión de 1.0 (7) bajo 5.1.1(iv) porque, tras pulsar `Do not consent` en el mensaje europeo, la app mostraba inmediatamente el aviso ATT. La causa no era UMP sino la llamada manual posterior: `canRequestAds` también es verdadero para ciertos modos limitados/no personalizados y no demuestra consentimiento para tracking. La sesión autenticada de AdMob confirmó un mensaje europeo activo y la ausencia del mensaje IDFA.
+
+### D-035 - Puerta explícita entre UMP y ATT - 2026-08-18
+
+La candidata 1.0 (8) no confía en `canRequestAds` ni en un mensaje IDFA remoto para decidir ATT. Después de UMP, una puerta local falla de forma conservadora y solo permite solicitar ATT en Europa cuando las señales TCF confirman los propósitos de almacenamiento, perfil y selección de publicidad personalizada, las bases operativas necesarias y Google como proveedor 755. Rechazo, ausencia, error o datos malformados producen cero ATT; fuera del ámbito europeo ATT puede solicitarse después de la actualización UMP. El mensaje IDFA de AdMob permanece sin publicar porque la ayuda oficial indica que podría disparar ATT inmediatamente después del propio mensaje europeo. `canRequestAds` continúa siendo únicamente la puerta de inicio/carga de anuncios. Esta decisión sustituye la implementación incondicional descrita en D-030 y la ruta UMP-remota transitoria que no llegó a commit ni build.

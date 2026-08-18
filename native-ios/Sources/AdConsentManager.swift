@@ -25,7 +25,6 @@ final class AdConsentManager: ObservableObject {
             try await ConsentInformation.shared.requestConsentInfoUpdate(with: RequestParameters())
         } catch {
             refreshConsentState()
-            await requestTrackingAuthorizationIfNeeded()
             await startMobileAdsIfAllowed()
             return
         }
@@ -35,12 +34,15 @@ final class AdConsentManager: ObservableObject {
         do {
             try await ConsentForm.loadAndPresentIfRequired(from: nil)
         } catch {
-            // UMP can retain a valid choice from an earlier session even when refreshing
-            // or presenting a new form fails, so its own canRequestAds value stays authoritative.
+            // A form error must not trigger a new tracking request. UMP may still retain
+            // an earlier ad-serving choice, so canRequestAds remains the ad-only gate.
+            refreshConsentState()
+            await startMobileAdsIfAllowed()
+            return
         }
 
         refreshConsentState()
-        await requestTrackingAuthorizationIfNeeded()
+        await requestTrackingAuthorizationIfEligible()
         await startMobileAdsIfAllowed()
     }
 
@@ -52,7 +54,8 @@ final class AdConsentManager: ObservableObject {
         do {
             try await ConsentForm.presentPrivacyOptionsForm(from: nil)
             refreshConsentState()
-            await requestTrackingAuthorizationIfNeeded()
+            // Do not follow a privacy-choice change with ATT in the same flow.
+            // A later launch can request ATT if the stored choices are eligible.
             await startMobileAdsIfAllowed()
         } catch {
             privacyOptionsErrorMessage = L("No se pudieron abrir las opciones de privacidad.")
@@ -69,13 +72,17 @@ final class AdConsentManager: ObservableObject {
         isPrivacyOptionsRequired = consentInformation.privacyOptionsRequirementStatus == .required
     }
 
-    private func requestTrackingAuthorizationIfNeeded() async {
-        guard canRequestAds, !didRequestTrackingAuthorization else { return }
+    private func requestTrackingAuthorizationIfEligible() async {
+        guard !didRequestTrackingAuthorization,
+              TrackingConsentEligibility.isATTRequestAllowed(
+                  canRequestAds: canRequestAds
+              )
+        else { return }
+
         await waitUntilApplicationIsActive()
-
         guard ATTrackingManager.trackingAuthorizationStatus == .notDetermined else { return }
-        didRequestTrackingAuthorization = true
 
+        didRequestTrackingAuthorization = true
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             ATTrackingManager.requestTrackingAuthorization { _ in
                 continuation.resume()

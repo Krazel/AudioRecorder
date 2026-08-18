@@ -33,7 +33,7 @@ The public privacy URL above is the only privacy-policy URL for this release. Pu
 
 - The iOS integration requests UMP consent information on every launch and gates Mobile Ads plus banner loading behind `canRequestAds`.
 - The privacy-options action is exposed only when UMP reports it as required.
-- The next public candidate completes the UMP flow, requests Apple's ATT permission when its status is undetermined, and waits for the result before Google Mobile Ads starts. Authorized users may receive personalized advertising and measurement using IDFA; denied/restricted users remain fully functional and receive ads without IDFA or tracking.
+- The build 8 source candidate replaces the unconditional ATT request with a fail-closed gate. In Europe it requests ATT only after the stored TCF purposes and Google vendor 755 signals positively authorize the personalized-advertising path. Rejection, missing or malformed data, and UMP errors never trigger ATT. Outside that scope ATT may be requested after the UMP update. Authorized users may receive personalized advertising and measurement using IDFA; denied/restricted users remain fully functional and receive only the ad mode allowed by their choices.
 - Local/unsigned builds and the authorized internal TestFlight beta may use Google's exact demo App ID and banner ID. The beta workflow exports that configuration as `TestFlight Internal Only`, so Apple prevents external testing or customer distribution from that build.
 - Any public candidate requires a newly generated archive with separate production values; the production workflow path rejects the demo publisher.
 - Google Mobile Ads is pinned to `12.14.0` and UMP to `3.1.0` until a major-version migration can be compiled and regression-tested on macOS.
@@ -45,7 +45,7 @@ After AdMob account verification, the only required advertising values are:
 1. iOS AdMob App ID for bundle `com.dmkr.audio.B2X6D3A9J9` (`ca-app-pub-…~…`).
 2. Banner ad unit ID for that app (`ca-app-pub-…/…`).
 
-The owner must also create, associate, translate, and publish the applicable messages in AdMob **Privacy & messaging**. UMP downloads those messages from Google; there is no local substitute.
+The European regulations message must remain published in AdMob **Privacy & messaging**. The IDFA message must remain unpublished for build 8 because Google documents that it can automatically place ATT immediately after the European form and bypass the app's explicit eligibility gate.
 
 ## Subscription model for version 1.0
 
@@ -108,12 +108,12 @@ Use Apple's displayed localized product price rather than hard-coding a currency
 - [ ] Review the current Google Mobile Ads SDK disclosure. Depending on configuration, it may process IP/general location, device identifiers, advertising data, product interactions, crash data, performance data, and diagnostics.
 - [x] Integrate UMP locally so no ad request occurs before `canRequestAds`, with privacy options exposed when required.
 - [x] In AdMob, create, associate, translate, and publish the European regulations message for the seven supported languages.
-- [x] The build 7 source candidate retains UMP and requests ATT after UMP but before starting Google Mobile Ads. The purpose string is present in `Info.plist` and all seven `InfoPlist.strings` localizations.
-- [ ] Optional but recommended: in AdMob Privacy & messaging, create, associate, translate, and publish the IDFA explainer for this app. The app directly requests ATT after UMP with a status guard, so the Apple system prompt does not depend on this optional AdMob explainer.
-- [ ] Reconcile App Store Privacy against the build 6 archive: disclose all six Google categories; mark coarse location, device ID, product interaction, advertising data, and performance data as used for tracking, but not non-user-related crash data.
+- [x] The build 8 source candidate retains UMP and requests ATT only through the explicit TCF/vendor eligibility gate. The purpose string and AppTrackingTransparency framework remain localized in all seven app languages.
+- [x] Keep the AdMob IDFA explainer unpublished. The upload workflow requires explicit confirmation of that state so a remote message cannot trigger ATT after a European refusal.
+- [ ] Reconcile App Store Privacy against the build 8 archive: disclose all six Google categories; mark coarse location, device ID, product interaction, advertising data, and performance data as used for tracking, but not non-user-related crash data.
 - [ ] Confirm the production AdMob app and ad-unit identifiers; never use the internal demo build for external TestFlight or a public submission.
 - [x] Complete age rating, content rights, support contact, and review contact. ATT/IDFA is intentionally enabled only after the system authorization flow.
-- [x] StoreKit subscriptions are the only mechanism that removes ads in build 6; there is no hidden code mechanism to disclose.
+- [x] StoreKit subscriptions are the only mechanism that removes ads in build 8; there is no hidden code mechanism to disclose.
 - [ ] Confirm Paid Apps Agreement, banking, and tax status before attempting to sell subscriptions.
 
 The privacy policy states the verified product design: recordings stay on the device, sharing is initiated by the user, no account is required, Apple processes StoreKit payments, and Google Mobile Ads may process advertising and technical data. If implementation or SDK configuration changes, update both the policy and App Store privacy answers before release.
@@ -150,14 +150,14 @@ Official references:
 - [ ] Low-storage or write-failure behavior stops without claiming to keep recording and preserves any valid completed audio.
 - [ ] Playback, recording, sharing, and deletion are checked with VoiceOver and large Dynamic Type for blocking defects.
 - [ ] Sandbox StoreKit loads exactly seven tiers, shows localized App Store prices, purchases one tier, restores it, and removes ads only while entitlement is active.
-- [ ] Sandbox upgrade/downgrade/cancel/expire/revoke flows keep entitlement state correct and do not disable a valid retained manual unlock.
+- [ ] Sandbox upgrade/downgrade/cancel/expire/revoke flows keep the StoreKit entitlement and ad-removal state correct.
 - [ ] Privacy Policy, Terms of Use, subscription management, and support email links open on a real device.
 - [ ] Battery use and thermal behavior are observed during a 30-minute continuous recording and a 30-minute sound-activated recording.
 
 ### Actions requiring owner approval, credentials, or external systems
 
 - [ ] The internal beta may use the exact Google demo pair. Wait for AdMob verification before generating any public candidate; then register/confirm the iOS app, create/confirm its banner unit, and provide the two production IDs.
-- [ ] Configure, translate, associate, and publish the applicable AdMob privacy and IDFA messages; test UMP withdrawal plus ATT authorize/deny outcomes and reconcile the archive with App Privacy answers.
+- [ ] Keep the European message published and the IDFA message unpublished; test UMP withdrawal plus ATT authorize/deny outcomes and reconcile the archive with App Privacy answers.
 - [ ] Run the unsigned macOS CI build for 1.0 with `publish_release=false`; inspect the generated app bundle and IPA before any publication.
 - [ ] Run the signed archive/export workflow with `upload_to_app_store=false`; validate the archive and aggregated privacy report before any upload.
 - [ ] Verify the seven intended subscriptions in App Store Connect; the deleted legacy 50/100/300 identifiers must remain absent.
@@ -208,7 +208,7 @@ ADMOB_IOS_BANNER_UNIT_ID
 
 The two AdMob secrets are required only for `ad_configuration=production`. The internal beta uses Google's fixed official demo pair and must use `ad_configuration=test`, which writes `testFlightInternalTestingOnly=true` into the export options. The first four Apple secrets authenticate App Store Connect; the P12, its password, and the provisioning profile provide the separate Apple Distribution signing identity. All seven belong in the protected GitHub environment `app-store-production`; their values are never stored in this repository. The workflow decodes them only under `$RUNNER_TEMP`, validates that the profile matches the team, bundle, certificate, and expiration, then removes the temporary keychain and profile with an `always()` cleanup step.
 
-The signed workflow also requires an explicit unused positive `build_number` for version 1.0. The live App Store Connect check found no prior builds, so build `1` is available for this beta. `validate_with_app_store` and `upload_to_app_store` both default to `false`; enabling either is an external action requiring contemporaneous owner authorization. Uploading a test-ID build additionally requires `confirm_internal_testflight_only=true`.
+The signed workflow also requires an explicit unused positive `build_number` for version 1.0. Builds 1 through 7 have already been used; the next corrected binary is build 8. `validate_with_app_store` and `upload_to_app_store` both default to `false`; enabling either is an external action requiring contemporaneous owner authorization. Uploading a test-ID build additionally requires `confirm_internal_testflight_only=true`. A production upload additionally requires `confirm_admob_idfa_message_unpublished=true` after verifying the live AdMob configuration.
 
 A successful no-upload run retains:
 
@@ -216,6 +216,6 @@ A successful no-upload run retains:
 - the signed `.xcarchive`, including its dSYM;
 - checks for bundle/version/build identity, the selected AdMob IDs, signature, distribution provisioning identity/entitlements, every privacy manifest in source/archive/export, asset catalog, seven localizations, dSYM, and the archive's `UIDeviceFamily`.
 
-The final privacy report still has to be generated or inspected with Xcode Organizer. VoiceRecorder 1.0 is explicitly iPhone-only (`TARGETED_DEVICE_FAMILY=1`) and portrait. ATT is now an explicit build 6 decision; export-compliance classification remains unchanged unless the implementation changes.
+The final privacy report still has to be generated or inspected with Xcode Organizer. VoiceRecorder 1.0 is explicitly iPhone-only (`TARGETED_DEVICE_FAMILY=1`) and portrait. ATT remains enabled only through the explicit post-UMP eligibility gate in build 8; export-compliance classification remains unchanged unless the implementation changes.
 
 Do not put private keys or secret values in this document or in the manifest.

@@ -1,6 +1,6 @@
 # VoiceRecorder iOS — visual approval manifest
 
-Last verified: 2026-08-13.
+Last verified: 2026-08-18.
 
 This file is the canonical index of complete visual references that govern the real iOS app. It does not grant approval by itself: an entry is `CURRENT` only when the owner explicitly approved that exact visual. Proposals stay under `docs/icon-proposals/` and store exports stay under `store/`; neither becomes a master merely by existing or being used in a build.
 
@@ -10,13 +10,13 @@ When a replacement is approved, add the new file without deleting the previous o
 
 | ID | Surface / state | Status | Approved reference | Device or canvas | Orientation | Language | Approval date | SHA-256 | Notes |
 |---|---|---|---|---|---|---|---|---|---|
-| `IOS-ICON-BLACK-001` | iOS app icon, black background | `CURRENT` | `design/approved/ios/app-icon/ribbon-dot-black-1024.png` | 1024 × 1024 px | Square | No text | 2026-08-09 | `c2ea4e285d00c52a2e98ef1968ba2a371ffe69f11014d12fe3a33bbd094b1c2f` | Exact 1024 px production export of owner-approved proposal 3. Approval recorded in `DECISIONS.md` D-020. |
+| `IOS-ICON-BLACK-001` | iOS app icon, black background | `CURRENT` | `design/approved/ios/app-icon/ribbon-dot-black-1024.png` | 1024 × 1024 px | Square | No text | 2026-08-09 | `c2ea4e285d00c52a2e98ef1968ba2a371ffe69f11014d12fe3a33bbd094b1c2f` | Exact 1024 px production export of owner-approved proposal 3. Approval recorded in `DECISIONS.md` D-020 and restored to the production AppIcon for build 8. |
 
-## Implemented visual not yet promoted to an approved master
+## Historical visual trial not promoted to an approved master
 
 | ID | Surface / state | Status | Current implementation | Device or canvas | Orientation | Language | Date introduced | SHA-256 | Notes |
 |---|---|---|---|---|---|---|---|---|---|
-| `IOS-ICON-WHITE-TRIAL-001` | iOS app icon, white background | `PROVISIONAL_IN_BUILD` | `native-ios/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png` | 1024 × 1024 px | Square | No text | 2026-08-09 | `8d8439197d1ee6f8dfc8438f84df8240791a8e79eacec526574c157b146e34d2` | Owner authorized a TestFlight trial, not a final replacement approval. This is the icon embedded in candidate build 1.0 (5). Its proposal source remains `docs/icon-proposals/05-ribbon-dot-white-1024.png`. |
+| `IOS-ICON-WHITE-TRIAL-001` | iOS app icon, white background | `SUPERSEDED_BY_APPROVED_MASTER` | `docs/icon-proposals/05-ribbon-dot-white-1024.png` | 1024 × 1024 px | Square | No text | 2026-08-09 | `8d8439197d1ee6f8dfc8438f84df8240791a8e79eacec526574c157b146e34d2` | Owner authorized a TestFlight trial, not a final replacement approval. It remains preserved, while build 8 restores `IOS-ICON-BLACK-001` without deleting this variant. |
 
 ## Screen/state coverage audit
 

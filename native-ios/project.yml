@@ -41,3 +41,24 @@ targets:
         CODE_SIGN_STYLE: Manual
         DEVELOPMENT_TEAM: ""
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+  AudioRecorderTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - Tests
+    dependencies:
+      - target: AudioRecorder
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: "YES"
+        PRODUCT_BUNDLE_IDENTIFIER: com.dmkr.audio.B2X6D3A9J9.tests
+        CODE_SIGNING_ALLOWED: "NO"
+schemes:
+  AudioRecorder:
+    build:
+      targets:
+        AudioRecorder: all
+    test:
+      targets:
+        - AudioRecorderTests
