@@ -2,12 +2,14 @@
 
 ## Estado de App Store Connect - 2026-08-18
 
-- El propietario corrigió la decisión visual: el icono blanco `IOS-ICON-WHITE-002` es el vigente para producción y el negro queda preservado como predecesor. La submission de build 8 se canceló antes de empezar la revisión; App Store Connect la dejó `COMPLETE` y la versión `DEVELOPER_REJECTED` para poder seleccionar build 9.
-- Próximo candidato: iOS 1.0 (9), mismo código de consentimiento validado que build 8 y único cambio de producto el icono blanco aprobado. Debe recrearse una submission con la versión, el grupo y las siete suscripciones, actualizar las notas a build 9 y responder al mensaje de Apple.
-- La candidata iOS 1.0 (8), commit de aplicación `88bc460`, se compiló, probó, firmó, validó y subió mediante GitHub Actions run `32160772323`. Apple la procesó como `VALID`, `APP_STORE_ELIGIBLE` y no caducada; recurso de build `8c9700dc-6582-42c4-aa07-cf857c1d43d5`.
-- La versión 1.0 selecciona build 8, mantiene `usesIdfa=true` y `releaseType=MANUAL`. La submission existente `7e9fd837-4419-498a-a40a-7e8fbbd4422e` fue reenviada sin recrear ni retirar productos: versión en `WAITING_FOR_REVIEW`, grupo y siete suscripciones en `IN_REVIEW`, exactamente nueve elementos.
-- Las notas privadas de App Review describen la causa de build 7, la puerta TCF conservadora de build 8, las rutas regionales, el comportamiento tras rechazo y el precio mensual intencional de USD 44.99. La política pública corregida responde HTTP 200 con el texto de build 8.
+- El icono blanco aprobado `IOS-ICON-WHITE-002` es el vigente en producción; el negro `IOS-ICON-BLACK-001` permanece preservado como predecesor. La build 9 contiene exactamente la maestra blanca aprobada.
+- iOS 1.0 (9), commit `f722e1b`, superó XCTest, firma, archive, validaciones de privacidad, exportación, validación de Apple y carga mediante GitHub Actions run `32162795001`. Apple la procesó como `VALID`, `APP_STORE_ELIGIBLE` y no caducada; recurso `c68a13fd-94ea-4982-bffb-393d66c2f73b`.
+- La versión 1.0 selecciona build 9, mantiene `usesIdfa=true` y `releaseType=MANUAL`. La nueva submission `059cf56f-4f6d-48b0-baa8-14a8e8e719fb` está `WAITING_FOR_REVIEW` con exactamente nueve elementos: versión de la app, versión del grupo y las siete versiones de suscripción.
+- Las notas privadas de App Review se actualizaron a build 9 e incluyen una respuesta explícita a 5.1.1(iv), la ruta europea `Do not consent` sin ATT, los fallos cerrados, los caminos regionales y el precio mensual intencional de USD 44.99. La API pública de App Store Connect no permite publicar mensajes en el hilo de revisión y el control de navegador continúa bloqueado por el problema conocido del plugin; la respuesta sí está visible para revisión en las notas del nuevo envío.
 - La publicación final permanece manual: una aprobación de Apple no hará pública la app automáticamente.
+- La candidata iOS 1.0 (8), commit de aplicación `88bc460`, se compiló, probó, firmó, validó y subió mediante GitHub Actions run `32160772323`. Apple la procesó como `VALID`, `APP_STORE_ELIGIBLE` y no caducada; recurso de build `8c9700dc-6582-42c4-aa07-cf857c1d43d5`.
+- Históricamente, la submission de build 8 se canceló antes de comenzar la revisión para corregir el icono. Apple la dejó `COMPLETE`; no se borró ningún producto ni se publicó la app.
+- La política pública corregida responde HTTP 200 con el comportamiento de consentimiento vigente.
 - Apple detuvo la revisión de iOS 1.0 (7) bajo 5.1.1(iv): en el flujo europeo, la app mostraba ATT inmediatamente después de que el usuario pulsara `Do not consent` en UMP.
 - Causa confirmada: `canRequestAds` permite iniciar algún modo de anuncios, incluidos limitados/no personalizados, pero la build 7 lo trataba incorrectamente como consentimiento para pedir tracking y llamaba directamente a `ATTrackingManager.requestTrackingAuthorization`.
 - La candidata local 1.0 (8) sustituye esa condición incorrecta por una puerta explícita y conservadora. En Europa solo solicita ATT cuando las señales TCF posteriores a UMP autorizan almacenamiento, perfil y selección de publicidad personalizada, las bases operativas y Google como proveedor 755. Rechazo, ausencia, error o valor malformado implican cero ATT. `canRequestAds` queda limitado a iniciar Google Mobile Ads.
@@ -32,7 +34,7 @@
 - App Store Connect muestra `Pendiente de revisión` para la submission y sus nueve elementos: app 1.0 (7), grupo y siete suscripciones. No se perdió ni recreó ningún producto.
 - La app no está publicada; la publicación posterior a una eventual aprobación permanece manual.
 
-Última revalidación: 2026-08-15.
+Última revalidación: 2026-08-18.
 
 > Estado histórico: la build 7 superó la validación binaria y se envió con nueve elementos, pero Apple detuvo después la revisión por el orden UMP/ATT descrito arriba.
 

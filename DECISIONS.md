@@ -320,3 +320,7 @@ El propietario confirmó expresamente que la candidata de producción debe usar 
 ### F-029 - Envío de build 8 cancelado para reemplazo visual - 2026-08-18
 
 La submission `7e9fd837-4419-498a-a40a-7e8fbbd4422e` se canceló cuando aún estaba `WAITING_FOR_REVIEW`. Apple la movió a `COMPLETE`, dejó la versión y los nueve recursos relacionados en `DEVELOPER_REJECTED`/`REMOVED`, y no publicó nada. Los productos y el grupo no se borraron; deberán añadirse a una nueva submission con iOS 1.0 (9).
+
+### F-030 - Build 9 validada y nuevo envío completo - 2026-08-18
+
+El run `32162795001`, desde el commit `f722e1b`, superó pruebas de la puerta GDPR/ATT, firma, archive, validaciones de privacidad, exportación, validación de Apple y upload. Apple procesó iOS 1.0 (9), recurso `c68a13fd-94ea-4982-bffb-393d66c2f73b`, como `VALID` y `APP_STORE_ELIGIBLE`. La versión selecciona build 9, conserva `usesIdfa=true` y publicación manual. Se creó la submission `059cf56f-4f6d-48b0-baa8-14a8e8e719fb` con exactamente nueve elementos —app, grupo y siete suscripciones— y quedó `WAITING_FOR_REVIEW`. Las notas privadas contienen la respuesta y rutas de prueba para 5.1.1(iv), además de confirmar el precio mensual intencional de USD 44.99. La app no está publicada.
