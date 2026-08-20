@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct RecorderView: View {
     @EnvironmentObject private var recorder: RecorderService
@@ -8,66 +9,86 @@ struct RecorderView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 28) {
-                Spacer()
-                    .frame(height: 24)
-
-                VStack(spacing: 8) {
-                    Text(recorder.isRecording ? L("Grabando") : L("Preparado"))
-                        .font(.largeTitle.weight(.semibold))
-                    Text(statusText)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-
-                ZStack {
-                    Circle()
-                        .fill(recorder.isRecording ? .red.opacity(0.16) : .gray.opacity(0.12))
-                        .frame(width: 220, height: 220)
-                    Circle()
-                        .stroke(recorder.isRecording ? .red : .secondary, lineWidth: 4)
-                        .frame(width: 174, height: 174)
-                    Image(systemName: recorder.isRecording ? "stop.fill" : "mic.fill")
-                        .font(.system(size: 58, weight: .bold))
-                        .foregroundStyle(recorder.isRecording ? .red : .primary)
-                }
-                .contentShape(Circle())
-                .onTapGesture {
-                    toggleRecording()
-                }
-
-                HStack(spacing: 16) {
-                    MetricView(title: "Segmento", value: formatTime(recorder.elapsed))
-                    MetricView(title: "Nivel", value: "\(visibleLevelDB) dB")
-                    MetricView(title: "Estado", value: recorder.isWritingAudio ? L("Guarda") : L("Espera"))
-                }
-
-                VStack(spacing: 12) {
-                    DetailRow(title: "Calidad", value: settings.quality.title)
-                    DetailRow(title: "Corte", value: String(format: L("%d min"), settings.segmentMinutes))
-                    DetailRow(title: "Modo", value: settings.mode.title)
-                    if settings.mode == .soundActivated {
-                        DetailRow(title: "Umbral", value: "\(visibleThresholdDB) dB")
-                        DetailRow(title: "Extra", value: soundTailTitle(settings.soundTailSeconds))
+            Group {
+                if isRunningOnIPad {
+                    GeometryReader { proxy in
+                        ScrollView {
+                            recorderContent
+                                .frame(maxWidth: .infinity)
+                                .frame(minHeight: proxy.size.height)
+                        }
                     }
+                } else {
+                    recorderContent
                 }
-                .padding()
-                .background(.thinMaterial)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-
-                if let error = recorder.lastError {
-                    Text(error)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
-                        .multilineTextAlignment(.center)
-                }
-
-                Spacer()
             }
-            .padding()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
         }
+    }
+
+    private var recorderContent: some View {
+        VStack(spacing: 28) {
+            Spacer()
+                .frame(height: 24)
+
+            VStack(spacing: 8) {
+                Text(recorder.isRecording ? L("Grabando") : L("Preparado"))
+                    .font(.largeTitle.weight(.semibold))
+                Text(statusText)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            ZStack {
+                Circle()
+                    .fill(recorder.isRecording ? .red.opacity(0.16) : .gray.opacity(0.12))
+                    .frame(width: 220, height: 220)
+                Circle()
+                    .stroke(recorder.isRecording ? .red : .secondary, lineWidth: 4)
+                    .frame(width: 174, height: 174)
+                Image(systemName: recorder.isRecording ? "stop.fill" : "mic.fill")
+                    .font(.system(size: 58, weight: .bold))
+                    .foregroundStyle(recorder.isRecording ? .red : .primary)
+            }
+            .contentShape(Circle())
+            .onTapGesture {
+                toggleRecording()
+            }
+
+            HStack(spacing: 16) {
+                MetricView(title: "Segmento", value: formatTime(recorder.elapsed), scalesValueToFit: isRunningOnIPad)
+                MetricView(title: "Nivel", value: "\(visibleLevelDB) dB", scalesValueToFit: isRunningOnIPad)
+                MetricView(title: "Estado", value: recorder.isWritingAudio ? L("Guarda") : L("Espera"), scalesValueToFit: isRunningOnIPad)
+            }
+
+            VStack(spacing: 12) {
+                DetailRow(title: "Calidad", value: settings.quality.title)
+                DetailRow(title: "Corte", value: String(format: L("%d min"), settings.segmentMinutes))
+                DetailRow(title: "Modo", value: settings.mode.title)
+                if settings.mode == .soundActivated {
+                    DetailRow(title: "Umbral", value: "\(visibleThresholdDB) dB")
+                    DetailRow(title: "Extra", value: soundTailTitle(settings.soundTailSeconds))
+                }
+            }
+            .padding()
+            .background(.thinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            if let error = recorder.lastError {
+                Text(error)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+                    .multilineTextAlignment(.center)
+            }
+
+            Spacer()
+        }
+        .padding()
+    }
+
+    private var isRunningOnIPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad || UIDevice.current.model.hasPrefix("iPad")
     }
 
     private var statusText: String {
@@ -124,11 +145,11 @@ struct RecorderView: View {
 private struct MetricView: View {
     let title: String
     let value: String
+    let scalesValueToFit: Bool
 
     var body: some View {
         VStack(spacing: 6) {
-            Text(value)
-                .font(.title2.monospacedDigit().weight(.semibold))
+            metricValue
             Text(L(title))
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -137,6 +158,19 @@ private struct MetricView: View {
         .padding()
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    @ViewBuilder
+    private var metricValue: some View {
+        if scalesValueToFit {
+            Text(value)
+                .font(.title2.monospacedDigit().weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.65)
+        } else {
+            Text(value)
+                .font(.title2.monospacedDigit().weight(.semibold))
+        }
     }
 }
 

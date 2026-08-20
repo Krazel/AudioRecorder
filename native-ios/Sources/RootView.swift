@@ -3,42 +3,55 @@ import SwiftUI
 struct RootView: View {
     @EnvironmentObject private var monetization: MonetizationStore
     @EnvironmentObject private var adConsent: AdConsentManager
+    @State private var isBannerLoaded = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            TabView {
-                RecorderView()
-                    .tabItem {
-                        Label(L("Grabar"), systemImage: "record.circle")
-                    }
+            VStack(spacing: 0) {
+                TabView {
+                    RecorderView()
+                        .tabItem {
+                            Label(L("Grabar"), systemImage: "record.circle")
+                        }
 
-                RecordingsView()
-                    .tabItem {
-                        Label(L("Archivos"), systemImage: "waveform")
-                    }
+                    RecordingsView()
+                        .tabItem {
+                            Label(L("Archivos"), systemImage: "waveform")
+                        }
 
-                SettingsView()
-                    .tabItem {
-                        Label(L("Ajustes"), systemImage: "slider.horizontal.3")
-                    }
-            }
-
-            if monetization.shouldShowAds && adConsent.canRequestAds && adConsent.isMobileAdsStarted {
-                VStack(spacing: 0) {
-                    Spacer(minLength: 0)
-                    AdMobBannerView()
-                        .frame(height: 50)
-                        .clipped()
+                    SettingsView()
+                        .tabItem {
+                            Label(L("Ajustes"), systemImage: "slider.horizontal.3")
+                        }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .ignoresSafeArea(.container, edges: .bottom)
-                .transition(.opacity.combined(with: .move(edge: .bottom)))
+
+                if shouldPrepareBanner {
+                    ZStack {
+                        AdMobBannerView(isLoaded: $isBannerLoaded)
+                            .frame(height: 50)
+                            .opacity(isBannerLoaded ? 1 : 0)
+                            .allowsHitTesting(isBannerLoaded)
+                            .accessibilityHidden(!isBannerLoaded)
+                    }
+                    .frame(height: isBannerLoaded ? 50 : 0)
+                    .clipped()
+                    .animation(.easeInOut(duration: 0.2), value: isBannerLoaded)
+                }
             }
 
             AutoStartRecorderView()
                 .frame(width: 0, height: 0)
                 .allowsHitTesting(false)
         }
+        .onChange(of: shouldPrepareBanner) { shouldPrepare in
+            if !shouldPrepare {
+                isBannerLoaded = false
+            }
+        }
+    }
+
+    private var shouldPrepareBanner: Bool {
+        monetization.shouldShowAds && adConsent.canRequestAds && adConsent.isMobileAdsStarted
     }
 }
 
