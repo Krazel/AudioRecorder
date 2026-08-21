@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 struct RecorderView: View {
     @EnvironmentObject private var recorder: RecorderService
@@ -9,17 +8,11 @@ struct RecorderView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if isRunningOnIPad {
-                    GeometryReader { proxy in
-                        ScrollView {
-                            recorderContent
-                                .frame(maxWidth: .infinity)
-                                .frame(minHeight: proxy.size.height)
-                        }
-                    }
-                } else {
+            GeometryReader { proxy in
+                ScrollView {
                     recorderContent
+                        .frame(maxWidth: .infinity)
+                        .frame(minHeight: proxy.size.height)
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -57,9 +50,9 @@ struct RecorderView: View {
             }
 
             HStack(spacing: 16) {
-                MetricView(title: "Segmento", value: formatTime(recorder.elapsed), scalesValueToFit: isRunningOnIPad)
-                MetricView(title: "Nivel", value: "\(visibleLevelDB) dB", scalesValueToFit: isRunningOnIPad)
-                MetricView(title: "Estado", value: recorder.isWritingAudio ? L("Guarda") : L("Espera"), scalesValueToFit: isRunningOnIPad)
+                MetricView(title: "Segmento", value: formatTime(recorder.elapsed), scalesValueToFit: true)
+                MetricView(title: "Nivel", value: "\(visibleLevelDB) dB", scalesValueToFit: true)
+                MetricView(title: "Estado", value: recorder.isWritingAudio ? L("Guarda") : L("Espera"), scalesValueToFit: true)
             }
 
             VStack(spacing: 12) {
@@ -85,10 +78,6 @@ struct RecorderView: View {
             Spacer()
         }
         .padding()
-    }
-
-    private var isRunningOnIPad: Bool {
-        UIDevice.current.userInterfaceIdiom == .pad || UIDevice.current.model.hasPrefix("iPad")
     }
 
     private var statusText: String {
