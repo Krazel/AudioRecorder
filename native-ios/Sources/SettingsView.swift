@@ -3,6 +3,7 @@ import StoreKit
 
 struct SettingsView: View {
     @EnvironmentObject private var settings: RecordingSettingsStore
+    @EnvironmentObject private var recorder: RecorderService
     @EnvironmentObject private var monetization: MonetizationStore
     @EnvironmentObject private var library: RecordingLibrary
     @EnvironmentObject private var uploadQueue: CloudUploadQueue
@@ -47,6 +48,7 @@ struct SettingsView: View {
                             Text(mode.title).tag(mode)
                         }
                     }
+                    .disabled(recorder.isRecording)
 
                     if settings.mode == .soundActivated {
                         VStack(alignment: .leading, spacing: 8) {

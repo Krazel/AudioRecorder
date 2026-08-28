@@ -58,8 +58,8 @@ struct RecorderView: View {
             VStack(spacing: 12) {
                 DetailRow(title: "Calidad", value: settings.quality.title)
                 DetailRow(title: "Corte", value: String(format: L("%d min"), settings.segmentMinutes))
-                DetailRow(title: "Modo", value: settings.mode.title)
-                if settings.mode == .soundActivated {
+                DetailRow(title: "Modo", value: displayedMode.title)
+                if displayedMode == .soundActivated {
                     DetailRow(title: "Umbral", value: "\(visibleThresholdDB) dB")
                     DetailRow(title: "Extra", value: soundTailTitle(settings.soundTailSeconds))
                 }
@@ -86,7 +86,7 @@ struct RecorderView: View {
         }
 
         if recorder.isRecording {
-            if settings.mode == .everything {
+            if displayedMode == .everything {
                 return String(format: L("Se crea un archivo nuevo cada %d minutos"), settings.segmentMinutes)
             } else if recorder.isWritingAudio {
                 return String(format: L("Supera %d dB y se esta guardando audio"), visibleThresholdDB)
@@ -100,6 +100,10 @@ struct RecorderView: View {
 
     private var visibleLevelDB: Int {
         normalizedDB(recorder.currentLevel)
+    }
+
+    private var displayedMode: RecordingMode {
+        recorder.activeRecordingMode ?? settings.mode
     }
 
     private var visibleThresholdDB: Int {

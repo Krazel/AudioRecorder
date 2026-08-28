@@ -38,6 +38,11 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         UserDefaults.standard.bool(forKey: persistedRecordingIntentKey)
     }
 
+    var activeRecordingMode: RecordingMode? {
+        guard isRecording else { return nil }
+        return currentSettings?.mode
+    }
+
     func start(
         settings: RecordingSettingsStore,
         library: RecordingLibrary,
@@ -359,7 +364,13 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
 
     private var activeSettings: RecordingSnapshot? {
         if let settingsStore {
-            return RecordingSnapshot(settingsStore)
+            let configuredSettings = RecordingSnapshot(settingsStore)
+            let resolvedMode = RecordingModeSessionPolicy.modeForNextSegment(
+                configuredMode: configuredSettings.mode,
+                activeMode: currentSettings?.mode,
+                isRecording: isRecording
+            )
+            return configuredSettings.replacingMode(with: resolvedMode)
         }
         return currentSettings
     }
@@ -642,6 +653,22 @@ private struct RecordingSnapshot {
     let thresholdDB: Float
     let soundTailDuration: TimeInterval
 
+    private init(
+        mode: RecordingMode,
+        quality: AudioQuality,
+        segmentDuration: TimeInterval,
+        uploadState: UploadState,
+        thresholdDB: Float,
+        soundTailDuration: TimeInterval
+    ) {
+        self.mode = mode
+        self.quality = quality
+        self.segmentDuration = segmentDuration
+        self.uploadState = uploadState
+        self.thresholdDB = thresholdDB
+        self.soundTailDuration = soundTailDuration
+    }
+
     @MainActor
     init(_ settings: RecordingSettingsStore) {
         mode = settings.mode
@@ -650,6 +677,17 @@ private struct RecordingSnapshot {
         uploadState = settings.uploadAutomatically && settings.cloudProvider != .none ? .queued : .localOnly
         thresholdDB = settings.recordingThresholdDB
         soundTailDuration = settings.soundTailSeconds
+    }
+
+    func replacingMode(with mode: RecordingMode) -> RecordingSnapshot {
+        RecordingSnapshot(
+            mode: mode,
+            quality: quality,
+            segmentDuration: segmentDuration,
+            uploadState: uploadState,
+            thresholdDB: thresholdDB,
+            soundTailDuration: soundTailDuration
+        )
     }
 }
 

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       build_number:
-        description: Unique positive build number for version 1.0
+        description: Unique positive build number for the selected app version
         required: true
         type: string
       ad_configuration:
@@ -41,11 +41,11 @@ permissions:
 
 jobs:
   upload:
-    if: github.actor == github.repository_owner
+    if: github.actor == github.repository_owner && github.ref == 'refs/heads/main'
     runs-on: macos-latest
     environment: app-store-production
     env:
-      APP_VERSION: "1.0"
+      APP_VERSION: "1.0.1"
       APP_BUILD_NUMBER: ${{ inputs.build_number }}
       ADMOB_CONFIGURATION: ${{ inputs.ad_configuration }}
       ADMOB_TEST_APP_ID: ca-app-pub-3940256099942544~1458002511
@@ -464,7 +464,7 @@ jobs:
       - name: Retain signed archive and dSYM
         uses: actions/upload-artifact@v4
         with:
-          name: AudioRecorder-${{ inputs.ad_configuration }}-archive-build-${{ inputs.build_number }}
+          name: AudioRecorder-${{ env.APP_VERSION }}-${{ inputs.ad_configuration }}-archive-build-${{ inputs.build_number }}
           path: build/appstore/AudioRecorder.xcarchive
           retention-days: 7
 
@@ -569,7 +569,7 @@ jobs:
       - name: Upload exported IPA artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AudioRecorder-${{ inputs.ad_configuration }}-ipa-build-${{ inputs.build_number }}
+          name: AudioRecorder-${{ env.APP_VERSION }}-${{ inputs.ad_configuration }}-ipa-build-${{ inputs.build_number }}
           path: build/appstore/export/*.ipa
           retention-days: 7
       - name: Clean temporary signing material
