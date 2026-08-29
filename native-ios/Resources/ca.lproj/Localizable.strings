@@ -102,6 +102,11 @@
 "No hay permiso para usar el microfono." = "No hi ha permis per usar el microfon.";
 "Faltan ajustes de grabacion." = "Falten ajustos de gravacio.";
 "No se pudo iniciar la grabacion." = "No s ha pogut iniciar la gravacio.";
+"No se pudo preparar el archivo de grabacion." = "No s ha pogut preparar el fitxer de gravacio.";
+"La grabacion de audio se detuvo inesperadamente." = "La gravacio d audio s ha aturat inesperadament.";
+"La entrada de audio no esta disponible." = "L entrada d audio no esta disponible.";
+"La entrada de audio dejo de responder." = "L entrada d audio ha deixat de respondre.";
+"No se pudo codificar el audio." = "No s ha pogut codificar l audio.";
 "Contacto" = "Contacte";
 "Cargando opciones" = "Carregant opcions";
 "Sin subida" = "Sense pujada";

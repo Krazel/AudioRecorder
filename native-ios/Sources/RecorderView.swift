@@ -85,6 +85,10 @@ struct RecorderView: View {
             return L("Pausado por otro audio. Se reanudara automaticamente")
         }
 
+        if recorder.isRecording, !recorder.isCapturingAudio {
+            return recorder.lastError ?? L("No se pudo reanudar la grabacion.")
+        }
+
         if recorder.isRecording {
             if displayedMode == .everything {
                 return String(format: L("Se crea un archivo nuevo cada %d minutos"), settings.segmentMinutes)

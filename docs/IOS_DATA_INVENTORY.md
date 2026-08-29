@@ -1,6 +1,6 @@
 # VoiceRecorder iOS — release data inventory
 
-Last verified: 2026-08-18. Scope: the iOS 1.0 build 8 source candidate and its declared Google Mobile Ads 12.14.0, Google UMP 3.1.0, and Apple StoreKit integrations. Build 8 corrects the GDPR/ATT sequence rejected under 5.1.1(iv), after build 7 fixed the earlier `ITMS-91064` privacy-manifest packaging issue.
+Last verified: 2026-08-30. Scope: the iOS 1.0.2 build 1 source candidate and its declared Google Mobile Ads 12.14.0, Google UMP 3.1.0, and Apple StoreKit integrations. The recording-stability correction adds only bounded, device-local lifecycle diagnostics; it does not add a recipient, analytics service, account, or transmission.
 
 This inventory is the source of truth for privacy copy and App Store Privacy answers. It describes the shipped build, not possible future features.
 
@@ -20,6 +20,7 @@ This inventory is the source of truth for privacy copy and App Store Privacy ans
 - User-assigned file names, favorites, and selection state needed for file management.
 - Recording quality, mode, segment duration, sound threshold/tail, launch-recording preference, and selected app language.
 - Local ad-removal state derived from the active StoreKit entitlement.
+- Up to 200 local recording lifecycle events in Caches: timestamp, ephemeral session UUID, event/phase/mode, numeric route-reason code, and error domain/code. They exclude audio, filenames/paths, hardware-route names, accounts, and user-entered content; iOS may purge them.
 - StoreKit provides verified product/transaction entitlement state; the app does not receive payment-card details.
 
 The app has no account, developer backend, cloud account, analytics SDK, social graph, or automatic upload feature enabled in the shipped UI.

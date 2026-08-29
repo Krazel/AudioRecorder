@@ -1,0 +1,76 @@
+name: Verify iOS Recording Stability
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    if: ${{ github.actor == github.repository_owner && !github.event.repository.private }}
+    runs-on: macos-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Record toolchain
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          xcrun --sdk iphonesimulator --show-sdk-version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate project
+        working-directory: native-ios
+        run: xcodegen generate
+
+      - name: Run deterministic continuity tests
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          SIMULATOR_UDID="$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devices = json.load(sys.stdin).get("devices", {})
+          for runtime_devices in devices.values():
+              for device in runtime_devices:
+                  if device.get("isAvailable") and device.get("name", "").startswith("iPhone"):
+                      print(device["udid"])
+                      raise SystemExit(0)
+          raise SystemExit("No available iPhone simulator")
+          ')"
+          xcodebuild test \
+            -project native-ios/AudioRecorder.xcodeproj \
+            -scheme AudioRecorder \
+            -destination "platform=iOS Simulator,id=${SIMULATOR_UDID}" \
+            -resultBundlePath build/recording-stability-tests.xcresult \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Compile device target without signing
+        run: |
+          set -euo pipefail
+          xcodebuild build \
+            -project native-ios/AudioRecorder.xcodeproj \
+            -scheme AudioRecorder \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/recording-stability-derived \
+            MARKETING_VERSION=1.0.2 \
+            CURRENT_PROJECT_VERSION=1 \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: Retain test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: AudioRecorder-1.0.2-1-${{ github.sha }}-Recording-Stability-Tests
+          path: build/recording-stability-tests.xcresult
+          if-no-files-found: warn
+          retention-days: 7

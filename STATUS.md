@@ -1,5 +1,61 @@
 # VoiceRecorder / AudioRecorder — estado actual
 
+## Candidata local iOS 1.0.2 (1) — estabilidad de grabación — 2026-08-30
+
+- La auditoría completa de `RecorderService` demostró varias causas independientes. La rotación cerraba el segmento actual antes de asegurar el siguiente y cualquier fallo terminaba en `stop()`. El watchdog marcaba como correcto cualquier `AVAudioRecorder.isRecording == false`, se ignoraba el fallo de `prepareToRecord()`, no se distinguían motivos de route change ni `shouldResume`, media-services reset reutilizaba objetos huérfanos y el modo por sonido no acotaba buffers pendientes.
+- La corrección mantiene separadas la intención del usuario y la salud del backend. Solo Stop borra la intención; rotación fallida, cierre inesperado, error de escritura o entrada detenida guardan el segmento válido, muestran error, registran causa local y reintentan cada cinco segundos. El watchdog usa uptime monotónico y cubre `AVAudioRecorder` y `AVAudioEngine`.
+- Interrupciones, rutas, background/foreground y media services tienen políticas explícitas. Se finaliza antes de una interrupción, se respeta la recomendación `shouldResume`, foreground repara la ausencia de un fin de interrupción, las rutas relevantes reabren con el formato vigente y un reset desecha/recrea `AVAudioEngine` antes de recuperar la sesión ya iniciada.
+- `RecordingDiagnostics` conserva como máximo 200 eventos en Caches/Unified Log sin audio, nombres/rutas de archivos, rutas de hardware, cuentas ni contenido del usuario; no existe transmisión. `SoundActivatedAudioProcessor` limita a 64 los buffers pendientes y convierte una saturación en fallo recuperable.
+- Se añadió `RecordingContinuityPolicy` y XCTest determinista para rotación repetida, fallo del siguiente segmento, interrupción/reanudación, route change, background/foreground, stop solicitado frente a stop inesperado, fallo/reintento y media-services lost/reset. Otras pruebas fijan el límite y esquema minimizado de la telemetría. La evidencia técnica y la matriz física están en `docs/IOS_RECORDING_STABILITY.md`.
+- El versionado fuente y ambos workflows quedan preparados para iOS `1.0.2` build `1`. La puerta manual `verify-ios-recording-stability.yml` ejecuta XCTest y build Release sin firma y no asigna runner si el repositorio es privado. No se ejecutó GitHub Actions, no se cambió la visibilidad privada, no se generó/subió una build y no hubo TestFlight, App Review ni publicación.
+- Validación local Windows: `git diff --check`, igualdad y ausencia de duplicados en las siete tablas de localización, balance estructural Swift, JSON/plist y revisión de alcance pasan. Windows carece de Swift/Xcode, por lo que compilación/XCTest y toda la matriz física siguen pendientes.
+- Riesgos residuales: `AVAudioRecorder` puede dejar un hueco pequeño entre archivos; iOS puede terminar un proceso sin callbacks; Bluetooth, llamadas/Siri/alarmas, reset de media services, poco espacio y sesiones sostenidas requieren iPhone real. Android y `artifact/` permanecen intactos.
+
+## TestFlight iOS 1.0.1 (1) - 2026-08-28
+
+- La correccion del cambio de modo durante una grabacion se versiono como iOS `1.0.1` build `1` en el commit `7446eb6` y se subio a `main` y a `agent/prepare-ios-test-build`.
+- GitHub Actions run `33193618292` termino correctamente. Pasaron la validacion de toolchain, firma, configuracion AdMob de produccion, puerta GDPR/ATT, XCTest —incluidas las nuevas pruebas de modo—, archive firmado, exportacion IPA, validacion de Apple y carga a App Store Connect.
+- La carga fue aceptada por App Store Connect. La sesion web disponible no esta autenticada, por lo que el estado asincrono posterior de procesamiento y aparicion en TestFlight no se pudo consultar directamente desde esta tarea.
+- El workflow solo cargo el binario; no lo envio a App Review ni publico una nueva version en App Store.
+- Tras completar el run, `Krazel/AudioRecorder` volvio a visibilidad `PRIVATE`, como autorizo el propietario. Las paginas legales y `app-ads.txt` viven en `krazel.github.io` y no se ven afectadas.
+- Android y `artifact/` permanecen intactos. Los cambios locales previos de documentacion y scripts se conservaron fuera del commit de la app.
+
+## Correccion local del cambio de modo durante grabacion - 2026-08-28
+
+- Se confirmo un fallo iOS al cambiar `Por sonido`/`Todo` con una grabacion activa: el selector actualizaba la preferencia y la interfaz, pero el backend continuaba en el modo anterior. En una rotacion, reanudacion o recuperacion podia mezclar `AVAudioEngine` y `AVAudioRecorder`, iniciar el backend equivocado o mantener `isRecording` sin un backend valido.
+- La correccion local desactiva unicamente el selector de modo mientras se graba, conserva el modo inicial de la sesion en todos sus segmentos y recuperaciones, y muestra en la pantalla de grabacion el modo realmente activo. El modo puede cambiarse de nuevo al detener la grabacion y se aplicara al siguiente inicio.
+- Se anadio `RecordingModeSessionPolicy` con pruebas para bloquear ambos sentidos (`Todo` a `Por sonido` y `Por sonido` a `Todo`) durante una sesion, manteniendo el modo configurado antes de comenzar.
+- `git diff --check` no detecta errores. Windows no dispone de Xcode, por lo que quedan pendientes XCTest/compilacion en macOS y prueba fisica en ambos modos, incluyendo rotacion de segmento, segundo plano/primer plano e interrupcion de audio.
+- En esa fase previa aun no se habia hecho commit, push ni build; la compilacion y carga posteriores quedan registradas en la seccion superior. Android y `artifact/` no se modificaron.
+
+## Publicacion y verificacion de AdMob - 2026-08-25
+
+- Apple publica iOS 1.0 en App Store con ID `6772278149`, bundle `com.dmkr.audio.B2X6D3A9J9` y URL `https://apps.apple.com/es/app/grabadora-de-voz-pro-audio-k/id6772278149`.
+- AdMob ya tiene seleccionada y guardada esa ficha para la aplicacion `2340753104`. El App ID real es `ca-app-pub-3425091654264901~2340753104` y existe un unico bloque banner real `ca-app-pub-3425091654264901/5497133550`; ambos coinciden con la build publica.
+- El Centro de Politicas de AdMob no muestra problemas. El mensaje de Reglamentos europeos conserva un mensaje activo y no se ha creado el mensaje explicativo remoto de IDFA, de acuerdo con la puerta local GDPR/ATT aprobada por Apple.
+- La comprobacion inmediata de AdMob aun muestra `No hemos podido verificar` para `app-ads.txt`. La fuente publica de Apple declara `https://krazel.github.io/audio-recorder/` como sitio del desarrollador y `https://krazel.github.io/app-ads.txt` responde HTTP 200, `text/plain`, con exactamente `google.com, pub-3425091654264901, DIRECT, f08c47fec0942fa0`. Se solicito `Buscar actualizaciones`, pero Google todavia no ha propagado la verificacion; no falta ningun cambio local ni de la web.
+- Hasta que AdMob complete el rastreo/verificacion y la revision de disponibilidad, la app puede enviar solicitudes pero recibir cero impresiones. El siguiente paso es volver a comprobar el estado tras la propagacion de Google, sin generar otra build.
+
+## App Review - 2026-08-21
+
+- Apple procesó iOS 1.0 (11), recurso `d68a22da-42b9-40c8-ab8e-e44eb4586937`, como `VALID`, `APP_STORE_ELIGIBLE` y no caducada. La candidata corresponde al commit `b86b73a` y al GitHub Actions run `32434875228`.
+- La build 11 conserva el banner dinámico de la build 10 y hace desplazable la pantalla de grabación en cualquier dispositivo cuando la altura disponible no basta. En pantallas donde el contenido cabe, `minHeight` conserva la composición; el escalado de métricas solo actúa si un valor no cabe en una línea.
+- El workflow superó XcodeGen, las pruebas GDPR/ATT, archive firmado, verificaciones de privacidad y AdMob, exportación, validación de Apple y upload.
+- La versión 1.0 selecciona build 11, mantiene `usesIdfa=true` y publicación `MANUAL`. La submission `059cf56f-4f6d-48b0-baa8-14a8e8e719fb` está `WAITING_FOR_REVIEW` con exactamente nueve elementos: app, versión del grupo y las siete versiones de suscripción. No se duplicó ni recreó ningún producto.
+- Las notas privadas explican la corrección de Guideline 4, las rutas de prueba de iPhone/iPad compatible, la puerta GDPR/ATT y el precio intencional de USD 44.99. La app todavía no está publicada y una eventual aprobación no la publicará automáticamente.
+- Android permanece sin diferencias y `artifact/` sigue preservado sin seguimiento.
+
+## Preparación previa de TestFlight y App Review - 2026-08-21
+
+- Apple rechazó iOS 1.0 (9) bajo Guideline 4 por una interfaz inferior abarrotada o difícil de usar en iPhone 17 Pro Max y en el modo de compatibilidad iPhone de un iPad Air 11-inch (M3). La versión 1.0 sigue `REJECTED`, selecciona históricamente build 9 y conserva publicación manual.
+- La causa local confirmada era doble: el banner se superponía a toda la `TabView` e ignoraba la zona segura; además, `RecorderView` era una pila vertical no desplazable que podía solaparse o truncarse en la ventana compatible del iPad.
+- El commit reversible `f548298` corrige únicamente iOS. El banner se prepara sin ocupar espacio y, al recibir un anuncio real, reserva exactamente 50 puntos como hermano de la `TabView`, desplaza la barra inferior y deja de interceptarla. Si el anuncio falla o los anuncios se desactivan, el hueco vuelve automáticamente a cero.
+- El diseño normal de iPhone conserva sus tamaños y composición. Solo en hardware iPad, detectado por idiom/modelo, la pantalla de grabación usa desplazamiento vertical y permite reducir el texto de las métricas para evitar el recorte observado.
+- GitHub Actions run `32432124526` compiló y probó iOS 1.0 (10), commit `f548298`; firma, archive, privacidad, AdMob, IPA, validación de Apple y upload terminaron correctamente.
+- Apple procesó build 10, recurso `f8bb39d4-b9f1-4522-b0f2-ff99f1670cb9`, como `VALID`, `APP_STORE_ELIGIBLE`, no caducada y `IN_BETA_TESTING`. El grupo privado interno `Testers` tiene acceso automático y dos testers; no existe enlace público ni se solicitó Beta App Review.
+- Build 10 no está seleccionada en la versión de App Store y no se ha enviado a App Review. La siguiente acción es probar en iPhone el banner apareciendo/desapareciendo y, si es posible, repetir el caso en un iPad antes de preparar un nuevo envío.
+- El estado anterior completo puede recuperarse revirtiendo únicamente `f548298`; su padre es `fb9a5fb`. Android y `artifact/` permanecen intactos.
+
 ## Estado de App Store Connect - 2026-08-18
 
 - El icono blanco aprobado `IOS-ICON-WHITE-002` es el vigente en producción; el negro `IOS-ICON-BLACK-001` permanece preservado como predecesor. La build 9 contiene exactamente la maestra blanca aprobada.

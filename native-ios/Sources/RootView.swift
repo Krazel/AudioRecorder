@@ -71,9 +71,11 @@ private struct AutoStartRecorderView: View {
                 Task {
                     switch phase {
                     case .active:
-                        await recorder.recoverActiveRecordingIfNeeded()
+                        await recorder.applicationDidBecomeActive()
                         await startIfNeeded()
-                    case .background, .inactive:
+                    case .background:
+                        recorder.applicationDidEnterBackground()
+                    case .inactive:
                         break
                     @unknown default:
                         break

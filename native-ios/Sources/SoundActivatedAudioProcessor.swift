@@ -23,6 +23,8 @@ final class SoundActivatedAudioProcessor: @unchecked Sendable {
     typealias ProgressHandler = @Sendable (SoundActivatedAudioProgress) -> Void
 
     private let queue = DispatchQueue(label: "com.dmkr.audio.sound-processing", qos: .userInitiated)
+    private let pendingBufferLock = NSLock()
+    private let maximumPendingBuffers = 64
     private let analyzer = VoiceNoiseAnalyzer()
     private let progressHandler: ProgressHandler
 
@@ -35,6 +37,8 @@ final class SoundActivatedAudioProcessor: @unchecked Sendable {
     private var lastSoundAboveThresholdAt: Date?
     private var lastProgressUpdateAt = Date.distantPast
     private var isPaused = true
+    private var pendingBufferCount = 0
+    private var didSignalBufferOverflow = false
 
     init(progressHandler: @escaping ProgressHandler) {
         self.progressHandler = progressHandler
@@ -52,16 +56,64 @@ final class SoundActivatedAudioProcessor: @unchecked Sendable {
             lastSoundAboveThresholdAt = nil
             lastProgressUpdateAt = .distantPast
             isPaused = false
+            pendingBufferLock.lock()
+            didSignalBufferOverflow = false
+            pendingBufferLock.unlock()
             return newGeneration
         }
     }
 
     func enqueue(_ buffer: AVAudioPCMBuffer) {
+        guard reservePendingBufferSlot() else {
+            signalPendingBufferFailureIfNeeded()
+            return
+        }
+
         // AVAudioEngine can reuse its tap buffer after the callback returns.
         // Copy it before handing it to the serial processing queue.
-        guard let copiedBuffer = buffer.deepCopy().map(CopiedAudioBuffer.init) else { return }
+        guard let copiedBuffer = buffer.deepCopy().map(CopiedAudioBuffer.init) else {
+            releasePendingBufferSlot()
+            signalPendingBufferFailureIfNeeded()
+            return
+        }
         queue.async { [weak self] in
+            defer { self?.releasePendingBufferSlot() }
             self?.process(copiedBuffer.value)
+        }
+    }
+
+    private func reservePendingBufferSlot() -> Bool {
+        pendingBufferLock.lock()
+        defer { pendingBufferLock.unlock() }
+        guard pendingBufferCount < maximumPendingBuffers else { return false }
+        pendingBufferCount += 1
+        return true
+    }
+
+    private func releasePendingBufferSlot() {
+        pendingBufferLock.lock()
+        pendingBufferCount = max(0, pendingBufferCount - 1)
+        pendingBufferLock.unlock()
+    }
+
+    private func signalPendingBufferFailureIfNeeded() {
+        pendingBufferLock.lock()
+        let shouldSignal = !didSignalBufferOverflow
+        didSignalBufferOverflow = true
+        pendingBufferLock.unlock()
+        guard shouldSignal else { return }
+
+        queue.async { [weak self] in
+            guard let self, !isPaused else { return }
+            isPaused = true
+            isWriting = false
+            progressHandler(
+                snapshot(
+                    level: nil,
+                    reachedSegmentLimit: false,
+                    errorDescription: L("La entrada de audio dejo de responder.")
+                )
+            )
         }
     }
 

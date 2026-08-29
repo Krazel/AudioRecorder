@@ -1,6 +1,6 @@
 # VoiceRecorder / AudioRecorder — hechos y decisiones
 
-Última actualización: 2026-08-11.
+Última actualización: 2026-08-30.
 
 Este documento distingue hechos observados de decisiones del propietario. Un hecho puede cambiar al evolucionar el repositorio; una decisión permanece vigente hasta que el propietario la sustituya expresamente.
 
@@ -324,3 +324,55 @@ La submission `7e9fd837-4419-498a-a40a-7e8fbbd4422e` se canceló cuando aún est
 ### F-030 - Build 9 validada y nuevo envío completo - 2026-08-18
 
 El run `32162795001`, desde el commit `f722e1b`, superó pruebas de la puerta GDPR/ATT, firma, archive, validaciones de privacidad, exportación, validación de Apple y upload. Apple procesó iOS 1.0 (9), recurso `c68a13fd-94ea-4982-bffb-393d66c2f73b`, como `VALID` y `APP_STORE_ELIGIBLE`. La versión selecciona build 9, conserva `usesIdfa=true` y publicación manual. Se creó la submission `059cf56f-4f6d-48b0-baa8-14a8e8e719fb` con exactamente nueve elementos —app, grupo y siete suscripciones— y quedó `WAITING_FOR_REVIEW`. Las notas privadas contienen la respuesta y rutas de prueba para 5.1.1(iv), además de confirmar el precio mensual intencional de USD 44.99. La app no está publicada.
+
+### D-037 - Banner con espacio dinámico y compatibilidad iPad aislada - 2026-08-21
+
+La corrección de Guideline 4 no convierte la aplicación en universal ni añade soporte nativo de iPad. `TARGETED_DEVICE_FAMILY=1` y el diseño normal de iPhone permanecen vigentes. El banner deja de ser una superposición: se carga inicialmente sin altura ni interacción y solo reserva 50 puntos debajo de la `TabView` cuando Google confirma una creatividad real; al fallar, desaparecer o desactivarse anuncios, el espacio vuelve a cero. Solo en hardware iPad la pantalla de grabación puede desplazarse verticalmente y reducir métricas largas para funcionar correctamente en el modo de compatibilidad iPhone.
+
+### F-031 - Build 10 disponible en TestFlight interno - 2026-08-21
+
+El commit reversible `f548298` contiene exclusivamente la corrección de banner y compatibilidad iPad. El run `32432124526` superó XCTest, archive firmado, verificaciones de privacidad/AdMob, exportación, validación y upload. Apple procesó iOS 1.0 (10), recurso `f8bb39d4-b9f1-4522-b0f2-ff99f1670cb9`, como `VALID`, `APP_STORE_ELIGIBLE` e `IN_BETA_TESTING`. El grupo privado `Testers`, con dos testers y acceso automático a builds, ya dispone de ella. Build 10 no está asociada a la versión pública ni enviada a App Review; la publicación continúa manual.
+
+### D-038 - Desplazamiento defensivo en cualquier altura limitada - 2026-08-21
+
+La limitación de desplazamiento exclusiva de iPad descrita en D-037 queda sustituida. El banner cargado también reduce el alto disponible en iPhone, por lo que `RecorderView` usa `GeometryReader`, `ScrollView` y `minHeight` en todos los dispositivos. Cuando el contenido cabe mantiene la misma composición; cuando no cabe permite alcanzar todos los controles y detalles. Los valores métricos conservan su tamaño normal y solo se reducen si no caben en una línea. La app continúa siendo iPhone-only y vertical.
+
+### F-032 - Build 11 validada y reenviada a App Review - 2026-08-21
+
+El commit `b86b73a` contiene únicamente la ampliación defensiva del desplazamiento. GitHub Actions run `32434875228` superó pruebas, firma, archive, privacidad, AdMob, exportación, validación de Apple y upload. Apple procesó iOS 1.0 (11), recurso `d68a22da-42b9-40c8-ab8e-e44eb4586937`, como `VALID` y `APP_STORE_ELIGIBLE`. La versión selecciona build 11, conserva `usesIdfa=true` y publicación `MANUAL`. Se actualizó la información privada de revisión, se resolvió solo el elemento rechazado de la app y se reenvió la submission `059cf56f-4f6d-48b0-baa8-14a8e8e719fb` con sus nueve elementos originales. App, grupo y siete suscripciones están nuevamente en la cola de revisión; no se publicó la aplicación.
+
+### F-033 - Publicacion y enlace de tienda en AdMob - 2026-08-25
+
+Apple publica iOS 1.0 con ID `6772278149` y el sitio de desarrollador `https://krazel.github.io/audio-recorder/`. AdMob encontro y guardo esa ficha exacta para la aplicacion `2340753104`; sus App ID y banner real coinciden con la build y el Centro de Politicas no muestra problemas. La primera verificacion de `app-ads.txt` continua pendiente de propagacion de Google aunque el archivo raiz publico responde HTTP 200 con el publisher ID y la relacion `DIRECT` exactos. Se solicito una nueva comprobacion. No se crea un mensaje remoto de IDFA ni se cambia el binario por este retraso de rastreo.
+
+### D-039 - El modo de grabacion queda fijo durante cada sesion - 2026-08-28
+
+`Todo` y `Por sonido` usan backends distintos y no se cambian en caliente dentro de una grabacion. El selector de modo queda desactivado mientras la sesion esta activa y `RecorderService` conserva defensivamente el modo con el que comenzo para todos los segmentos, reanudaciones y recuperaciones. El usuario puede elegir otro modo despues de detener la grabacion; la eleccion se aplica al siguiente inicio. Esta politica evita mezclar `AVAudioRecorder`, `AVAudioEngine` y callbacks de segmentos distintos sin introducir una transicion de audio mas arriesgada.
+
+### F-034 - Correccion local del cambio de modo durante grabacion - 2026-08-28
+
+La fuente iOS incorpora `RecordingModeSessionPolicy`, bloquea el selector durante una grabacion y hace que la interfaz muestre el modo realmente activo. Se añadieron pruebas unitarias para ambos sentidos de cambio y para el modo configurado antes del inicio. La revision estatica local pasa; la compilacion/XCTest en macOS y la prueba fisica quedan pendientes. No se modifico Android, no se genero ni subio una build y no se hizo commit o push.
+
+### F-035 - Build 1.0.1 (1) cargada para TestFlight - 2026-08-28
+
+El commit `7446eb6` fija el modo durante cada sesion y actualiza la version iOS a `1.0.1` build `1`. GitHub Actions run `33193618292` supero las pruebas, la firma, la configuracion AdMob de produccion, las verificaciones GDPR/ATT, el archive, la exportacion IPA, la validacion de Apple y la carga a App Store Connect. El workflow no envio la app a App Review. El estado final de procesamiento en TestFlight queda por confirmar porque la sesion web disponible no esta autenticada. Tras el run, `Krazel/AudioRecorder` se devolvio a visibilidad privada por decision expresa del propietario; Android y `artifact/` no se tocaron.
+
+### D-040 - La intención de grabar no depende de un backend transitorio - 2026-08-30
+
+Solo una parada solicitada explícitamente por el usuario borra la intención de grabación y desactiva la sesión. Un límite de segmento, fallo al preparar el archivo siguiente, cierre inesperado de `AVAudioRecorder`/`AVAudioEngine`, error de escritura o entrada detenida conserva todos los segmentos válidos, mantiene la intención, muestra un error útil y pasa a recuperación con reintentos. La interfaz distingue la sesión solicitada de la captura real mediante `isCapturingAudio`.
+
+### D-041 - Política de interrupciones, rutas y media services - 2026-08-30
+
+Al comenzar una interrupción se finaliza el fragmento válido. Su fin reanuda inmediatamente solo con la recomendación `shouldResume`; foreground puede recuperar cuando no llegó el fin o el backend ya no existe. Conexión, retirada, reconfiguración o ausencia de ruta fuerzan un nuevo segmento con el formato actual; cambios no disruptivos no cortan un backend sano. Media-services lost congela la sesión y reset descarta objetos huérfanos, crea un `AVAudioEngine` nuevo, reaplica `AVAudioSession` y recupera únicamente una sesión que ya tenía intención explícita. Background por sí solo no detiene.
+
+### D-042 - Diagnóstico de grabación exclusivamente local y minimizado - 2026-08-30
+
+La app puede conservar hasta 200 eventos de ciclo de vida en `Library/Caches/RecordingDiagnostics/events.json` y Unified Log. Solo se registran fecha, UUID efímero de sesión, código de evento, fase, modo y dominio/código numérico del error. Se prohíben audio, transcripciones, nombres o rutas de archivo, nombre de ruta/dispositivo, cuentas y contenido del usuario. No se añade ningún transporte ni analítica y el sistema puede purgar Caches.
+
+### F-036 - Causas demostradas de rotación y parada inesperada - 2026-08-30
+
+La fuente 1.0.1 cerraba/indexaba el segmento antes de demostrar que el siguiente destino era abrible y `rotateSegment()` ejecutaba `stop()` ante cualquier error. Además, el timer convertía cualquier backend inactivo en final correcto, ignoraba `prepareToRecord()==false`, no leía motivos de route change ni `shouldResume`, reutilizaba el engine después de media-services reset y no acotaba la cola del modo por sonido. Son causas y riesgos independientes; no se presupone una única explicación para todos los casos físicos.
+
+### F-037 - Candidata local iOS 1.0.2 (1) preparada - 2026-08-30
+
+`native-ios/project.yml`, los workflows y la documentación preparan marketing `1.0.2`, build `1`, sin generar binario. `RecordingContinuityPolicyTests` cubre rotaciones repetidas, error del segmento siguiente, interrupciones, ruta, lifecycle, stop solicitado/inesperado, recuperación y media services. `.github/workflows/verify-ios-recording-stability.yml` ejecutará XCTest y build Release en macOS, pero su job se omite mientras el repositorio sea privado. No se ejecutó Actions ni se cambió visibilidad; compilación/XCTest y QA físico siguen pendientes. Android y `artifact/` no se modificaron.

@@ -102,6 +102,11 @@
 "No hay permiso para usar el microfono." = "Permesso per il microfono mancante.";
 "Faltan ajustes de grabacion." = "Impostazioni di registrazione mancanti.";
 "No se pudo iniciar la grabacion." = "Impossibile avviare la registrazione.";
+"No se pudo preparar el archivo de grabacion." = "Impossibile preparare il file di registrazione.";
+"La grabacion de audio se detuvo inesperadamente." = "La registrazione audio si e interrotta inaspettatamente.";
+"La entrada de audio no esta disponible." = "L ingresso audio non e disponibile.";
+"La entrada de audio dejo de responder." = "L ingresso audio non risponde piu.";
+"No se pudo codificar el audio." = "Impossibile codificare l audio.";
 "Contacto" = "Contatto";
 "Cargando opciones" = "Caricamento opzioni";
 "Sin subida" = "Nessun caricamento";

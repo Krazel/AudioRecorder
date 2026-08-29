@@ -32,7 +32,7 @@ Para vigilar y descargar el IPA desde Windows:
 ## Incluido
 
 - SwiftUI con tabs de grabacion, archivos y ajustes.
-- Grabacion mediante `AVAudioEngine`.
+- Grabacion continua mediante `AVAudioRecorder` y modo por sonido mediante `AVAudioEngine`.
 - Permiso de microfono en `Info.plist`.
 - `UIBackgroundModes = audio` para continuar grabando en segundo plano.
 - Segmentacion configurable: no separar, 5, 15, 30, 60 y 120 minutos.
@@ -54,8 +54,8 @@ Para envio manual, abre `Archivos` y usa el boton de compartir de arriba para en
 
 - Sustituir la separacion simple voz/ruido por un modelo Core ML si se necesita separacion avanzada.
 - Probar consumo de bateria en sesiones largas.
-- Gestionar interrupciones de audio: llamadas, Siri, alarmas, cambios de ruta Bluetooth.
-- Anadir tests unitarios cuando el proyecto se compile en macOS.
+- Ejecutar la matriz física de interrupciones, rutas, media-services y poco espacio documentada en `docs/IOS_RECORDING_STABILITY.md`.
+- Ejecutar la puerta XCTest/macOS preparada antes de generar una build 1.0.2.
 
 ## Ficheros clave
 
