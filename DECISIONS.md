@@ -375,4 +375,12 @@ La fuente 1.0.1 cerraba/indexaba el segmento antes de demostrar que el siguiente
 
 ### F-037 - Candidata local iOS 1.0.2 (1) preparada - 2026-08-30
 
-`native-ios/project.yml`, los workflows y la documentación preparan marketing `1.0.2`, build `1`, sin generar binario. `RecordingContinuityPolicyTests` cubre rotaciones repetidas, error del segmento siguiente, interrupciones, ruta, lifecycle, stop solicitado/inesperado, recuperación y media services. `.github/workflows/verify-ios-recording-stability.yml` ejecutará XCTest y build Release en macOS, pero su job se omite mientras el repositorio sea privado. No se ejecutó Actions ni se cambió visibilidad; compilación/XCTest y QA físico siguen pendientes. Android y `artifact/` no se modificaron.
+`native-ios/project.yml`, los workflows y la documentación prepararon marketing `1.0.2`, build `1`. `RecordingContinuityPolicyTests` cubre rotaciones repetidas, error del segmento siguiente, interrupciones, ruta, lifecycle, stop solicitado/inesperado, recuperación y media services. La candidata quedó consolidada en `eb72a56`; antes de la autorización de distribución no se ejecutó Actions, no se cambió visibilidad y Android y `artifact/` permanecieron intactos.
+
+### D-043 - La build de estabilidad 1.0.2 (1) es exclusivamente interna - 2026-08-30
+
+La comprobación contemporánea mostró la cuenta de AdMob desactivada por inactividad. La build destinada a comprobar el motor de audio usa por ello los identificadores demo oficiales y queda limitada a TestFlight interno. No puede promoverse a testing externo ni App Review. Reactivar AdMob, volver a verificar consentimiento/configuración y producir un binario con IDs reales son acciones separadas; si se mantiene marketing 1.0.2, ese binario deberá usar build 2.
+
+### F-038 - iOS 1.0.2 (1) disponible en TestFlight interno - 2026-08-30
+
+Con autorización expresa del propietario, el commit `eb72a56` se publicó en `main`, `Krazel/AudioRecorder` pasó a visibilidad pública y se despachó el run `33278736558`. Xcode 26.6 superó la puerta GDPR/ATT, todos los XCTest, archive firmado, verificaciones de versión/firma/privacidad, exportación, validación Apple y upload. Apple procesó la entrega `a4ab24e5-b69e-4940-a6b8-edcb479fe34e` como `VALID`, audiencia `INTERNAL_ONLY` e `IN_BETA_TESTING`; el grupo privado `Testers`, con dos testers y acceso automático, ya dispone de ella. No hubo testing externo, App Review ni publicación.
