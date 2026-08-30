@@ -24,6 +24,8 @@ final class RecorderService: ObservableObject {
     private var audioTapInstalled = false
     private var currentFile: AVAudioFile?
     private var currentURL: URL?
+    private var currentSegmentCompletionToken: UUID?
+    private var segmentCompletionGate = RecordingSegmentCompletionGate()
     private var currentSettings: RecordingSnapshot?
     private var writtenDuration: TimeInterval = 0
     private var didWriteCurrentSegment = false
@@ -35,8 +37,12 @@ final class RecorderService: ObservableObject {
     private var waitingForMediaServicesReset = false
     private var lastBackendActivityAt: Date?
     private var recoveryRetryTask: Task<Void, Never>?
+    private var recoveryRetryToken: UUID?
     private var segmentRotationRetryTask: Task<Void, Never>?
     private var continuityPolicy = RecordingContinuityPolicy()
+    private var recoveryDriver = RecordingRecoveryDriver()
+    private var recoveryInvalidationGate = RecordingRecoveryInvalidationGate()
+    private var recoveryMustAbandonEngine = false
     private let diagnostics = RecordingDiagnostics()
     private var diagnosticSessionID = UUID()
     private let persistedRecordingIntentKey = "RecorderService.persistedRecordingIntent"
@@ -101,8 +107,13 @@ final class RecorderService: ObservableObject {
         if clearIntent {
             persistRecordingIntent(false)
         }
-        stopEngine()
-        completeCurrentSegment()
+        if recoveryMustAbandonEngine {
+            abandonAudioObjectsPreservingSegment()
+        } else {
+            stopEngine()
+            completeCurrentSegment()
+        }
+        recoveryMustAbandonEngine = false
         if deactivateSession {
             let session = AVAudioSession.sharedInstance()
             try? session.setPrefersNoInterruptionsFromSystemAlerts(false)
@@ -122,8 +133,7 @@ final class RecorderService: ObservableObject {
         )
         guard action == .recover else { return }
         await recoverRecordingBackend(
-            messageFormat: L("No se pudo reactivar la grabacion: %@"),
-            rebuildAudioObjects: false
+            messageFormat: L("No se pudo reactivar la grabacion: %@")
         )
     }
 
@@ -293,6 +303,7 @@ final class RecorderService: ObservableObject {
         currentSettings = settings
         currentFile = preparedFile
         currentURL = url
+        currentSegmentCompletionToken = segmentCompletionGate.beginSegment()
         currentSegmentStartedAt = Date()
         writtenDuration = 0
         didWriteCurrentSegment = false
@@ -394,9 +405,25 @@ final class RecorderService: ObservableObject {
     }
 
     private func completeCurrentSegment() {
-        guard let url = currentURL, let startedAt = currentSegmentStartedAt, let currentSettings else {
+        guard let url = currentURL,
+              let startedAt = currentSegmentStartedAt,
+              let currentSettings,
+              let completionToken = currentSegmentCompletionToken else {
             currentFile = nil
             currentURL = nil
+            currentSegmentCompletionToken = nil
+            segmentCompletionGate.clear()
+            currentSegmentStartedAt = nil
+            writtenDuration = 0
+            didWriteCurrentSegment = false
+            elapsed = 0
+            return
+        }
+
+        guard segmentCompletionGate.claimCompletion(for: completionToken) else {
+            currentFile = nil
+            currentURL = nil
+            currentSegmentCompletionToken = nil
             currentSegmentStartedAt = nil
             writtenDuration = 0
             didWriteCurrentSegment = false
@@ -405,10 +432,12 @@ final class RecorderService: ObservableObject {
         }
 
         currentFile = nil
+        currentSegmentCompletionToken = nil
         let duration = writtenDuration
         guard didWriteCurrentSegment, duration > 0.02 else {
             deleteFileIfNeeded(url)
             currentURL = nil
+            currentSegmentCompletionToken = nil
             currentSegmentStartedAt = nil
             writtenDuration = 0
             didWriteCurrentSegment = false
@@ -430,6 +459,7 @@ final class RecorderService: ObservableObject {
         addCompletedSegment(item)
         recordDiagnostic(.segmentCompleted)
         currentURL = nil
+        currentSegmentCompletionToken = nil
         currentSegmentStartedAt = nil
         writtenDuration = 0
         didWriteCurrentSegment = false
@@ -502,6 +532,20 @@ final class RecorderService: ObservableObject {
         }
 
         NotificationCenter.default.addObserver(
+            forName: .AVAudioEngineConfigurationChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            // Never rebuild the graph synchronously inside AVAudioEngine's
+            // configuration callback. Because this observer is delivered on the
+            // main queue, the MainActor task cannot execute until this callback
+            // returns. Ignore events from an already-replaced generation.
+            Task { @MainActor in
+                await self?.handleAudioEngineConfigurationChange(notification)
+            }
+        }
+
+        NotificationCenter.default.addObserver(
             forName: AVAudioSession.mediaServicesWereLostNotification,
             object: nil,
             queue: .main
@@ -539,8 +583,7 @@ final class RecorderService: ObservableObject {
         }
         if action == .recover {
             await recoverRecordingBackend(
-                messageFormat: L("No se pudo reactivar la grabacion: %@"),
-                rebuildAudioObjects: false
+                messageFormat: L("No se pudo reactivar la grabacion: %@")
             )
         }
     }
@@ -553,6 +596,8 @@ final class RecorderService: ObservableObject {
         setWritingAudio(false)
         cancelRecoveryRetry()
         cancelSegmentRotationRetry()
+        invalidateCurrentAudioEngine()
+        abandonAudioObjectsPreservingSegment()
         _ = continuityPolicy.handle(.mediaServicesLost)
         recordDiagnostic(.mediaServicesLost)
     }
@@ -563,8 +608,7 @@ final class RecorderService: ObservableObject {
         _ = continuityPolicy.handle(.mediaServicesReset)
         recordDiagnostic(.mediaServicesReset)
         await recoverRecordingBackend(
-            messageFormat: L("No se pudo recuperar el audio del sistema: %@"),
-            rebuildAudioObjects: true
+            messageFormat: L("No se pudo recuperar el audio del sistema: %@")
         )
     }
 
@@ -596,8 +640,8 @@ final class RecorderService: ObservableObject {
         setWritingAudio(false)
         cancelRecoveryRetry()
         cancelSegmentRotationRetry()
-        stopEngine()
-        completeCurrentSegment()
+        invalidateCurrentAudioEngine()
+        abandonAudioObjectsPreservingSegment()
         let pausedMessage = L("Grabacion pausada por otra app. Se reanudara sola.")
         lastError = pausedMessage
         recordDiagnostic(.interruptionBegan)
@@ -622,8 +666,35 @@ final class RecorderService: ObservableObject {
         // the bounded retry path until the microphone is actually available.
         cancelRecoveryRetry()
         await recoverRecordingBackend(
-            messageFormat: L("No se pudo reanudar la grabacion: %@"),
-            rebuildAudioObjects: false
+            messageFormat: L("No se pudo reanudar la grabacion: %@")
+        )
+    }
+
+    private func handleAudioEngineConfigurationChange(_ notification: Notification) async {
+        guard isRecording,
+              let changedEngine = notification.object as? AVAudioEngine,
+              RecordingEngineGenerationGate.accepts(
+                changedEngine: changedEngine,
+                currentEngine: engine
+              ) else {
+            return
+        }
+
+        recordDiagnostic(.audioEngineConfigurationChanged)
+        invalidateCurrentAudioEngine()
+        guard !waitingForMediaServicesReset else { return }
+        if isInterrupted {
+            scheduleRecoveryRetry(message: L("Grabacion pausada por otra app. Se reanudara sola."))
+            return
+        }
+        if isPerformingRecovery {
+            scheduleRecoveryRetry(message: L("No se pudo reactivar la grabacion."))
+            return
+        }
+
+        _ = continuityPolicy.handle(.backendFailed)
+        await recoverRecordingBackend(
+            messageFormat: L("No se pudo reactivar la grabacion: %@")
         )
     }
 
@@ -654,9 +725,9 @@ final class RecorderService: ObservableObject {
         }
 
         recordDiagnostic(.routeRecoveryStarted, detailCode: Int(rawReason))
+        invalidateCurrentAudioEngine()
         await recoverRecordingBackend(
-            messageFormat: L("No se pudo reactivar la grabacion: %@"),
-            rebuildAudioObjects: true
+            messageFormat: L("No se pudo reactivar la grabacion: %@")
         )
     }
 
@@ -670,53 +741,88 @@ final class RecorderService: ObservableObject {
         cancelSegmentRotationRetry()
         stopEngine()
         completeCurrentSegment()
+        invalidateCurrentAudioEngine()
         scheduleRecoveryRetry(
             message: String(format: L("No se pudo reanudar la grabacion: %@"), error.localizedDescription),
             error: error
         )
     }
 
-    private func recoverRecordingBackend(
-        messageFormat: String,
-        rebuildAudioObjects: Bool
-    ) async {
+    private func recoverRecordingBackend(messageFormat: String) async {
         guard isRecording, !isPerformingRecovery else { return }
         isPerformingRecovery = true
         cancelSegmentRotationRetry()
         defer { isPerformingRecovery = false }
 
-        if rebuildAudioObjects {
-            discardOrphanedAudioObjectsPreservingSegment()
+        if recoveryMustAbandonEngine {
+            abandonAudioObjectsPreservingSegment()
         } else {
             stopEngine()
             completeCurrentSegment()
         }
+        recoveryMustAbandonEngine = false
 
+        var driver = recoveryDriver
+        let invalidationTicket = recoveryInvalidationGate.ticket()
         do {
-            try configureAudioSession()
-            try startNewSegment()
-            try startRecordingBackend()
+            let generation = try driver.attempt(using: RecordingRecoveryHardwareSteps(
+                activateSession: { [unowned self] in
+                    try self.configureAudioSession()
+                },
+                rebuildAudioEngine: { [unowned self] generation in
+                    self.replaceAudioEngine(generation: generation)
+                },
+                validateInputAndOpenSegment: { [unowned self] in
+                    try self.startNewSegment()
+                },
+                installTapAndStartEngine: { [unowned self] in
+                    try self.startRecordingBackend()
+                }
+            ))
+            recoveryDriver = driver
+            guard recoveryInvalidationGate.accepts(ticket: invalidationTicket) else {
+                throw RecordingRecoveryInvalidatedError()
+            }
             isInterrupted = false
             isCapturingAudio = true
             cancelRecoveryRetry()
             lastError = nil
             _ = continuityPolicy.handle(.recoverySucceeded)
-            recordDiagnostic(.recoverySucceeded)
+            recordDiagnostic(.recoverySucceeded, detailCode: generation)
         } catch {
+            recoveryDriver = driver
             isCapturingAudio = false
+            invalidateCurrentAudioEngine()
             _ = continuityPolicy.handle(.recoveryFailed)
-            recordDiagnostic(.recoveryFailed, error: error)
+            let attemptError = error as? RecordingRecoveryAttemptError
+            let reportedError: Error = error is RecordingRecoveryInvalidatedError
+                ? RecorderError.backendStoppedUnexpectedly
+                : (attemptError?.underlyingError ?? error)
+            recordDiagnostic(
+                .recoveryFailed,
+                detailCode: attemptError?.generation,
+                error: reportedError
+            )
             scheduleRecoveryRetry(
-                message: String(format: messageFormat, error.localizedDescription),
-                error: error
+                message: String(format: messageFormat, reportedError.localizedDescription),
+                error: reportedError
             )
         }
     }
 
-    private func discardOrphanedAudioObjectsPreservingSegment() {
+    private func abandonAudioObjectsPreservingSegment() {
         recorderTimer?.invalidate()
         recorderTimer = nil
         cancelSegmentRotationRetry()
+
+        // Every caller reaches this method after the AVFoundation notification
+        // callback has returned. Tear down and release the retired graph here,
+        // never inside AVAudioEngineConfigurationChange's internal queue.
+        let retiredEngine = engine
+        if audioTapInstalled {
+            retiredEngine.inputNode.removeTap(onBus: 0)
+        }
+        retiredEngine.stop()
         audioTapInstalled = false
         engine = AVAudioEngine()
 
@@ -731,6 +837,22 @@ final class RecorderService: ObservableObject {
         completeCurrentSegment()
     }
 
+    private func replaceAudioEngine(generation: Int) {
+        // The placeholder or prior generation is never reused. It has no active
+        // tap after `abandonAudioObjectsPreservingSegment`, but stopping before
+        // release keeps this path safe if recovery was entered directly.
+        engine.stop()
+        engine = AVAudioEngine()
+        audioTapInstalled = false
+        lastBackendActivityAt = nil
+        recordDiagnostic(.audioEngineRebuilt, detailCode: generation)
+    }
+
+    private func invalidateCurrentAudioEngine() {
+        recoveryMustAbandonEngine = true
+        recoveryInvalidationGate.invalidate()
+    }
+
     private func scheduleRecoveryRetry(message: String, error: Error? = nil) {
         guard isRecording else { return }
         persistRecordingIntent(true)
@@ -740,14 +862,18 @@ final class RecorderService: ObservableObject {
         recordDiagnostic(.recoveryScheduled, error: error)
 
         guard recoveryRetryTask == nil else { return }
+        let token = UUID()
+        recoveryRetryToken = token
         recoveryRetryTask = Task { [weak self] in
             guard await RecordingRetryGate.wait(nanoseconds: 5_000_000_000) else { return }
-            await self?.runScheduledRecoveryRetry()
+            await self?.runScheduledRecoveryRetry(token: token)
         }
     }
 
-    private func runScheduledRecoveryRetry() async {
+    private func runScheduledRecoveryRetry(token: UUID) async {
+        guard recoveryRetryToken == token else { return }
         recoveryRetryTask = nil
+        recoveryRetryToken = nil
         guard isRecording else { return }
         await recoverActiveRecordingIfNeeded()
 
@@ -759,6 +885,7 @@ final class RecorderService: ObservableObject {
     private func cancelRecoveryRetry() {
         recoveryRetryTask?.cancel()
         recoveryRetryTask = nil
+        recoveryRetryToken = nil
     }
 
     private func scheduleSegmentRotationRetry(message: String, error: Error?) {
@@ -812,8 +939,13 @@ final class RecorderService: ObservableObject {
         isInterrupted = false
         cancelRecoveryRetry()
         cancelSegmentRotationRetry()
-        stopEngine()
-        completeCurrentSegment()
+        if recoveryMustAbandonEngine {
+            abandonAudioObjectsPreservingSegment()
+        } else {
+            stopEngine()
+            completeCurrentSegment()
+        }
+        recoveryMustAbandonEngine = false
         isRecording = false
         isCapturingAudio = false
         setWritingAudio(false)

@@ -1,6 +1,17 @@
 # VoiceRecorder / AudioRecorder — estado actual
 
-## Candidata interna iOS 1.0.4 (1): reanudación tras Siri/interrupciones — 2026-08-30
+## Candidata interna iOS 1.0.5 (1): reconstrucción real tras Siri — 2026-08-30
+
+- El propietario probó 1.0.4 (1) en iPhone: al abrir Siri la captura se detiene y no vuelve. La build queda considerada fallida y no puede promoverse ni reutilizarse como evidencia de estabilidad.
+- La causa concreta es el desacople entre los tests de política y AVFoundation real. La recuperación de Siri, foreground y retry reactivaba `AVAudioSession`, pero pasaba `rebuildAudioObjects:false` y reutilizaba el mismo `AVAudioEngine`, `inputNode`, tap y formato. La app tampoco observaba `AVAudioEngineConfigurationChange`.
+- Apple documenta que un cambio de sample rate o canales detiene y desinicializa el I/O unit del engine, conserva nodos con sus formatos anteriores y obliga a restablecer las conexiones si el formato cambia. También exige comprobar que el formato hardware del `inputNode` tenga sample rate y canales distintos de cero.
+- La corrección local usa un `RecordingRecoveryDriver` inyectable y ordena cada intento: activar sesión; crear una generación nueva de `AVAudioEngine`; consultar el input y abrir el archivo; instalar tap e iniciar engine. Un fallo de input o start obliga a abandonar esa generación y reconstruir otra en el siguiente intento; un fallo de `setActive` reintenta sin tocar el engine hasta recuperar la sesión.
+- Se observa `.AVAudioEngineConfigurationChange` para el engine vigente. El callback solo salta al main actor: no reconstruye dentro de la notificación. La identidad del objeto descarta eventos de generaciones antiguas y un ticket de invalidación impide que un intento en curso acepte éxito si su graph cambió; la política, `isPerformingRecovery` y el token del retry evitan backends o tareas duplicadas. Foreground continúa siendo una oportunidad independiente aunque un `Task.sleep` se haya suspendido.
+- Interrupción, cambio de configuración, ruta, media-services y fallos reales conservan/finalizan el segmento válido una sola vez y reconstruyen el graph. Stop invalida el token y no toca un engine marcado como huérfano.
+- Hay pruebas inyectadas del orden hardware, descarte de notificaciones de generaciones antiguas y fallos en `setActive`, input/formato cero y `engine.start`, además de los tests de política para fin omitido, foreground, Stop, preservación única de segmentos y no duplicación. La corrección se versiona como iOS 1.0.5 (1) porque cambia comportamiento después de 1.0.4 (1). Android, `artifact/`, AdMob, UI, localizaciones, temporizador futuro y los dos scripts previos permanecen intactos.
+- Validación local Windows PASS: `git diff --check`, balance estructural de 35 Swift, manifiesto de privacidad, siete localizaciones con 129 claves idénticas/sin duplicados, ausencia del backend temporizado y cero diffs en Android o recursos iOS. Windows no puede compilar AVFoundation ni ejecutar XCTest; macOS/Xcode y QA físico siguen siendo puertas obligatorias antes de afirmar que Siri está resuelto.
+
+## TestFlight interno iOS 1.0.4 (1) — fallido en reanudación física — 2026-08-30
 
 - La prueba física de 1.0.3 (1) reveló un bloqueo adicional: si el fin de Siri u otra interrupción llegaba sin `shouldResume`, `RecordingContinuityPolicy` conservaba intención pero no recuperaba ni programaba retry. Si tampoco cambiaba `scenePhase`, la captura quedaba pausada indefinidamente.
 - La corrección local finaliza una sola vez el segmento válido, intenta recuperar al finalizar cualquier interrupción mientras siga vigente la intención explícita de grabar y mantiene un único retry cancelable cada cinco segundos para el caso en que Apple omita la notificación de fin o la sesión aún no pueda activarse.
@@ -9,8 +20,7 @@
 - Stop cancela todo retry y las señales tardías no pueden iniciar un segundo backend. Las pruebas deterministas cubren fin con y sin recomendación, ausencia de fin, fallos repetidos, foreground, Stop, interrupciones múltiples, finalización única y backend ya activo.
 - La fuente está en `main` mediante `ff46277`. El run macOS `33317813454` superó la prohibición de `AVAudioRecorder`/`record(forDuration:)`, todos los XCTest deterministas y compilación Release para dispositivo. El run firmado `33318104211` superó GDPR/ATT, archive, firma, versión/privacidad, IPA, validación Apple y upload con IDs demo oficiales.
 - Apple procesó 1.0.4 (1), recurso `47d060ec-9a1d-44ed-be8f-5d06c26a6a80`, como `VALID`, `INTERNAL_ONLY`, `IN_BETA_TESTING`, cifrado no exento `false` y testing externo `NOT_APPLICABLE`. El run `33318596898` confirmó disponibilidad automática en el grupo privado `Testers`, exactamente dos testers, y `selectedByAppStoreVersions=[]`.
-- Esta build es exclusivamente QA interno: no se creó ni modificó un train/versión de App Store, no se seleccionó la build, no hubo TestFlight externo, App Review ni publicación. Pendiente QA físico dirigido en ambos modos. Android, `artifact/`, AdMob, UI, localizaciones y los dos scripts locales previos permanecen intactos.
-- QA físico obligatorio: activar Siri con la app visible y con pantalla bloqueada en `Todo` y `Por sonido`; cerrar Siri y comprobar reanudación automática inmediata o dentro de cinco segundos, nuevo segmento y fragmento anterior reproducible. Repetir tres interrupciones; mantener Siri/llamada más de 15 segundos; probar llamada rechazada/aceptada, alarma, Bluetooth HFP y background; pulsar Stop durante una interrupción y confirmar que no reinicia al cerrarla ni diez segundos después; cruzar además el corte de cinco minutos y continuar 10–15 minutos sin doble backend ni pérdida de segmentos.
+- Esta build era exclusivamente QA interno y la prueba física de Siri falló. No se creó ni modificó un train/versión de App Store, no se seleccionó la build, no hubo TestFlight externo, App Review ni publicación. No debe promoverse. Android, `artifact/`, AdMob, UI, localizaciones y los dos scripts locales previos permanecieron intactos.
 
 ## TestFlight interno iOS 1.0.3 (1) — rotación continua real — 2026-08-30
 
@@ -26,7 +36,7 @@
 
 ## Ideas futuras registradas
 
-- Temporizador opcional de grabación: permitir que el usuario elija una duración antes de empezar y que la app detenga y guarde automáticamente la grabación al cumplirse. No está autorizado ni planificado para la candidata 1.0.4; deberá diseñarse y probarse después de cerrar la estabilidad y la publicación actuales.
+- Temporizador opcional de grabación: permitir que el usuario elija una duración antes de empezar y que la app detenga y guarde automáticamente la grabación al cumplirse. No está autorizado ni planificado para la corrección actual; deberá diseñarse y probarse después de cerrar la estabilidad y la publicación actuales.
 
 ## TestFlight interno iOS 1.0.2 (1) — estabilidad de grabación — 2026-08-30
 

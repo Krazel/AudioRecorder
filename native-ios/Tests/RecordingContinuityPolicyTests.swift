@@ -67,6 +67,16 @@ final class RecordingContinuityPolicyTests: XCTestCase {
         XCTAssertTrue(policy.hasRecordingIntent)
     }
 
+    func testInterruptionEndRetriesImmediatelyAfterAnEarlierRecoveryFailure() {
+        var policy = startedPolicy()
+
+        _ = policy.handle(.interruptionBegan)
+        XCTAssertEqual(policy.handle(.recoveryOpportunity(backendActive: false)), .recover)
+        XCTAssertEqual(policy.handle(.recoveryFailed), .scheduleRecovery)
+        XCTAssertEqual(policy.handle(.interruptionEnded(shouldResume: false)), .recover)
+        XCTAssertEqual(policy.phase, .recovering)
+    }
+
     func testNoResumeRecommendationCanRecoverOnForegroundAfterActivationFailure() {
         var policy = startedPolicy()
 

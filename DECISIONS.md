@@ -420,3 +420,15 @@ El commit `ff46277` está en `main`. `33317813454` superó todos los XCTest de c
 ### D-048 - 1.0.4 (1) es solo una prueba interna de recuperación - 2026-08-30
 
 La build incorpora IDs demo oficiales y no puede promoverse a TestFlight externo ni App Review. Primero debe pasar QA físico de Siri, llamadas, alarma, Bluetooth, background, Stop durante interrupción y rotación de segmentos. Si el código queda sin cambios, la futura candidata de producción será 1.0.4 (2), con AdMob real activo/verificable y preflight repetido contra ese binario exacto.
+
+### F-043 - iOS 1.0.4 (1) falla la reanudación física tras Siri - 2026-08-30
+
+El propietario confirmó en iPhone que abrir Siri detiene 1.0.4 (1) y cerrar Siri no reactiva la captura. Los XCTest de esa build solo demostraban transiciones de `RecordingContinuityPolicy`; no ejercitaban la identidad, estado ni formatos de un `AVAudioEngine` real. La fuente reactivaba `AVAudioSession` pero reutilizaba el engine, input node, tap y formato previos, y no observaba `AVAudioEngineConfigurationChange`. 1.0.4 (1) queda fallida y no puede promoverse.
+
+### D-049 - Toda recuperación de hardware crea una generación nueva de AVAudioEngine - 2026-08-30
+
+Después de Siri, configuration change, ruta, media-services o fallo de backend, la recuperación sigue un pipeline único e inyectable: `setActive` → engine nuevo → validar formato hardware y abrir segmento → instalar tap e iniciar engine. Si falla input/formato o start, el siguiente intento debe reconstruir otra generación; si falla `setActive`, no se toca el engine hasta una activación válida. La app observa `.AVAudioEngineConfigurationChange`, sale inmediatamente del callback hacia el main actor y filtra por identidad para ignorar generaciones antiguas. Un ticket de invalidación evita aceptar el éxito de una recuperación cuyo graph cambió durante el intento; el engine retirado se detiene y libera fuera del callback antes de usar la nueva generación. El segmento tiene una única reclamación de finalización, la intención se preserva y Stop invalida retries y nunca reanuda. Esta corrección permanece local y no recibe versión ni distribución hasta nueva autorización.
+
+### D-050 - La reconstrucción física se distribuye como 1.0.5 (1) interna - 2026-08-30
+
+La autorización vigente permite commit, CI macOS y TestFlight interno. Como la reconstrucción de `AVAudioEngine` cambia comportamiento después de 1.0.4 (1), se usa marketing 1.0.5 y build 1. La build se genera exclusivamente con IDs demo oficiales, `INTERNAL_ONLY`; no puede seleccionarse para una versión App Store, testing externo, App Review ni publicación. Primero debe pasar XCTest/Release en macOS y después QA físico de Siri y demás interrupciones.

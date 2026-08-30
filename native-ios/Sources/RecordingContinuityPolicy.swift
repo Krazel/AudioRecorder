@@ -84,7 +84,11 @@ struct RecordingContinuityPolicy {
             return .pauseAndFinalize
 
         case .interruptionEnded:
-            guard hasRecordingIntent, phase == .interrupted else { return .none }
+            guard hasRecordingIntent,
+                  phase != .awaitingMediaServices,
+                  phase != .recording else {
+                return .none
+            }
             phase = .recovering
             return .recover
 

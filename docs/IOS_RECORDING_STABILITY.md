@@ -1,4 +1,4 @@
-# VoiceRecorder iOS — estabilidad de grabación 1.0.4
+# VoiceRecorder iOS — estabilidad de grabación 1.0.5
 
 Fecha de auditoría: 2026-08-30
 Alcance: `native-ios/`; Android, distribución y servicios externos fuera de alcance.
@@ -53,6 +53,17 @@ interrupción. Si Siri no provocaba después un cambio de `scenePhase` a activo 
 si no llegaba notificación de fin— no quedaba ningún evento que reabriera el
 backend y la sesión permanecía pausada indefinidamente.
 
+## Fallo físico confirmado en 1.0.4 (1): graph AVAudioEngine reutilizado
+
+La prueba en iPhone volvió a fallar: Siri detuvo la captura y al cerrarlo nunca
+regresó. 1.0.4 corregía la transición de intención, pero la recuperación real
+seguía llamando `recoverRecordingBackend(rebuildAudioObjects: false)`. Después
+de reactivar `AVAudioSession` reutilizaba el mismo `AVAudioEngine`, `inputNode`,
+tap y formato anterior. Los tests solo sustituían eventos en la política y no
+podían detectar un I/O unit desinicializado o un formato hardware inválido.
+Además, no existía observador de `AVAudioEngineConfigurationChange`, por lo que
+una invalidación del graph podía quedar fuera de interrupción, ruta y watchdog.
+
 ## Contratos de Apple aplicados
 
 - [`record(forDuration:)`](https://developer.apple.com/documentation/avfaudio/avaudiorecorder/record%28forduration%3A%29)
@@ -96,6 +107,12 @@ backend y la sesión permanecía pausada indefinidamente.
   se usa únicamente para congelar estado y esperar el reset.
 - [`AVAudioEngine.inputNode`](https://developer.apple.com/documentation/avfaudio/avaudioengine/inputnode)
   requiere frecuencia y canales no nulos antes de capturar.
+- [`AVAudioEngineConfigurationChange`](https://developer.apple.com/documentation/foundation/nsnotification/name-swift.struct/avaudioengineconfigurationchange)
+  se emite cuando el I/O unit observa un cambio de sample rate o canales. Apple
+  indica que el engine se detiene y desinicializa, mientras los nodos conservan
+  las conexiones y formatos anteriores; la app debe restablecer conexiones si
+  cambia el formato. VoiceRecorder reconstruye el graph fuera del callback y
+  filtra la notificación por identidad del engine vigente.
 - [`AVAudioApplication.requestRecordPermission`](https://developer.apple.com/documentation/avfaudio/avaudioapplication/requestrecordpermission%28completionhandler%3A%29)
   es la ruta vigente desde iOS 17; iOS 16 conserva el fallback de
   `AVAudioSession`.
@@ -103,7 +120,7 @@ backend y la sesión permanecía pausada indefinidamente.
   continúa bajo bloqueo de pantalla y en segundo plano con `UIBackgroundModes`
   `audio`; por defecto es no mezclable.
 
-## Políticas explícitas de 1.0.4
+## Políticas de la fuente corregida posterior a 1.0.4 (1)
 
 - Solo `stopRequested` borra la intención y desactiva la sesión. Un final
   inesperado, fallo de escritura o fallo al abrir el segmento siguiente guarda
@@ -126,6 +143,20 @@ backend y la sesión permanecía pausada indefinidamente.
   fallan, la recuperación continúa por el retry acotado; foreground es otra
   oportunidad inmediata. Stop cancela la tarea y ninguna señal tardía puede
   volver a crear el backend.
+- Cada recuperación de hardware ejecuta el mismo orden: activar la sesión;
+  abandonar el graph anterior y crear una generación de engine nueva; consultar
+  el formato hardware y abrir el archivo; instalar el tap e iniciar el engine.
+  Un input con sample rate/canales cero o un fallo de start invalida esa
+  generación y el retry siguiente crea otra. Un fallo de activación no usa el
+  engine mientras iOS aún niega el micrófono.
+- La notificación de configuración nunca reconstruye dentro del callback. Salta
+  al main actor, exige que el objeto sea el engine vigente y se deduplica con la
+  recuperación activa. Un ticket de invalidación hace que un intento en curso
+  falle cerrado si su graph cambia antes de confirmar éxito; entonces queda un
+  retry garantizado. El engine retirado se detiene y libera fuera del callback,
+  junto con su tap, antes de iniciar la generación nueva. Foreground constituye
+  una oportunidad independiente del `Task.sleep`; el retry usa token para que
+  una tarea cancelada no vuelva tarde.
 - La sesión solicita que las alertas del sistema no interrumpan cuando iOS pueda
   respetarlo. Esta preferencia no se presenta como garantía y se desactiva al
   terminar voluntariamente la sesión.
@@ -180,23 +211,33 @@ esquema codificado no incluye campos de audio, archivo/ruta o transcripción.
 que separar un archivo no detiene la captura, que la cola de rotación conserva
 orden y límite y que un retry cancelado no puede ejecutarse después.
 
+`RecordingRecoveryDriverTests` inyecta fallos en los límites de hardware y fija
+el orden `setActive` → rebuild → input/archivo → tap/start. Demuestra que un
+formato cero o un fallo de `engine.start()` obliga a una generación nueva en el
+intento siguiente, y que un fallo de `setActive` no toca el engine antes de que
+la sesión vuelva a estar disponible. También verifica que una notificación de
+configuración perteneciente a una generación retirada —o sin engine— se ignora,
+y solo el engine vigente abre una oportunidad de recuperación. Un test de carrera
+invalida un intento en curso antes de aceptar éxito, y el gate de segmento prueba
+que señales repetidas solo pueden finalizar una vez cada archivo válido.
+
 La puerta manual `.github/workflows/verify-ios-recording-stability.yml` genera
 el proyecto, ejecuta XCTest en simulador, compila Release para dispositivo sin
-firma y conserva el `.xcresult`. Tiene una guarda que no asigna runner mientras
-el repositorio sea privado. No debe despacharse hasta que el propietario autorice
-una visibilidad compatible con Actions; no se cambia la visibilidad desde esta
-corrección.
+firma y conserva el `.xcresult`. La corrección posterior a 1.0.4 (1) todavía es
+local: no se ha despachado de nuevo ni tiene autorización de distribución.
 
 ## Matriz de QA físico pendiente
 
-Evidencia automatizada de la candidata 1.0.4 (1): el commit `ff46277` pasó
+Evidencia histórica de 1.0.4 (1): el commit `ff46277` pasó
 XCTest y Release device en `33317813454`; el run `33318104211` archivó, firmó,
 validó y subió la IPA interna con IDs demo. Apple procesó el recurso
 `47d060ec-9a1d-44ed-be8f-5d06c26a6a80` como `VALID`, `INTERNAL_ONLY` e
 `IN_BETA_TESTING`; `33318596898` confirmó dos testers privados y ninguna
 selección por una versión App Store. Esto no sustituye las pruebas físicas:
 Siri, llamadas, alarmas, rutas y disponibilidad real del micrófono no se pueden
-reproducir fielmente mediante XCTest.
+reproducir fielmente mediante XCTest. La prueba física posterior de Siri falló,
+por lo que esa build queda invalidada y la matriz debe repetirse sobre un binario
+nuevo que contenga el recovery driver y la reconstrucción real del graph.
 
 | Caso | Dispositivo/condición | Resultado esperado |
 |---|---|---|
@@ -217,9 +258,9 @@ reproducir fielmente mediante XCTest.
 
 ## Riesgos residuales
 
-- Windows no puede compilar AVFoundation ni ejecutar XCTest. La compilación,
-  XCTest y el comportamiento de hardware siguen pendientes de macOS/Xcode y de
-  los dos iPhone físicos.
+- Windows no puede compilar AVFoundation ni ejecutar XCTest. La nueva fuente
+  posterior a 1.0.4 (1) sigue pendiente de macOS/Xcode y después de los dos
+  iPhone físicos; los runs anteriores no certifican esta corrección.
 - El engine permanece activo entre archivos, pero una apertura de disco que
   tarde más que la cola temporal disponible terminará en recuperación para no
   crecer sin límite. Poco espacio y almacenamiento degradado requieren prueba
