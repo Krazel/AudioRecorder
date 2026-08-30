@@ -1,0 +1,63 @@
+name: Finalize iOS 1.0.6 Internal TestFlight
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Verify that build 1 is unused before upload, or finalize the processed internal build
+        required: true
+        default: verify-unused
+        type: choice
+        options:
+          - verify-unused
+          - confirm-internal-only
+      confirm_internal_only:
+        description: Required only for finalization; confirms private internal assignment with no App Store selection
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  finalize:
+    if: ${{ github.actor == github.repository_owner && github.ref == 'refs/heads/main' && !github.event.repository.private && (inputs.operation == 'verify-unused' || inputs.confirm_internal_only) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: app-store-production
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_PRIVATE_KEY_BASE64: ${{ secrets.ASC_PRIVATE_KEY_BASE64 }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install temporary App Store Connect key
+        run: |
+          set -euo pipefail
+          if [[ -z "${ASC_KEY_ID}" || -z "${ASC_ISSUER_ID}" || -z "${ASC_PRIVATE_KEY_BASE64}" ]]; then
+            echo "Missing App Store Connect credentials"
+            exit 1
+          fi
+          KEY_PATH="$RUNNER_TEMP/AuthKey_${ASC_KEY_ID}.p8"
+          python3 - <<'PY'
+          import base64
+          import os
+          from pathlib import Path
+
+          encoded = os.environ["ASC_PRIVATE_KEY_BASE64"].strip().lstrip("\ufeff")
+          private_key = base64.b64decode(encoded, validate=True)
+          Path(os.environ["RUNNER_TEMP"], f"AuthKey_{os.environ['ASC_KEY_ID']}.p8").write_bytes(private_key)
+          PY
+          chmod 600 "$KEY_PATH"
+          echo "ASC_PRIVATE_KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
+
+      - name: Verify unused combination or finalize private internal assignment
+        run: node scripts/finalize-testflight-1.0.6.mjs --${{ inputs.operation }}
+
+      - name: Clean temporary key
+        if: always()
+        run: rm -f "${ASC_PRIVATE_KEY_PATH:-}"

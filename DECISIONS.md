@@ -444,3 +444,7 @@ El propietario confirmó que 1.0.5 (1) no reanuda al cerrar Siri. Los tests de p
 ### D-051 - La siguiente build es diagnóstica, minimizada e interna - 2026-08-31
 
 La siguiente combinación será iOS 1.0.6 (1). Antes de otra corrección, debe capturar un rastro local acotado que distinga notificación/tipo/options/reason/suspended, lifecycle, configuración del engine, intención, estado de engine/formato, cada etapa de recuperación, retries/cancelaciones y primer buffer posterior. La exportación es una acción provisional dentro de Ajustes, visible únicamente cuando el binario usa el App ID demo oficial; no existe en una configuración AdMob real. El JSON incluye versión/build/iOS pero prohíbe audio, contenido, nombres/rutas, identificadores de hardware, cuentas y transporte. La fuente permanece local hasta una autorización posterior de commit/build/TestFlight.
+
+### F-046 - iOS 1.0.6 (1) compilada y aceptada por Apple - 2026-08-31
+
+El commit `7df0dea` contiene la instrumentación interna. `33340707076` pasó XCTest y Release; `33340921074` pasó firma, archive, IPA, validación Apple y upload con IDs demo, y Apple aceptó la entrega. El finalizador local 1.0.6 se limita a lecturas y espera: debe confirmar build exacta, `VALID`, `INTERNAL_ONLY`, `IN_BETA_TESTING`, externo `NOT_APPLICABLE`, `Testers` privado con dos testers y acceso automático a todas las builds, relación automática y `selectedByAppStoreVersions=[]`. No puede asociar builds, editar metadata, crear trains ni enviar revisión. Sigue pendiente autorización para versionar/ejecutar ese finalizador.

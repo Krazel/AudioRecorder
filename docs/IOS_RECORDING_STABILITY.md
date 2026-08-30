@@ -41,6 +41,14 @@ Siri, mantenerlo activo, cerrarlo, esperar al menos 15 segundos y exportar el
 JSON inmediatamente. Repetir una vez con la app visible y otra bloqueada. No
 reiniciar ni reinstalar entre el fallo y la exportación.
 
+La fuente diagnóstica quedó en `7df0dea`. `33340707076` pasó XCTest y Release;
+`33340921074` archivó, firmó, validó y subió 1.0.6 (1) con IDs demo, y Apple
+aceptó la carga. El finalizador local `finalize-testflight-1.0.6.mjs` no realiza
+POST ni PATCH: espera y verifica la build exacta, su audiencia/estados, el grupo
+privado automático con dos testers y que ninguna versión App Store la seleccione.
+Todavía no se ha publicado ni ejecutado ese finalizador, por lo que el build ID
+y la disponibilidad final siguen pendientes.
+
 ## Causas demostradas en la fuente 1.0.1
 
 1. La rotación no era transaccional. `startNewSegment()` completaba el segmento
