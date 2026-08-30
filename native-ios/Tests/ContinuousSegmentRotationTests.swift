@@ -33,6 +33,7 @@ final class ContinuousSegmentRotationTests: XCTestCase {
         }
 
         retry.cancel()
-        XCTAssertFalse(await retry.value)
+        let retryWouldRun = await retry.value
+        XCTAssertFalse(retryWouldRun)
     }
 }
