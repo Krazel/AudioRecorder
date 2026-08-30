@@ -432,3 +432,7 @@ Después de Siri, configuration change, ruta, media-services o fallo de backend,
 ### D-050 - La reconstrucción física se distribuye como 1.0.5 (1) interna - 2026-08-30
 
 La autorización vigente permite commit, CI macOS y TestFlight interno. Como la reconstrucción de `AVAudioEngine` cambia comportamiento después de 1.0.4 (1), se usa marketing 1.0.5 y build 1. La build se genera exclusivamente con IDs demo oficiales, `INTERNAL_ONLY`; no puede seleccionarse para una versión App Store, testing externo, App Review ni publicación. Primero debe pasar XCTest/Release en macOS y después QA físico de Siri y demás interrupciones.
+
+### F-044 - iOS 1.0.5 (1) disponible para QA interno - 2026-08-30
+
+La reconstrucción del graph quedó en `7072aee` y la deduplicación de recovery en `b162787`. El run `33326449264` falló antes de distribución y demostró una segunda arista de recuperación; la fase `retryScheduled` la cerró. `33326890651` pasó los 41 XCTest y Release device. `33327128802` archivó, firmó, validó y subió con IDs demo. Apple procesó el recurso `549fc26d-3786-446d-a379-163485cbe57c` como `VALID`, `INTERNAL_ONLY` e `IN_BETA_TESTING`, con cifrado no exento `false` y estado externo `NOT_APPLICABLE`. `33327511155` confirmó asignación automática al grupo privado `Testers`, dos testers, acceso a todas las builds y ninguna versión App Store seleccionándola. No hubo TestFlight externo, App Review ni publicación; el resultado físico de Siri sigue pendiente.

@@ -223,21 +223,22 @@ que señales repetidas solo pueden finalizar una vez cada archivo válido.
 
 La puerta manual `.github/workflows/verify-ios-recording-stability.yml` genera
 el proyecto, ejecuta XCTest en simulador, compila Release para dispositivo sin
-firma y conserva el `.xcresult`. La corrección posterior a 1.0.4 (1) todavía es
-local: no se ha despachado de nuevo ni tiene autorización de distribución.
+firma y conserva el `.xcresult`. El run `33326449264` detectó antes de distribuir
+una recuperación duplicada entre dos fines de interrupción; la nueva fase
+`retryScheduled` la corrigió. El run `33326890651` pasó después los 41 XCTest y
+Release device. Los commits distribuidos son `7072aee` y `b162787`.
 
 ## Matriz de QA físico pendiente
 
-Evidencia histórica de 1.0.4 (1): el commit `ff46277` pasó
-XCTest y Release device en `33317813454`; el run `33318104211` archivó, firmó,
-validó y subió la IPA interna con IDs demo. Apple procesó el recurso
-`47d060ec-9a1d-44ed-be8f-5d06c26a6a80` como `VALID`, `INTERNAL_ONLY` e
-`IN_BETA_TESTING`; `33318596898` confirmó dos testers privados y ninguna
-selección por una versión App Store. Esto no sustituye las pruebas físicas:
-Siri, llamadas, alarmas, rutas y disponibilidad real del micrófono no se pueden
-reproducir fielmente mediante XCTest. La prueba física posterior de Siri falló,
-por lo que esa build queda invalidada y la matriz debe repetirse sobre un binario
-nuevo que contenga el recovery driver y la reconstrucción real del graph.
+1.0.4 (1) queda invalidada por el fallo físico de Siri. La candidata vigente de
+QA es 1.0.5 (1): `33327128802` archivó, firmó, validó con Apple y subió el IPA
+con IDs demo. Apple procesó el recurso
+`549fc26d-3786-446d-a379-163485cbe57c` como `VALID`, `INTERNAL_ONLY` e
+`IN_BETA_TESTING`; `33327511155` confirmó dos testers privados, acceso
+automático, estado externo `NOT_APPLICABLE` y ninguna selección por una versión
+App Store. Esto no sustituye las pruebas físicas: Siri, llamadas, alarmas, rutas
+y disponibilidad real del micrófono no se pueden reproducir fielmente mediante
+XCTest. Toda la matriz debe repetirse sobre esta build exacta.
 
 | Caso | Dispositivo/condición | Resultado esperado |
 |---|---|---|
@@ -258,9 +259,9 @@ nuevo que contenga el recovery driver y la reconstrucción real del graph.
 
 ## Riesgos residuales
 
-- Windows no puede compilar AVFoundation ni ejecutar XCTest. La nueva fuente
-  posterior a 1.0.4 (1) sigue pendiente de macOS/Xcode y después de los dos
-  iPhone físicos; los runs anteriores no certifican esta corrección.
+- macOS/Xcode, los XCTest y Release device ya validaron la fuente exacta de
+  1.0.5 (1), pero no pueden certificar el comportamiento del micrófono frente a
+  Siri ni rutas reales. La puerta restante son los iPhone físicos.
 - El engine permanece activo entre archivos, pero una apertura de disco que
   tarde más que la cola temporal disponible terminará en recuperación para no
   crecer sin límite. Poco espacio y almacenamiento degradado requieren prueba
