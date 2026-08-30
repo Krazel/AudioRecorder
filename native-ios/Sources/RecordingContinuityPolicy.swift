@@ -8,6 +8,7 @@ enum RecordingContinuityPhase: Equatable {
     case interrupted
     case awaitingMediaServices
     case recovering
+    case retryScheduled
 }
 
 enum RecordingContinuityEvent: Equatable {
@@ -74,7 +75,7 @@ struct RecordingContinuityPolicy {
 
         case .nextSegmentFailed, .backendFailed, .recoveryFailed:
             guard hasRecordingIntent else { return .none }
-            phase = .recovering
+            phase = .retryScheduled
             return .scheduleRecovery
 
         case .interruptionBegan:
@@ -85,8 +86,7 @@ struct RecordingContinuityPolicy {
 
         case .interruptionEnded:
             guard hasRecordingIntent,
-                  phase != .awaitingMediaServices,
-                  phase != .recording else {
+                  phase == .interrupted || phase == .retryScheduled else {
                 return .none
             }
             phase = .recovering

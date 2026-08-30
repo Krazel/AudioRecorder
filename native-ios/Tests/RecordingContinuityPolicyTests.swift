@@ -19,7 +19,7 @@ final class RecordingContinuityPolicyTests: XCTestCase {
 
         XCTAssertEqual(policy.handle(.segmentLimitReached), .rotateSegment)
         XCTAssertEqual(policy.handle(.nextSegmentFailed), .scheduleRecovery)
-        XCTAssertEqual(policy.phase, .recovering)
+        XCTAssertEqual(policy.phase, .retryScheduled)
         XCTAssertTrue(policy.hasRecordingIntent)
 
         XCTAssertEqual(policy.handle(.recoverySucceeded), .none)
@@ -73,6 +73,7 @@ final class RecordingContinuityPolicyTests: XCTestCase {
         _ = policy.handle(.interruptionBegan)
         XCTAssertEqual(policy.handle(.recoveryOpportunity(backendActive: false)), .recover)
         XCTAssertEqual(policy.handle(.recoveryFailed), .scheduleRecovery)
+        XCTAssertEqual(policy.phase, .retryScheduled)
         XCTAssertEqual(policy.handle(.interruptionEnded(shouldResume: false)), .recover)
         XCTAssertEqual(policy.phase, .recovering)
     }
