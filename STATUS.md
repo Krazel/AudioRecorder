@@ -1,5 +1,13 @@
 # VoiceRecorder / AudioRecorder — estado actual
 
+## Corrección local iOS 1.0.3 (1) — rotación continua real — 2026-08-30
+
+- La prueba física del propietario demostró que 1.0.2 (1) seguía deteniéndose exactamente en el primer corte de cinco minutos. La máquina de estados reintentaba, pero el modo `Todo` todavía llamaba a `AVAudioRecorder.record(forDuration:)`, API que finaliza la captura al expirar; el segundo grabador solo podía abrirse después y dejaba una ventana real sin backend.
+- 1.0.3 elimina `AVAudioRecorder` del motor. `Todo` y `Por sonido` comparten una única captura `AVAudioEngine` que permanece activa durante toda la sesión; la rotación cambia únicamente el `AVAudioFile`. `Todo` escribe todos los buffers, incluido silencio, y `Por sonido` conserva su filtro.
+- Durante la apertura del siguiente archivo se retienen hasta 128 buffers FIFO y se drenan en orden al nuevo segmento. Un fallo de apertura reintenta cada 500 ms sin apagar el micrófono; el límite de memoria sigue siendo explícito y un desbordamiento pasa a recuperación completa.
+- Se corrigió otra carrera: las tareas de retry canceladas ignoraban `CancellationError` y podían ejecutar recuperaciones tardías. `RecordingRetryGate` impide esa ejecución y tiene prueba asíncrona determinista.
+- Se añadieron `RecordingBackendPolicy` y `ContinuousSegmentRotationTests`; el código, workflows y artefactos quedan versionados localmente como 1.0.3 build 1. Aún no hay commit, push, Actions ni nueva build; se requiere validación macOS y después autorización separada para TestFlight. Android, `artifact/` y los scripts previos permanecen intactos.
+
 ## TestFlight interno iOS 1.0.2 (1) — estabilidad de grabación — 2026-08-30
 
 - La auditoría completa de `RecorderService` demostró varias causas independientes. La rotación cerraba el segmento actual antes de asegurar el siguiente y cualquier fallo terminaba en `stop()`. El watchdog marcaba como correcto cualquier `AVAudioRecorder.isRecording == false`, se ignoraba el fallo de `prepareToRecord()`, no se distinguían motivos de route change ni `shouldResume`, media-services reset reutilizaba objetos huérfanos y el modo por sonido no acotaba buffers pendientes.

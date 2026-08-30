@@ -1,6 +1,6 @@
 # VoiceRecorder iOS — release data inventory
 
-Last verified: 2026-08-30. Scope: the iOS 1.0.2 build 1 source candidate and its declared Google Mobile Ads 12.14.0, Google UMP 3.1.0, and Apple StoreKit integrations. The recording-stability correction adds only bounded, device-local lifecycle diagnostics; it does not add a recipient, analytics service, account, or transmission.
+Last verified: 2026-08-30. Scope: the iOS 1.0.3 build 1 source candidate and its declared Google Mobile Ads 12.14.0, Google UMP 3.1.0, and Apple StoreKit integrations. The continuous-segmentation correction and bounded, device-local lifecycle diagnostics do not add a recipient, analytics service, account, or transmission.
 
 This inventory is the source of truth for privacy copy and App Store Privacy answers. It describes the shipped build, not possible future features.
 

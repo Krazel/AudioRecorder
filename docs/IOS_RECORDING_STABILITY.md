@@ -1,4 +1,4 @@
-# VoiceRecorder iOS — estabilidad de grabación 1.0.2
+# VoiceRecorder iOS — estabilidad de grabación 1.0.3
 
 Fecha de auditoría: 2026-08-30
 Alcance: `native-ios/`; Android, distribución y servicios externos fuera de alcance.
@@ -33,6 +33,16 @@ La revisión no atribuye todas las paradas reales a una sola causa. Los puntos
 1–5 contienen caminos concretos capaces de producir la rotación fallida o una
 parada sin explicación; el punto 6 es un riesgo de sesiones sostenidas.
 
+## Fallo físico confirmado en 1.0.2 (1)
+
+Una grabación real en modo `Todo` volvió a detenerse exactamente al alcanzar el
+primer corte de cinco minutos. La causa restante era arquitectónica:
+`record(forDuration:)` detiene deliberadamente `AVAudioRecorder` al llegar al
+límite y la app intentaba crear otro grabador después. Durante ese intervalo ya
+no existía captura activa y iOS podía suspender el proceso antes de completar la
+reanudación. Además, las tareas canceladas de retry ignoraban el error de
+cancelación y podían ejecutar una recuperación tardía.
+
 ## Contratos de Apple aplicados
 
 - [`record(forDuration:)`](https://developer.apple.com/documentation/avfaudio/avaudiorecorder/record%28forduration%3A%29)
@@ -63,19 +73,21 @@ parada sin explicación; el punto 6 es un riesgo de sesiones sostenidas.
   continúa bajo bloqueo de pantalla y en segundo plano con `UIBackgroundModes`
   `audio`; por defecto es no mezclable.
 
-## Políticas explícitas de 1.0.2
+## Políticas explícitas de 1.0.3
 
 - Solo `stopRequested` borra la intención y desactiva la sesión. Un final
   inesperado, fallo de escritura o fallo al abrir el segmento siguiente guarda
   lo recuperable, mantiene `isRecording` como intención y reintenta cada cinco
   segundos.
-- La rotación prepara primero el destino escribible del modo por sonido. El
-  segmento anterior solo se confirma después. Para `AVAudioRecorder`, el
-  segmento terminado ya está cerrado por Apple; si el siguiente no se prepara,
-  el anterior queda indexado y el motor entra en recuperación.
-- El watchdog usa tiempo monotónico para separar el límite esperado de una
-  pérdida prematura del backend. En modo por sonido exige engine, generación de
-  procesador y actividad de buffers.
+- Ambos modos usan una sola captura `AVAudioEngine` durante toda la sesión. La
+  separación cambia únicamente el `AVAudioFile`; nunca detiene el input node.
+- Mientras se abre el archivo siguiente, los buffers se conservan en una cola
+  FIFO acotada a 128 elementos y se escriben en orden al nuevo segmento. Un
+  fallo de apertura reintenta cada 500 ms sin apagar el engine. Si la espera
+  supera la cota se informa un fallo y se entra en recuperación completa.
+- El watchdog exige engine, generación de procesador y actividad real de
+  buffers para ambos modos. `Todo` escribe todos los buffers, incluido silencio;
+  `Por sonido` conserva su umbral y cola final.
 - Al comenzar una interrupción se finaliza el fragmento válido. Con
   `shouldResume` se reabre un segmento inmediatamente; sin esa recomendación se
   conserva la intención y se espera al foreground o al usuario.
@@ -87,8 +99,12 @@ parada sin explicación; el punto 6 es un riesgo de sesiones sostenidas.
   sesión que ya tenía intención activa.
 - Entrar en background no detiene. Al volver a foreground se compara intención
   con backend real y se repara cualquier divergencia.
-- Un máximo de 64 buffers pendientes limita la presión de memoria del modo por
-  sonido. Un desbordamiento se trata como fallo diagnosticado y recuperable.
+- Un máximo de 64 buffers pendientes limita la presión normal de la cola de
+  proceso. La cola temporal de rotación tiene su propia cota de 128. Cualquier
+  desbordamiento se trata como fallo diagnosticado y recuperable.
+- Cancelar un retry impide que su acción se ejecute más tarde; Stop,
+  interrupción, route change y recuperación invalidan tanto el retry general
+  como el de rotación.
 - Los archivos no indexados siguen recuperándose desde `Documents/Recordings`
   al cargar la biblioteca. Un fallo del índice no elimina el audio.
 
@@ -117,6 +133,10 @@ ser purgado por iOS.
 
 `RecordingDiagnosticsTests` comprueba el límite del buffer local y que el
 esquema codificado no incluye campos de audio, archivo/ruta o transcripción.
+
+`ContinuousSegmentRotationTests` fija que ambos modos usan el engine continuo,
+que separar un archivo no detiene la captura, que la cola de rotación conserva
+orden y límite y que un retry cancelado no puede ejecutarse después.
 
 La puerta manual `.github/workflows/verify-ios-recording-stability.yml` genera
 el proyecto, ejecuta XCTest en simulador, compila Release para dispositivo sin
@@ -147,9 +167,10 @@ corrección.
 - Windows no puede compilar AVFoundation ni ejecutar XCTest. La compilación,
   XCTest y el comportamiento de hardware siguen pendientes de macOS/Xcode y de
   los dos iPhone físicos.
-- `AVAudioRecorder` cierra y abre archivos independientes; puede existir un
-  intervalo pequeño entre segmentos. La corrección garantiza continuidad de la
-  sesión y recuperación, no captura sin muestras perdidas a nivel profesional.
+- El engine permanece activo entre archivos, pero una apertura de disco que
+  tarde más que la cola temporal disponible terminará en recuperación para no
+  crecer sin límite. Poco espacio y almacenamiento degradado requieren prueba
+  física controlada.
 - iOS puede terminar el proceso por presión extrema, batería o decisión del
   sistema sin entregar callbacks. Los archivos ya cerrados y los no indexados
   permanecen recuperables, pero no se puede grabar mientras el proceso no existe.

@@ -3,7 +3,7 @@ import Foundation
 import UIKit
 
 @MainActor
-final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate {
+final class RecorderService: ObservableObject {
     @Published private(set) var isRecording = false
     @Published private(set) var currentSegmentStartedAt: Date?
     @Published private(set) var elapsed: TimeInterval = 0
@@ -20,8 +20,6 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         }
     }
     private var soundProcessorGeneration: UUID?
-    private var audioRecorder: AVAudioRecorder?
-    private var preparedSystemRecorder: AVAudioRecorder?
     private var recorderTimer: Timer?
     private var audioTapInstalled = false
     private var currentFile: AVAudioFile?
@@ -36,9 +34,9 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
     private var shouldResumeAfterInterruption = false
     private var isPerformingRecovery = false
     private var waitingForMediaServicesReset = false
-    private var expectedSystemRecorderEndUptime: TimeInterval?
     private var lastBackendActivityAt: Date?
     private var recoveryRetryTask: Task<Void, Never>?
+    private var segmentRotationRetryTask: Task<Void, Never>?
     private var continuityPolicy = RecordingContinuityPolicy()
     private let diagnostics = RecordingDiagnostics()
     private var diagnosticSessionID = UUID()
@@ -101,10 +99,10 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         isPerformingRecovery = false
         waitingForMediaServicesReset = false
         cancelRecoveryRetry()
+        cancelSegmentRotationRetry()
         if clearIntent {
             persistRecordingIntent(false)
         }
-        stopSystemRecorder(finalize: true)
         stopEngine()
         completeCurrentSegment()
         if deactivateSession {
@@ -181,29 +179,10 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
 
     private func startRecordingBackend() throws {
         guard let settings = currentSettings else { throw RecorderError.missingSettings }
-        switch settings.mode {
-        case .everything:
-            try startSystemRecorder()
-        case .soundActivated:
-            try startEngine()
-        }
-    }
-
-    private func startSystemRecorder() throws {
-        guard let recorder = preparedSystemRecorder, let settings = currentSettings else {
+        guard RecordingBackendPolicy.backend(for: settings.mode) == .continuousAudioEngine else {
             throw RecorderError.missingSettings
         }
-        preparedSystemRecorder = nil
-        guard recorder.record(forDuration: settings.segmentDuration) else {
-            throw RecorderError.recorderStartFailed
-        }
-
-        audioRecorder = recorder
-        expectedSystemRecorderEndUptime = ProcessInfo.processInfo.systemUptime + settings.segmentDuration
-        lastBackendActivityAt = Date()
-        isCapturingAudio = true
-        isWritingAudio = true
-        startBackendHealthTimer()
+        try startEngine()
     }
 
     private func startBackendHealthTimer() {
@@ -219,78 +198,19 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
 
     private func updateBackendHealth() {
         guard isRecording, !isInterrupted, !isPerformingRecovery else { return }
-
-        switch currentSettings?.mode {
-        case .everything:
-            updateSystemRecorderProgress()
-        case .soundActivated:
-            if !engine.isRunning {
-                handleUnexpectedBackendFailure(
-                    RecorderError.backendStoppedUnexpectedly,
-                    diagnosticCode: .backendStoppedUnexpectedly
-                )
-            } else if let lastBackendActivityAt,
-                      Date().timeIntervalSince(lastBackendActivityAt) > 5 {
-                handleUnexpectedBackendFailure(
-                    RecorderError.audioInputStalled,
-                    diagnosticCode: .backendStoppedUnexpectedly
-                )
-            }
-        case .none:
-            break
-        }
-    }
-
-    private func updateSystemRecorderProgress() {
-        guard let recorder = audioRecorder else {
+        if !engine.isRunning {
             handleUnexpectedBackendFailure(
                 RecorderError.backendStoppedUnexpectedly,
                 diagnosticCode: .backendStoppedUnexpectedly
             )
-            return
-        }
-
-        guard recorder.isRecording else {
-            let reachedExpectedLimit = expectedSystemRecorderEndUptime.map {
-                ProcessInfo.processInfo.systemUptime >= $0 - 0.75
-            } ?? false
-            handleSystemRecorderFinished(
-                recorder,
-                successfully: reachedExpectedLimit,
-                shouldRestart: true
+        } else if segmentRotationRetryTask == nil,
+                  let lastBackendActivityAt,
+                  Date().timeIntervalSince(lastBackendActivityAt) > 5 {
+            handleUnexpectedBackendFailure(
+                RecorderError.audioInputStalled,
+                diagnosticCode: .backendStoppedUnexpectedly
             )
-            return
         }
-
-        recorder.updateMeters()
-        currentLevel = recorder.averagePower(forChannel: 0)
-        writtenDuration = recorder.currentTime
-        elapsed = writtenDuration
-        didWriteCurrentSegment = writtenDuration > 0.02
-        lastBackendActivityAt = Date()
-        setWritingAudio(true)
-
-        if let settings = currentSettings, writtenDuration >= settings.segmentDuration + 1 {
-            handleSystemRecorderFinished(recorder, successfully: true, shouldRestart: true)
-        }
-    }
-
-    private func stopSystemRecorder(finalize: Bool) {
-        recorderTimer?.invalidate()
-        recorderTimer = nil
-        expectedSystemRecorderEndUptime = nil
-        preparedSystemRecorder = nil
-
-        guard let recorder = audioRecorder else { return }
-        let duration = recorder.currentTime
-        audioRecorder = nil
-        recorder.delegate = nil
-        recorder.stop()
-        isCapturingAudio = false
-
-        guard finalize else { return }
-        writtenDuration = max(writtenDuration, duration)
-        didWriteCurrentSegment = didWriteCurrentSegment || writtenDuration > 0.02
     }
 
     private func startEngine() throws {
@@ -303,7 +223,8 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
                 settings: SoundActivatedAudioSettings(
                     segmentDuration: settings.segmentDuration,
                     thresholdDB: settings.thresholdDB,
-                    soundTailDuration: settings.soundTailDuration
+                    soundTailDuration: settings.soundTailDuration,
+                    capturesAllAudio: settings.mode == .everything
                 )
             )
         }
@@ -332,6 +253,7 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
     }
 
     private func stopEngine() {
+        cancelSegmentRotationRetry()
         recorderTimer?.invalidate()
         recorderTimer = nil
         if audioTapInstalled {
@@ -351,33 +273,20 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
     private func startNewSegment() throws {
         guard let settings = activeSettings else { throw RecorderError.missingSettings }
         let url = try RecordingStorage.nextSegmentURL(mode: settings.mode, quality: settings.quality)
-        var preparedFile: AVAudioFile?
-        var preparedRecorder: AVAudioRecorder?
-        if settings.mode == .soundActivated {
-            let inputFormat = engine.inputNode.outputFormat(forBus: 0)
-            guard inputFormat.sampleRate > 0, inputFormat.channelCount > 0 else {
-                throw RecorderError.audioInputUnavailable
-            }
-            preparedFile = try AVAudioFile(
-                forWriting: url,
-                settings: settings.quality.recordingSettings(matching: inputFormat)
-            )
-        } else {
-            let recorder = try AVAudioRecorder(url: url, settings: settings.quality.recorderSettings)
-            recorder.delegate = self
-            recorder.isMeteringEnabled = true
-            guard recorder.prepareToRecord() else {
-                throw RecorderError.recorderPreparationFailed
-            }
-            preparedRecorder = recorder
+        let inputFormat = engine.inputNode.outputFormat(forBus: 0)
+        guard inputFormat.sampleRate > 0, inputFormat.channelCount > 0 else {
+            throw RecorderError.audioInputUnavailable
         }
+        let preparedFile = try AVAudioFile(
+            forWriting: url,
+            settings: settings.quality.recordingSettings(matching: inputFormat)
+        )
 
         // Commit only after the next destination is known to be writable. A
         // preparation failure must never discard or relabel the prior segment.
         completeCurrentSegment()
         currentSettings = settings
         currentFile = preparedFile
-        preparedSystemRecorder = preparedRecorder
         currentURL = url
         currentSegmentStartedAt = Date()
         writtenDuration = 0
@@ -389,101 +298,43 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
     private func rotateSegment() {
         guard continuityPolicy.handle(.segmentLimitReached) == .rotateSegment else { return }
         recordDiagnostic(.rotationRequested)
+        attemptSegmentRotation()
+    }
+
+    private func attemptSegmentRotation() {
+        guard isRecording, engine.isRunning else {
+            handleUnexpectedBackendFailure(
+                RecorderError.backendStoppedUnexpectedly,
+                diagnosticCode: .backendStoppedUnexpectedly
+            )
+            return
+        }
+
         do {
-            if currentSettings?.mode == .everything {
-                stopSystemRecorder(finalize: true)
-            }
             try startNewSegment()
-            if currentSettings?.mode == .everything {
-                try startSystemRecorder()
-            } else if currentSettings?.mode == .soundActivated,
-                      let currentFile,
-                      let settings = currentSettings {
-                soundProcessorGeneration = soundProcessor.start(
-                    file: currentFile,
-                    settings: SoundActivatedAudioSettings(
-                        segmentDuration: settings.segmentDuration,
-                        thresholdDB: settings.thresholdDB,
-                        soundTailDuration: settings.soundTailDuration
-                    )
-                )
+            guard let currentFile, let settings = currentSettings else {
+                throw RecorderError.missingSettings
             }
+            soundProcessorGeneration = soundProcessor.start(
+                file: currentFile,
+                settings: SoundActivatedAudioSettings(
+                    segmentDuration: settings.segmentDuration,
+                    thresholdDB: settings.thresholdDB,
+                    soundTailDuration: settings.soundTailDuration,
+                    capturesAllAudio: settings.mode == .everything
+                )
+            )
+            lastBackendActivityAt = Date()
             isCapturingAudio = hasActiveRecordingBackend
             _ = continuityPolicy.handle(.nextSegmentStarted)
-            cancelRecoveryRetry()
-            lastError = nil
-            recordDiagnostic(.rotationSucceeded)
-        } catch {
-            stopSystemRecorder(finalize: true)
-            stopEngine()
-            completeCurrentSegment()
-            _ = continuityPolicy.handle(.nextSegmentFailed)
-            recordDiagnostic(.rotationDeferred, error: error)
-            scheduleRecoveryRetry(
-                message: String(format: L("No se pudo reanudar la grabacion: %@"), error.localizedDescription),
-                error: error
-            )
-        }
-    }
-
-    nonisolated func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
-        Task { @MainActor in
-            self.handleSystemRecorderFinished(recorder, successfully: flag, shouldRestart: true)
-        }
-    }
-
-    nonisolated func audioRecorderEncodeErrorDidOccur(_ recorder: AVAudioRecorder, error: Error?) {
-        Task { @MainActor in
-            let effectiveError = error ?? RecorderError.audioEncodingFailed
-            self.recordDiagnostic(.audioWriteFailed, error: effectiveError)
-            self.handleSystemRecorderFinished(recorder, successfully: false, shouldRestart: true)
-        }
-    }
-
-    private func handleSystemRecorderFinished(_ recorder: AVAudioRecorder, successfully flag: Bool, shouldRestart: Bool) {
-        guard audioRecorder === recorder else { return }
-
-        recorderTimer?.invalidate()
-        recorderTimer = nil
-        expectedSystemRecorderEndUptime = nil
-        audioRecorder = nil
-        recorder.delegate = nil
-        writtenDuration = max(writtenDuration, recorder.currentTime)
-        didWriteCurrentSegment = didWriteCurrentSegment || writtenDuration > 0.02
-        completeCurrentSegment()
-
-        guard shouldRestart, isRecording, currentSettings?.mode == .everything else {
-            isCapturingAudio = false
-            setWritingAudio(false)
-            return
-        }
-
-        if !flag {
-            _ = continuityPolicy.handle(.backendFailed)
-            let error = RecorderError.backendStoppedUnexpectedly
-            recordDiagnostic(.backendStoppedUnexpectedly, error: error)
-            scheduleRecoveryRetry(
-                message: String(format: L("No se pudo reanudar la grabacion: %@"), error.localizedDescription),
-                error: error
-            )
-            return
-        }
-
-        do {
-            recordDiagnostic(.rotationRequested)
-            try configureAudioSession()
-            try startNewSegment()
-            try startSystemRecorder()
-            isInterrupted = false
-            _ = continuityPolicy.handle(.segmentLimitReached)
-            _ = continuityPolicy.handle(.nextSegmentStarted)
+            cancelSegmentRotationRetry()
             cancelRecoveryRetry()
             lastError = nil
             recordDiagnostic(.rotationSucceeded)
         } catch {
             _ = continuityPolicy.handle(.nextSegmentFailed)
             recordDiagnostic(.rotationDeferred, error: error)
-            scheduleRecoveryRetry(
+            scheduleSegmentRotationRetry(
                 message: String(format: L("No se pudo reanudar la grabacion: %@"), error.localizedDescription),
                 error: error
             )
@@ -513,7 +364,7 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
             handleUnexpectedBackendFailure(error, diagnosticCode: .audioWriteFailed)
             return
         }
-        if progress.reachedSegmentLimit, isRecording, currentSettings?.mode == .soundActivated {
+        if progress.reachedSegmentLimit, isRecording {
             rotateSegment()
         }
     }
@@ -696,6 +547,7 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         isCapturingAudio = false
         setWritingAudio(false)
         cancelRecoveryRetry()
+        cancelSegmentRotationRetry()
         _ = continuityPolicy.handle(.mediaServicesLost)
         recordDiagnostic(.mediaServicesLost)
     }
@@ -738,7 +590,7 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         isInterrupted = true
         isCapturingAudio = false
         setWritingAudio(false)
-        stopSystemRecorder(finalize: true)
+        cancelSegmentRotationRetry()
         stopEngine()
         completeCurrentSegment()
         lastError = L("Grabacion pausada por otra app. Se reanudara sola.")
@@ -794,7 +646,7 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         recordDiagnostic(.routeRecoveryStarted, detailCode: Int(rawReason))
         await recoverRecordingBackend(
             messageFormat: L("No se pudo reactivar la grabacion: %@"),
-            rebuildAudioObjects: currentSettings?.mode == .soundActivated
+            rebuildAudioObjects: true
         )
     }
 
@@ -805,7 +657,7 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         guard isRecording, !isInterrupted, !isPerformingRecovery else { return }
         _ = continuityPolicy.handle(.backendFailed)
         recordDiagnostic(diagnosticCode, error: error)
-        stopSystemRecorder(finalize: true)
+        cancelSegmentRotationRetry()
         stopEngine()
         completeCurrentSegment()
         scheduleRecoveryRetry(
@@ -820,12 +672,12 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
     ) async {
         guard isRecording, !isPerformingRecovery else { return }
         isPerformingRecovery = true
+        cancelSegmentRotationRetry()
         defer { isPerformingRecovery = false }
 
         if rebuildAudioObjects {
             discardOrphanedAudioObjectsPreservingSegment()
         } else {
-            stopSystemRecorder(finalize: true)
             stopEngine()
             completeCurrentSegment()
         }
@@ -855,10 +707,7 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
     private func discardOrphanedAudioObjectsPreservingSegment() {
         recorderTimer?.invalidate()
         recorderTimer = nil
-        expectedSystemRecorderEndUptime = nil
-        audioRecorder?.delegate = nil
-        audioRecorder = nil
-        preparedSystemRecorder = nil
+        cancelSegmentRotationRetry()
         audioTapInstalled = false
         engine = AVAudioEngine()
 
@@ -883,7 +732,7 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
 
         guard recoveryRetryTask == nil else { return }
         recoveryRetryTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 5_000_000_000)
+            guard await RecordingRetryGate.wait(nanoseconds: 5_000_000_000) else { return }
             await self?.runScheduledRecoveryRetry()
         }
     }
@@ -903,15 +752,34 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         recoveryRetryTask = nil
     }
 
-    private var hasActiveRecordingBackend: Bool {
-        switch currentSettings?.mode ?? activeSettings?.mode {
-        case .everything:
-            return audioRecorder?.isRecording == true
-        case .soundActivated:
-            return engine.isRunning && soundProcessorGeneration != nil
-        case .none:
-            return false
+    private func scheduleSegmentRotationRetry(message: String, error: Error?) {
+        guard isRecording else { return }
+        persistRecordingIntent(true)
+        setWritingAudio(false)
+        isCapturingAudio = engine.isRunning
+        lastError = message
+        recordDiagnostic(.recoveryScheduled, error: error)
+
+        guard segmentRotationRetryTask == nil else { return }
+        segmentRotationRetryTask = Task { [weak self] in
+            guard await RecordingRetryGate.wait(nanoseconds: 500_000_000) else { return }
+            await self?.runSegmentRotationRetry()
         }
+    }
+
+    private func runSegmentRotationRetry() {
+        segmentRotationRetryTask = nil
+        guard isRecording else { return }
+        attemptSegmentRotation()
+    }
+
+    private func cancelSegmentRotationRetry() {
+        segmentRotationRetryTask?.cancel()
+        segmentRotationRetryTask = nil
+    }
+
+    private var hasActiveRecordingBackend: Bool {
+        engine.isRunning && soundProcessorGeneration != nil
     }
 
     private func recordDiagnostic(
@@ -935,7 +803,7 @@ final class RecorderService: NSObject, ObservableObject, AVAudioRecorderDelegate
         shouldResumeAfterInterruption = false
         isInterrupted = false
         cancelRecoveryRetry()
-        stopSystemRecorder(finalize: true)
+        cancelSegmentRotationRetry()
         stopEngine()
         completeCurrentSegment()
         isRecording = false
@@ -993,12 +861,9 @@ private struct RecordingSnapshot {
 enum RecorderError: LocalizedError {
     case microphoneDenied
     case missingSettings
-    case recorderPreparationFailed
-    case recorderStartFailed
     case backendStoppedUnexpectedly
     case audioInputUnavailable
     case audioInputStalled
-    case audioEncodingFailed
     case audioWriteFailed(String)
 
     var errorDescription: String? {
@@ -1007,18 +872,12 @@ enum RecorderError: LocalizedError {
             L("No hay permiso para usar el microfono.")
         case .missingSettings:
             L("Faltan ajustes de grabacion.")
-        case .recorderPreparationFailed:
-            L("No se pudo preparar el archivo de grabacion.")
-        case .recorderStartFailed:
-            L("No se pudo iniciar la grabacion.")
         case .backendStoppedUnexpectedly:
             L("La grabacion de audio se detuvo inesperadamente.")
         case .audioInputUnavailable:
             L("La entrada de audio no esta disponible.")
         case .audioInputStalled:
             L("La entrada de audio dejo de responder.")
-        case .audioEncodingFailed:
-            L("No se pudo codificar el audio.")
         case let .audioWriteFailed(description):
             description
         }

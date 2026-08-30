@@ -5,6 +5,7 @@ struct SoundActivatedAudioSettings: Sendable {
     let segmentDuration: TimeInterval
     let thresholdDB: Float
     let soundTailDuration: TimeInterval
+    let capturesAllAudio: Bool
 }
 
 struct SoundActivatedAudioProgress: Sendable {
@@ -17,8 +18,9 @@ struct SoundActivatedAudioProgress: Sendable {
     let errorDescription: String?
 }
 
-/// Owns analysis and file writes for sound-activated recording. Its state is
-/// confined to `queue`; only coalesced progress snapshots cross to the UI.
+/// Owns analysis and file writes for both recording modes. The audio engine
+/// remains alive while output files rotate; buffers received during that
+/// handoff are retained in a bounded FIFO. State is confined to `queue`.
 final class SoundActivatedAudioProcessor: @unchecked Sendable {
     typealias ProgressHandler = @Sendable (SoundActivatedAudioProgress) -> Void
 
@@ -37,6 +39,8 @@ final class SoundActivatedAudioProcessor: @unchecked Sendable {
     private var lastSoundAboveThresholdAt: Date?
     private var lastProgressUpdateAt = Date.distantPast
     private var isPaused = true
+    private var isAwaitingSegmentRotation = false
+    private var rotationBacklog = SegmentRotationBacklog<AVAudioPCMBuffer>(capacity: 128)
     private var pendingBufferCount = 0
     private var didSignalBufferOverflow = false
 
@@ -46,6 +50,7 @@ final class SoundActivatedAudioProcessor: @unchecked Sendable {
 
     func start(file: AVAudioFile, settings: SoundActivatedAudioSettings) -> UUID {
         queue.sync {
+            let bufferedDuringRotation = rotationBacklog.drain()
             let newGeneration = UUID()
             self.file = file
             self.settings = settings
@@ -56,9 +61,13 @@ final class SoundActivatedAudioProcessor: @unchecked Sendable {
             lastSoundAboveThresholdAt = nil
             lastProgressUpdateAt = .distantPast
             isPaused = false
+            isAwaitingSegmentRotation = false
             pendingBufferLock.lock()
             didSignalBufferOverflow = false
             pendingBufferLock.unlock()
+            for buffer in bufferedDuringRotation {
+                process(buffer)
+            }
             return newGeneration
         }
     }
@@ -104,8 +113,9 @@ final class SoundActivatedAudioProcessor: @unchecked Sendable {
         guard shouldSignal else { return }
 
         queue.async { [weak self] in
-            guard let self, !isPaused else { return }
+            guard let self, !isPaused || isAwaitingSegmentRotation else { return }
             isPaused = true
+            isAwaitingSegmentRotation = false
             isWriting = false
             progressHandler(
                 snapshot(
@@ -120,6 +130,8 @@ final class SoundActivatedAudioProcessor: @unchecked Sendable {
     func stop() -> SoundActivatedAudioProgress {
         queue.sync {
             isPaused = true
+            isAwaitingSegmentRotation = false
+            rotationBacklog.removeAll()
             let finalProgress = snapshot(level: nil, reachedSegmentLimit: false, errorDescription: nil)
             file = nil
             settings = nil
@@ -129,6 +141,23 @@ final class SoundActivatedAudioProcessor: @unchecked Sendable {
     }
 
     private func process(_ buffer: AVAudioPCMBuffer) {
+        if isAwaitingSegmentRotation {
+            guard rotationBacklog.append(buffer) else {
+                isAwaitingSegmentRotation = false
+                isPaused = true
+                isWriting = false
+                progressHandler(
+                    snapshot(
+                        level: nil,
+                        reachedSegmentLimit: false,
+                        errorDescription: L("La entrada de audio dejo de responder.")
+                    )
+                )
+                return
+            }
+            return
+        }
+
         guard !isPaused, let file, let settings else { return }
 
         let analysis = analyzer.analyze(buffer)
@@ -155,11 +184,16 @@ final class SoundActivatedAudioProcessor: @unchecked Sendable {
         lastProgressUpdateAt = now
         if reachedSegmentLimit {
             isPaused = true
+            isAwaitingSegmentRotation = true
         }
         progressHandler(snapshot(level: analysis.rms, reachedSegmentLimit: reachedSegmentLimit, errorDescription: nil))
     }
 
     private func shouldWrite(level: Float, settings: SoundActivatedAudioSettings, now: Date) -> Bool {
+        if settings.capturesAllAudio {
+            return true
+        }
+
         if level >= settings.thresholdDB {
             lastSoundAboveThresholdAt = now
             return true
@@ -185,6 +219,30 @@ final class SoundActivatedAudioProcessor: @unchecked Sendable {
             reachedSegmentLimit: reachedSegmentLimit,
             errorDescription: errorDescription
         )
+    }
+}
+
+struct SegmentRotationBacklog<Element> {
+    let capacity: Int
+    private(set) var values: [Element] = []
+
+    init(capacity: Int) {
+        self.capacity = max(0, capacity)
+    }
+
+    mutating func append(_ value: Element) -> Bool {
+        guard values.count < capacity else { return false }
+        values.append(value)
+        return true
+    }
+
+    mutating func drain() -> [Element] {
+        defer { values.removeAll(keepingCapacity: true) }
+        return values
+    }
+
+    mutating func removeAll() {
+        values.removeAll(keepingCapacity: true)
     }
 }
 

@@ -384,3 +384,11 @@ La comprobación contemporánea mostró la cuenta de AdMob desactivada por inact
 ### F-038 - iOS 1.0.2 (1) disponible en TestFlight interno - 2026-08-30
 
 Con autorización expresa del propietario, el commit `eb72a56` se publicó en `main`, `Krazel/AudioRecorder` pasó a visibilidad pública y se despachó el run `33278736558`. Xcode 26.6 superó la puerta GDPR/ATT, todos los XCTest, archive firmado, verificaciones de versión/firma/privacidad, exportación, validación Apple y upload. Apple procesó la entrega `a4ab24e5-b69e-4940-a6b8-edcb479fe34e` como `VALID`, audiencia `INTERNAL_ONLY` e `IN_BETA_TESTING`; el grupo privado `Testers`, con dos testers y acceso automático, ya dispone de ella. No hubo testing externo, App Review ni publicación.
+
+### D-044 - La separación de archivos no puede detener la captura - 2026-08-30
+
+La prueba física de 1.0.2 (1) sustituye la arquitectura descrita en D-039 para el backend: ambos modos usan una sola captura `AVAudioEngine`. Un límite de segmento cambia únicamente el archivo de salida y conserva buffers en una cola FIFO acotada mientras se abre el siguiente. `Todo` escribe cada buffer; `Por sonido` aplica el umbral. `AVAudioRecorder.record(forDuration:)` queda prohibido para segmentación porque finaliza deliberadamente el grabador.
+
+### F-039 - Causa restante de cinco minutos corregida localmente en 1.0.3 (1) - 2026-08-30
+
+El propietario confirmó que 1.0.2 (1) se detenía exactamente al primer corte de cinco minutos. La fuente todavía dependía del final temporizado de `AVAudioRecorder` y arrancaba otro backend después. 1.0.3 mantiene el engine vivo, rota `AVAudioFile`, conserva hasta 128 buffers de handoff y reintenta la apertura cada 500 ms sin detener captura. También impide que tareas de retry canceladas ejecuten recuperaciones tardías. Se añadieron pruebas de backend continuo, FIFO/cota y cancelación. La corrección está local, sin commit/push/Actions/build; QA macOS y físico siguen pendientes.
