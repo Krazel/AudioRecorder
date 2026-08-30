@@ -1,12 +1,16 @@
 # VoiceRecorder / AudioRecorder — estado actual
 
-## Corrección local iOS 1.0.3 (1) — rotación continua real — 2026-08-30
+## TestFlight interno iOS 1.0.3 (1) — rotación continua real — 2026-08-30
 
 - La prueba física del propietario demostró que 1.0.2 (1) seguía deteniéndose exactamente en el primer corte de cinco minutos. La máquina de estados reintentaba, pero el modo `Todo` todavía llamaba a `AVAudioRecorder.record(forDuration:)`, API que finaliza la captura al expirar; el segundo grabador solo podía abrirse después y dejaba una ventana real sin backend.
 - 1.0.3 elimina `AVAudioRecorder` del motor. `Todo` y `Por sonido` comparten una única captura `AVAudioEngine` que permanece activa durante toda la sesión; la rotación cambia únicamente el `AVAudioFile`. `Todo` escribe todos los buffers, incluido silencio, y `Por sonido` conserva su filtro.
 - Durante la apertura del siguiente archivo se retienen hasta 128 buffers FIFO y se drenan en orden al nuevo segmento. Un fallo de apertura reintenta cada 500 ms sin apagar el micrófono; el límite de memoria sigue siendo explícito y un desbordamiento pasa a recuperación completa.
 - Se corrigió otra carrera: las tareas de retry canceladas ignoraban `CancellationError` y podían ejecutar recuperaciones tardías. `RecordingRetryGate` impide esa ejecución y tiene prueba asíncrona determinista.
-- Se añadieron `RecordingBackendPolicy` y `ContinuousSegmentRotationTests`; el código, workflows y artefactos quedan versionados localmente como 1.0.3 build 1. Aún no hay commit, push, Actions ni nueva build; se requiere validación macOS y después autorización separada para TestFlight. Android, `artifact/` y los scripts previos permanecen intactos.
+- La corrección binaria quedó en `3f3c9cf` (`2cf75bd` para el motor y `3f3c9cf` para la aserción XCTest). El run macOS `33284953418` superó la prohibición del backend temporizado, todos los XCTest y compilación Release para dispositivo.
+- El run firmado `33285208649` superó la puerta GDPR/ATT, archive, firma, versión/privacidad, exportación, validación Apple y upload. Apple procesó la build `702f442b-7c5e-4977-a3b4-6f08aa99cbde` como `VALID`, `INTERNAL_ONLY`, `IN_BETA_TESTING`, cifrado no exento `false` y testing externo `NOT_APPLICABLE`. El grupo privado `Testers` tiene acceso automático y dos testers.
+- App Store Connect contiene la versión 1.0.3 en `PREPARE_FOR_SUBMISSION`, release manual. El run protegido `33285857956` verificó sus siete localizaciones (`ca`, `de-DE`, `en-US`, `es-ES`, `fr-FR`, `it`, `pt-PT`) con `https://krazel.github.io/audio-recorder/` como Marketing URL. Esta build interna no se selecciona para App Review.
+- AdMob de producción continúa bloqueado: la cuenta/app/IDs reales no están activos y verificables y AdMob no reconoce todavía Developer Website. `app-ads.txt` y la Marketing URL responden HTTP 200, pero eso no demuestra la verificación dentro de AdMob. La build 1 usa IDs demo oficiales y no es candidata de producción.
+- `docs/IOS_1.0.3_APP_REVIEW_PREFLIGHT.md` deja preparado el preflight y sus bloqueos. No hubo TestFlight externo, App Review ni publicación. El siguiente paso obligatorio es QA físico del primer corte y rotaciones sostenidas; después, verificar AdMob y producir 1.0.3 (2) con IDs reales antes de cualquier envío. Android, `artifact/` y los dos scripts locales previos permanecen intactos.
 
 ## TestFlight interno iOS 1.0.2 (1) — estabilidad de grabación — 2026-08-30
 

@@ -145,6 +145,14 @@ if (!hasAccessToAllBuilds && !linked) fail("The build was not assigned to Tester
 const testers = (
   await request("GET", `/v1/betaGroups/${group.id}/relationships/betaTesters?limit=200`)
 ).data ?? [];
+const selectedBuildRelationship = await request(
+  "GET",
+  `/v1/appStoreVersions/${version.id}/relationships/build`
+);
+const selectedBuildId = selectedBuildRelationship.data?.id ?? null;
+if (selectedBuildId === build.id) {
+  fail("The internal test-ID build must not be selected for the App Store version.");
+}
 
 console.log(JSON.stringify({
   status: hasAccessToAllBuilds ? "AVAILABLE_AUTOMATICALLY" : "ASSIGNED",
@@ -154,6 +162,7 @@ console.log(JSON.stringify({
   appStoreVersionState: version.attributes?.appVersionState,
   releaseType: version.attributes?.releaseType,
   usesIdfa: version.attributes?.usesIdfa,
+  selectedBuildId,
   buildId: build.id,
   marketingVersion,
   buildNumber,

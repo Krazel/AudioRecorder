@@ -392,3 +392,11 @@ La prueba física de 1.0.2 (1) sustituye la arquitectura descrita en D-039 para 
 ### F-039 - Causa restante de cinco minutos corregida localmente en 1.0.3 (1) - 2026-08-30
 
 El propietario confirmó que 1.0.2 (1) se detenía exactamente al primer corte de cinco minutos. La fuente todavía dependía del final temporizado de `AVAudioRecorder` y arrancaba otro backend después. 1.0.3 mantiene el engine vivo, rota `AVAudioFile`, conserva hasta 128 buffers de handoff y reintenta la apertura cada 500 ms sin detener captura. También impide que tareas de retry canceladas ejecuten recuperaciones tardías. Se añadieron pruebas de backend continuo, FIFO/cota y cancelación. La corrección está local, sin commit/push/Actions/build; QA macOS y físico siguen pendientes.
+
+### F-040 - iOS 1.0.3 (1) disponible en TestFlight interno - 2026-08-30
+
+La corrección binaria `3f3c9cf` pasó XCTest y compilación Release en `33284953418`; `33285208649` archivó, firmó, validó y subió el IPA con IDs demo. Apple procesó el recurso `702f442b-7c5e-4977-a3b4-6f08aa99cbde` como `VALID`, `INTERNAL_ONLY` e `IN_BETA_TESTING`. `Testers` tiene acceso automático y dos testers. Las siete localizaciones de 1.0.3 comparten la Marketing URL `https://krazel.github.io/audio-recorder/`, verificado por `33285857956`. No hubo testing externo, App Review ni publicación.
+
+### D-045 - QA físico y AdMob separan TestFlight interno de App Review - 2026-08-30
+
+1.0.3 (1) usa IDs demo y existe únicamente para comprobar la corrección en iPhone. No se seleccionará para la versión de tienda. App Review queda bloqueado hasta que el propietario confirme el primer corte de cinco minutos y rotaciones sostenidas, y hasta que AdMob reconozca Developer Website y permita verificar cuenta, app e IDs reales activos. Entonces se generará 1.0.3 (2) de producción, se repetirá el preflight contra ese binario exacto y se mantendrá publicación manual.
