@@ -70,14 +70,13 @@ if (
   fail("The Marketing URL did not persist across all seven localizations.");
 }
 
-const preReleaseQuery = new URLSearchParams({
-  "filter[version]": marketingVersion,
-  "filter[platform]": "IOS",
-  limit: "10"
-});
-const preReleaseVersions = (
-  await request("GET", `/v1/apps/${appId}/preReleaseVersions?${preReleaseQuery}`)
+const allPreReleaseVersions = (
+  await request("GET", `/v1/apps/${appId}/preReleaseVersions?limit=200`)
 ).data ?? [];
+const preReleaseVersions = allPreReleaseVersions.filter((candidate) =>
+  candidate.attributes?.version === marketingVersion &&
+  candidate.attributes?.platform === "IOS"
+);
 if (preReleaseVersions.length !== 1) {
   fail(`Expected one prerelease version ${marketingVersion}; found ${preReleaseVersions.length}.`);
 }
