@@ -35,7 +35,15 @@ jobs:
             exit 1
           fi
           KEY_PATH="$RUNNER_TEMP/AuthKey_${ASC_KEY_ID}.p8"
-          printf '%s' "$ASC_PRIVATE_KEY_BASE64" | base64 --decode > "$KEY_PATH"
+          python3 - <<'PY'
+          import base64
+          import os
+          from pathlib import Path
+
+          encoded = os.environ["ASC_PRIVATE_KEY_BASE64"].strip().lstrip("\ufeff")
+          private_key = base64.b64decode(encoded, validate=True)
+          Path(os.environ["RUNNER_TEMP"], f"AuthKey_{os.environ['ASC_KEY_ID']}.p8").write_bytes(private_key)
+          PY
           chmod 600 "$KEY_PATH"
           echo "ASC_PRIVATE_KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
 
