@@ -26,12 +26,13 @@ if (app?.attributes?.bundleId !== bundleId) {
 }
 
 const versionQuery = new URLSearchParams({
-  "filter[app]": appId,
   "filter[versionString]": marketingVersion,
   "filter[platform]": "IOS",
   limit: "10"
 });
-const versions = (await request("GET", `/v1/appStoreVersions?${versionQuery}`)).data ?? [];
+const versions = (
+  await request("GET", `/v1/apps/${appId}/appStoreVersions?${versionQuery}`)
+).data ?? [];
 if (versions.length !== 1) {
   fail(`Expected one iOS App Store version ${marketingVersion}; found ${versions.length}.`);
 }
@@ -70,13 +71,12 @@ if (
 }
 
 const preReleaseQuery = new URLSearchParams({
-  "filter[app]": appId,
   "filter[version]": marketingVersion,
   "filter[platform]": "IOS",
   limit: "10"
 });
 const preReleaseVersions = (
-  await request("GET", `/v1/preReleaseVersions?${preReleaseQuery}`)
+  await request("GET", `/v1/apps/${appId}/preReleaseVersions?${preReleaseQuery}`)
 ).data ?? [];
 if (preReleaseVersions.length !== 1) {
   fail(`Expected one prerelease version ${marketingVersion}; found ${preReleaseVersions.length}.`);
