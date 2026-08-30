@@ -42,12 +42,33 @@ JSON inmediatamente. Repetir una vez con la app visible y otra bloqueada. No
 reiniciar ni reinstalar entre el fallo y la exportación.
 
 La fuente diagnóstica quedó en `7df0dea`. `33340707076` pasó XCTest y Release;
-`33340921074` archivó, firmó, validó y subió 1.0.6 (1) con IDs demo, y Apple
-aceptó la carga. El finalizador local `finalize-testflight-1.0.6.mjs` no realiza
-POST ni PATCH: espera y verifica la build exacta, su audiencia/estados, el grupo
-privado automático con dos testers y que ninguna versión App Store la seleccione.
-Todavía no se ha publicado ni ejecutado ese finalizador, por lo que el build ID
-y la disponibilidad final siguen pendientes.
+`33340921074` archivó, firmó, validó y subió 1.0.6 (1) con IDs demo. El
+finalizador de solo lectura `33341464009` confirmó el recurso Apple
+`53a1f112-27b7-4e31-be57-a2f5a130b73f` como `VALID`, `INTERNAL_ONLY`,
+`IN_BETA_TESTING`, cifrado no exento falso y externo `NOT_APPLICABLE`. El grupo
+privado `Testers` (`9fb339bc-471a-438f-bc2e-f9961e974cee`) tiene dos testers,
+acceso automático a todas las builds y relación activa; ninguna versión App
+Store selecciona el binario. No hubo testing externo, Review ni publicación.
+
+### QA exacto para obtener dos trazas comparables
+
+1. En TestFlight, instalar y abrir expresamente **1.0.6 (1)**. No usar 1.0.5.
+2. Seleccionar modo `Todo`, iniciar la grabación y hablar durante 10 segundos.
+3. Abrir Siri, mantenerlo activo 10 segundos y cerrarlo. No pulsar Stop ni
+   Grabar durante la interrupción o la espera.
+4. Esperar 20 segundos completos y hablar otros 10 segundos.
+5. Sin cerrar ni reiniciar la app, entrar en Ajustes y usar
+   `INTERNAL QA > Exportar diagnóstico de grabación`. Guardar/compartir el JSON
+   sin editar y etiquetarlo como `visible`.
+6. Solo después de exportar, detener la grabación.
+7. Iniciar una sesión nueva y repetir: hablar, bloquear el iPhone, invocar Siri,
+   cerrarlo, esperar 20 segundos, desbloquear, hablar y exportar antes de
+   detener. Etiquetar este JSON como `bloqueado`.
+
+Si la captura vuelve, anotar aproximadamente cuántos segundos tardó. Si no
+vuelve, no intentar arreglarla tocando controles antes de exportar: esos eventos
+son precisamente la evidencia necesaria. Los dos JSON, no capturas de pantalla,
+permitirán comparar notificaciones, suspensión, etapas y primer buffer.
 
 ## Causas demostradas en la fuente 1.0.1
 
