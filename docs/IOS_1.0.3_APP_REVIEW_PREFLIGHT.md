@@ -24,6 +24,8 @@ en hardware real.
 
 - App Store version 1.0.3: `PREPARE_FOR_SUBMISSION`.
 - Publicación: `MANUAL`.
+- Build seleccionada para App Review: ninguna (`selectedBuildId=null`, run
+  `33286090956`).
 - Marketing URL persistida en las siete localizaciones:
 
   `https://krazel.github.io/audio-recorder/`
