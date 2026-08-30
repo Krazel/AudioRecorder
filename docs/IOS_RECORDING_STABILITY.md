@@ -1,4 +1,4 @@
-# VoiceRecorder iOS — estabilidad de grabación 1.0.3
+# VoiceRecorder iOS — estabilidad de grabación 1.0.4
 
 Fecha de auditoría: 2026-08-30
 Alcance: `native-ios/`; Android, distribución y servicios externos fuera de alcance.
@@ -43,6 +43,16 @@ no existía captura activa y iOS podía suspender el proceso antes de completar 
 reanudación. Además, las tareas canceladas de retry ignoraban el error de
 cancelación y podían ejecutar una recuperación tardía.
 
+## Fallo físico confirmado en 1.0.3 (1): Siri/interrupciones
+
+El propietario confirmó en TestFlight que, después de Siri u otra interrupción,
+la captura no siempre volvía sola. La causa concreta estaba en la transición de
+fin: si iOS entregaba `.ended` sin `shouldResume`, la política conservaba la
+intención pero devolvía `.none`; tampoco programaba retry al comenzar la
+interrupción. Si Siri no provocaba después un cambio de `scenePhase` a activo —o
+si no llegaba notificación de fin— no quedaba ningún evento que reabriera el
+backend y la sesión permanecía pausada indefinidamente.
+
 ## Contratos de Apple aplicados
 
 - [`record(forDuration:)`](https://developer.apple.com/documentation/avfaudio/avaudiorecorder/record%28forduration%3A%29)
@@ -52,9 +62,29 @@ cancelación y podían ejecutar una recuperación tardía.
   exige guardar estado al comenzar, reactivar la sesión cuando proceda y asumir
   que puede no llegar una notificación de fin.
 - [`shouldResume`](https://developer.apple.com/documentation/avfaudio/avaudiosession/interruptionoptions/shouldresume)
-  se interpreta como recomendación de reanudación; si no está presente, la
-  sesión queda pausada y el foreground o una acción posterior del usuario puede
-  iniciar la recuperación.
+  es una recomendación para decidir si resulta apropiado reanudar reproducción
+  automáticamente. Apple indica que las apps que no necesitan una nueva acción
+  del usuario pueden ignorarla. En VoiceRecorder el botón Grabar ya pulsado es
+  la intención explícita vigente, por lo que un fin con o sin esa recomendación
+  abre una oportunidad de recuperación.
+- La metadata oficial vigente de Apple sitúa la deprecación de
+  `InterruptionOptions.shouldResume` en iOS 27.0. Su sustituta,
+  [`resumptionRecommendationNotification`](https://developer.apple.com/documentation/avfaudio/avaudiosession/resumptionrecommendationnotification),
+  se introduce también en iOS 27.0 y todavía está marcada como beta.
+  `interruptionNotification` continúa sin deprecación en iOS. La candidata usa
+  Xcode/SDK 26.6 y admite iOS 16+, por lo que la notificación clásica es el único
+  contrato disponible y correcto para iOS 16–26. Al adoptar un SDK estable que
+  conozca iOS 27 se deberá añadir observación condicional de la nueva señal en
+  iOS 27+, mantener fallback clásico en iOS 16–26 y deduplicar ambas mediante la
+  misma máquina de estados; no se referencia ahora una API ausente del SDK.
+- [`setPrefersNoInterruptionsFromSystemAlerts(_:)`](https://developer.apple.com/documentation/avfaudio/avaudiosession/setprefersnointerruptionsfromsystemalerts%28_%3A%29)
+  reduce algunas interrupciones de alertas del sistema —por ejemplo llamadas
+  presentadas como banner—, pero Apple aclara que es solo una preferencia y no
+  evita llamadas aceptadas, Siri ni todos los casos. Un fallo al aplicar esta
+  preferencia no impide iniciar la grabación y queda diagnosticado localmente.
+  Apple la declara disponible desde iOS 14.5 y la recomienda expresamente para
+  sesiones que graban medios audiovisuales; por tanto es válida con deployment
+  iOS 16 y la categoría de entrada `playAndRecord` usada por la app.
 - [Responding to Route Changes](https://developer.apple.com/library/archive/documentation/Audio/Conceptual/AudioSessionProgrammingGuide/HandlingAudioHardwareRouteChanges/HandlingAudioHardwareRouteChanges.html)
   requiere leer el motivo y volver a consultar formato, frecuencia y canales.
 - [`mediaServicesWereResetNotification`](https://developer.apple.com/documentation/avfaudio/avaudiosession/mediaserviceswereresetnotification)
@@ -73,7 +103,7 @@ cancelación y podían ejecutar una recuperación tardía.
   continúa bajo bloqueo de pantalla y en segundo plano con `UIBackgroundModes`
   `audio`; por defecto es no mezclable.
 
-## Políticas explícitas de 1.0.3
+## Políticas explícitas de 1.0.4
 
 - Solo `stopRequested` borra la intención y desactiva la sesión. Un final
   inesperado, fallo de escritura o fallo al abrir el segmento siguiente guarda
@@ -88,9 +118,17 @@ cancelación y podían ejecutar una recuperación tardía.
 - El watchdog exige engine, generación de procesador y actividad real de
   buffers para ambos modos. `Todo` escribe todos los buffers, incluido silencio;
   `Por sonido` conserva su umbral y cola final.
-- Al comenzar una interrupción se finaliza el fragmento válido. Con
-  `shouldResume` se reabre un segmento inmediatamente; sin esa recomendación se
-  conserva la intención y se espera al foreground o al usuario.
+- Al comenzar una interrupción se finaliza una sola vez el fragmento válido y
+  se conserva la intención. Se mantiene un único retry cancelable cada cinco
+  segundos porque Apple no garantiza que llegue la notificación de fin.
+- Al finalizar la interrupción se intenta reabrir inmediatamente un segmento
+  tanto con `shouldResume` como sin él. Si `setActive(true)` o el engine todavía
+  fallan, la recuperación continúa por el retry acotado; foreground es otra
+  oportunidad inmediata. Stop cancela la tarea y ninguna señal tardía puede
+  volver a crear el backend.
+- La sesión solicita que las alertas del sistema no interrumpan cuando iOS pueda
+  respetarlo. Esta preferencia no se presenta como garantía y se desactiva al
+  terminar voluntariamente la sesión.
 - Conectar, retirar o perder una ruta reinicia en un segmento nuevo y vuelve a
   consultar el formato. `override`, `categoryChange` y `wakeFromSleep` no fuerzan
   un corte si el backend sigue sano.
@@ -124,7 +162,11 @@ ser purgado por iOS.
 
 - cinco rotaciones consecutivas;
 - error al preparar el segmento siguiente sin perder intención;
-- interrupción con y sin recomendación de reanudar;
+- interrupción con y sin recomendación de reanudar, ambas con recuperación;
+- ausencia de notificación de fin y oportunidad posterior por retry;
+- fallos repetidos de activación/engine hasta recuperación;
+- Stop durante interrupción y señales tardías sin reinicio;
+- interrupciones múltiples, finalización única y ausencia de doble backend;
 - cambio de ruta relevante frente a override no disruptivo;
 - background/foreground con backend activo e inactivo;
 - stop solicitado frente a fallo inesperado;
@@ -152,8 +194,10 @@ corrección.
 | Rotación continua | iPhone iOS 16 y iPhone iOS actual; 5 cortes mínimos | Cinco archivos válidos y la sesión continúa |
 | Rotación por sonido | Ambos iPhone; voz suficiente para 5 cortes | Cinco archivos reproducibles, sin crecimiento anómalo de memoria |
 | Destino no escribible / poco espacio | Llenar almacenamiento de forma controlada | Segmento previo visible, error útil, intención activa y recuperación al liberar espacio |
-| Llamada/FaceTime | Rechazar y aceptar llamada | Segmento previo guardado; reanudación recomendada o al volver/actuar |
-| Siri y alarma | Activar durante ambos modos | UI y backend coinciden; ningún segmento válido desaparece |
+| Llamada/FaceTime | Rechazar y aceptar llamada | Segmento previo guardado; al liberar iOS el micrófono, reanudación inmediata o en el siguiente retry/foreground |
+| Siri y alarma | Activar durante ambos modos; repetir con app visible y bloqueada | Segmento previo guardado; tras cerrar Siri/alarma aparece un segmento nuevo y la captura vuelve sin tocar Grabar |
+| Interrupción prolongada | Mantener llamada/Siri más de 15 s | Un solo backend/retry, sin crecimiento de tareas; reanuda como máximo en el primer ciclo permitido tras liberar audio |
+| Stop interrumpido | Pulsar Stop mientras Siri/llamada mantiene el micrófono | No hay reanudación al cerrar la interrupción ni cinco segundos después |
 | Auriculares cableados | Conectar y retirar grabando | Corte controlado, nuevo formato/ruta y continuación |
 | Bluetooth HFP | Conectar, desconectar y perder enlace | Nuevo segmento, continuación o reintento diagnosticado |
 | Background/bloqueo | 30 min por modo con varios cortes | Captura continua; foreground no crea dobles backends |
@@ -174,3 +218,8 @@ corrección.
 - iOS puede terminar el proceso por presión extrema, batería o decisión del
   sistema sin entregar callbacks. Los archivos ya cerrados y los no indexados
   permanecen recuperables, pero no se puede grabar mientras el proceso no existe.
+- iOS conserva la autoridad exclusiva sobre el micrófono. No es posible grabar
+  durante una llamada aceptada, Siri u otra sesión que lo haya tomado; la mejora
+  minimiza interrupciones evitables y recupera automáticamente cuando el sistema
+  vuelve a permitir activar la sesión, pero no puede eliminar el hueco impuesto
+  por el sistema.

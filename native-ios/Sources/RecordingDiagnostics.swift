@@ -15,6 +15,7 @@ enum RecordingDiagnosticCode: String, Codable {
     case interruptionBegan
     case interruptionEndedResume
     case interruptionEndedNoResume
+    case systemAlertInterruptionPreferenceUnavailable
     case routeChanged
     case routeRecoveryStarted
     case enteredBackground

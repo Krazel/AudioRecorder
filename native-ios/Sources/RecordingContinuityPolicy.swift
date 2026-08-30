@@ -19,6 +19,7 @@ enum RecordingContinuityEvent: Equatable {
     case nextSegmentFailed
     case interruptionBegan
     case interruptionEnded(shouldResume: Bool)
+    case recoveryOpportunity(backendActive: Bool)
     case routeChanged(requiresRestart: Bool)
     case enteredBackground
     case enteredForeground(backendActive: Bool)
@@ -78,17 +79,30 @@ struct RecordingContinuityPolicy {
 
         case .interruptionBegan:
             guard hasRecordingIntent else { return .none }
+            guard phase != .interrupted else { return .none }
             phase = .interrupted
             return .pauseAndFinalize
 
-        case let .interruptionEnded(shouldResume):
+        case .interruptionEnded:
             guard hasRecordingIntent, phase == .interrupted else { return .none }
-            guard shouldResume else { return .none }
+            phase = .recovering
+            return .recover
+
+        case let .recoveryOpportunity(backendActive):
+            guard hasRecordingIntent,
+                  phase != .awaitingMediaServices,
+                  !backendActive else {
+                return .none
+            }
             phase = .recovering
             return .recover
 
         case let .routeChanged(requiresRestart):
-            guard hasRecordingIntent, requiresRestart else { return .none }
+            guard hasRecordingIntent,
+                  phase != .awaitingMediaServices,
+                  requiresRestart else {
+                return .none
+            }
             phase = .recovering
             return .recover
 
@@ -96,7 +110,11 @@ struct RecordingContinuityPolicy {
             return .none
 
         case let .enteredForeground(backendActive):
-            guard hasRecordingIntent, !backendActive else { return .none }
+            guard hasRecordingIntent,
+                  phase != .awaitingMediaServices,
+                  !backendActive else {
+                return .none
+            }
             phase = .recovering
             return .recover
 

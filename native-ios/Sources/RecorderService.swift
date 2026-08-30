@@ -31,7 +31,6 @@ final class RecorderService: ObservableObject {
     private var settingsStore: RecordingSettingsStore?
     private var library: RecordingLibrary?
     private var uploadQueue: CloudUploadQueue?
-    private var shouldResumeAfterInterruption = false
     private var isPerformingRecovery = false
     private var waitingForMediaServicesReset = false
     private var lastBackendActivityAt: Date?
@@ -94,7 +93,6 @@ final class RecorderService: ObservableObject {
     }
 
     private func stopRecordingSession(clearIntent: Bool, deactivateSession: Bool) {
-        shouldResumeAfterInterruption = false
         isInterrupted = false
         isPerformingRecovery = false
         waitingForMediaServicesReset = false
@@ -106,7 +104,9 @@ final class RecorderService: ObservableObject {
         stopEngine()
         completeCurrentSegment()
         if deactivateSession {
-            try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
+            let session = AVAudioSession.sharedInstance()
+            try? session.setPrefersNoInterruptionsFromSystemAlerts(false)
+            try? session.setActive(false, options: [.notifyOthersOnDeactivation])
         }
         if clearIntent {
             isRecording = false
@@ -117,13 +117,10 @@ final class RecorderService: ObservableObject {
 
     func recoverActiveRecordingIfNeeded() async {
         guard isRecording, !waitingForMediaServicesReset, !isPerformingRecovery else { return }
-
-        if shouldResumeAfterInterruption {
-            await resumeAfterAudioInterruption()
-            return
-        }
-
-        guard !hasActiveRecordingBackend else { return }
+        let action = continuityPolicy.handle(
+            .recoveryOpportunity(backendActive: hasActiveRecordingBackend)
+        )
+        guard action == .recover else { return }
         await recoverRecordingBackend(
             messageFormat: L("No se pudo reactivar la grabacion: %@"),
             rebuildAudioObjects: false
@@ -174,6 +171,14 @@ final class RecorderService: ObservableObject {
     private func configureAudioSession() throws {
         let session = AVAudioSession.sharedInstance()
         try session.setCategory(.playAndRecord, mode: .default, options: [.allowBluetoothHFP, .defaultToSpeaker])
+        do {
+            // This is a preference, not a guarantee. It prevents some banner-
+            // style system alerts from interrupting an active recording, while
+            // the recovery path below still handles unavoidable interruptions.
+            try session.setPrefersNoInterruptionsFromSystemAlerts(true)
+        } catch {
+            recordDiagnostic(.systemAlertInterruptionPreferenceUnavailable, error: error)
+        }
         try session.setActive(true)
     }
 
@@ -525,6 +530,7 @@ final class RecorderService: ObservableObject {
     }
 
     func applicationDidBecomeActive() async {
+        guard !waitingForMediaServicesReset else { return }
         let action = continuityPolicy.handle(
             .enteredForeground(backendActive: hasActiveRecordingBackend)
         )
@@ -532,7 +538,6 @@ final class RecorderService: ObservableObject {
             recordDiagnostic(.enteredForeground)
         }
         if action == .recover {
-            shouldResumeAfterInterruption = false
             await recoverRecordingBackend(
                 messageFormat: L("No se pudo reactivar la grabacion: %@"),
                 rebuildAudioObjects: false
@@ -586,31 +591,36 @@ final class RecorderService: ObservableObject {
     private func pauseForAudioInterruption() {
         guard isRecording else { return }
         guard continuityPolicy.handle(.interruptionBegan) == .pauseAndFinalize else { return }
-        shouldResumeAfterInterruption = true
         isInterrupted = true
         isCapturingAudio = false
         setWritingAudio(false)
+        cancelRecoveryRetry()
         cancelSegmentRotationRetry()
         stopEngine()
         completeCurrentSegment()
-        lastError = L("Grabacion pausada por otra app. Se reanudara sola.")
+        let pausedMessage = L("Grabacion pausada por otra app. Se reanudara sola.")
+        lastError = pausedMessage
         recordDiagnostic(.interruptionBegan)
+        // Apple doesn't guarantee a matching interruption-ended notification.
+        // Keep a single, cancellable retry alive so a recording with explicit
+        // user intent can recover even when Siri or suspension omits that edge.
+        scheduleRecoveryRetry(message: pausedMessage)
     }
 
-    private func resumeAfterAudioInterruption(shouldResume: Bool = true) async {
-        guard shouldResumeAfterInterruption, settingsStore != nil else { return }
+    private func resumeAfterAudioInterruption(shouldResume: Bool) async {
+        guard isRecording, settingsStore != nil else { return }
         let action = continuityPolicy.handle(.interruptionEnded(shouldResume: shouldResume))
         if shouldResume {
             recordDiagnostic(.interruptionEndedResume)
         } else {
             recordDiagnostic(.interruptionEndedNoResume)
         }
-        guard action == .recover else {
-            // Apple treats shouldResume as a recommendation. Preserve the
-            // session intent, but wait for a foreground/user-driven recovery.
-            return
-        }
-        shouldResumeAfterInterruption = false
+        guard action == .recover else { return }
+        // `shouldResume` is a playback-oriented recommendation. This app has
+        // an explicit, still-active recording intent, so it attempts recovery
+        // after every interruption end and lets setActive/engine failures feed
+        // the bounded retry path until the microphone is actually available.
+        cancelRecoveryRetry()
         await recoverRecordingBackend(
             messageFormat: L("No se pudo reanudar la grabacion: %@"),
             rebuildAudioObjects: false
@@ -688,7 +698,6 @@ final class RecorderService: ObservableObject {
             try startRecordingBackend()
             isInterrupted = false
             isCapturingAudio = true
-            shouldResumeAfterInterruption = false
             cancelRecoveryRetry()
             lastError = nil
             _ = continuityPolicy.handle(.recoverySucceeded)
@@ -800,7 +809,6 @@ final class RecorderService: ObservableObject {
     private func emergencyStopAndSave() {
         guard isRecording else { return }
         recordDiagnostic(.backendStoppedUnexpectedly)
-        shouldResumeAfterInterruption = false
         isInterrupted = false
         cancelRecoveryRetry()
         cancelSegmentRotationRetry()

@@ -1,5 +1,14 @@
 # VoiceRecorder / AudioRecorder — estado actual
 
+## Candidata interna iOS 1.0.4 (1): reanudación tras Siri/interrupciones — 2026-08-30
+
+- La prueba física de 1.0.3 (1) reveló un bloqueo adicional: si el fin de Siri u otra interrupción llegaba sin `shouldResume`, `RecordingContinuityPolicy` conservaba intención pero no recuperaba ni programaba retry. Si tampoco cambiaba `scenePhase`, la captura quedaba pausada indefinidamente.
+- La corrección local finaliza una sola vez el segmento válido, intenta recuperar al finalizar cualquier interrupción mientras siga vigente la intención explícita de grabar y mantiene un único retry cancelable cada cinco segundos para el caso en que Apple omita la notificación de fin o la sesión aún no pueda activarse.
+- Se solicita a iOS la preferencia `setPrefersNoInterruptionsFromSystemAlerts(true)` durante grabación para evitar algunas alertas interrumpibles. No evita Siri, llamadas aceptadas ni decisiones del sistema; en esos casos conserva lo grabado y reanuda en cuanto `AVAudioSession` y `AVAudioEngine` vuelven a estar disponibles.
+- La revisión de metadata oficial confirma que `interruptionNotification` sigue vigente en iOS, `shouldResume` se depreca solo desde iOS 27 y su sustituta `resumptionRecommendationNotification` nace en iOS 27 beta. Con deployment iOS 16 y Xcode/SDK 26.6 no corresponde ni compila observar todavía esa API; queda registrada una migración dual condicionada para cuando exista SDK iOS 27 estable. `setPrefersNoInterruptionsFromSystemAlerts` existe desde iOS 14.5 y es compatible con esta candidata.
+- Stop cancela todo retry y las señales tardías no pueden iniciar un segundo backend. Las pruebas deterministas cubren fin con y sin recomendación, ausencia de fin, fallos repetidos, foreground, Stop, interrupciones múltiples, finalización única y backend ya activo.
+- La corrección está preparada como iOS `1.0.4` build `1`; App Store Connect confirmó que esa combinación no se ha usado. Aún no hay commit, push, Actions, build ni TestFlight de 1.0.4. Pendientes Xcode/XCTest en macOS y QA físico dirigido en ambos modos. Android, `artifact/`, AdMob, UI, localizaciones y los dos scripts locales previos permanecen intactos.
+
 ## TestFlight interno iOS 1.0.3 (1) — rotación continua real — 2026-08-30
 
 - La prueba física del propietario demostró que 1.0.2 (1) seguía deteniéndose exactamente en el primer corte de cinco minutos. La máquina de estados reintentaba, pero el modo `Todo` todavía llamaba a `AVAudioRecorder.record(forDuration:)`, API que finaliza la captura al expirar; el segundo grabador solo podía abrirse después y dejaba una ventana real sin backend.
@@ -10,7 +19,11 @@
 - El run firmado `33285208649` superó la puerta GDPR/ATT, archive, firma, versión/privacidad, exportación, validación Apple y upload. Apple procesó la build `702f442b-7c5e-4977-a3b4-6f08aa99cbde` como `VALID`, `INTERNAL_ONLY`, `IN_BETA_TESTING`, cifrado no exento `false` y testing externo `NOT_APPLICABLE`. El grupo privado `Testers` tiene acceso automático y dos testers.
 - App Store Connect contiene la versión 1.0.3 en `PREPARE_FOR_SUBMISSION`, release manual. Los runs protegidos `33285857956` y `33286090956` verificaron sus siete localizaciones (`ca`, `de-DE`, `en-US`, `es-ES`, `fr-FR`, `it`, `pt-PT`) con `https://krazel.github.io/audio-recorder/` como Marketing URL y `selectedBuildId=null`: esta build interna no está seleccionada para App Review.
 - AdMob de producción continúa bloqueado: la cuenta/app/IDs reales no están activos y verificables y AdMob no reconoce todavía Developer Website. `app-ads.txt` y la Marketing URL responden HTTP 200, pero eso no demuestra la verificación dentro de AdMob. La build 1 usa IDs demo oficiales y no es candidata de producción.
-- `docs/IOS_1.0.3_APP_REVIEW_PREFLIGHT.md` deja preparado el preflight y sus bloqueos. No hubo TestFlight externo, App Review ni publicación. El siguiente paso obligatorio es QA físico del primer corte y rotaciones sostenidas; después, verificar AdMob y producir 1.0.3 (2) con IDs reales antes de cualquier envío. Android, `artifact/` y los dos scripts locales previos permanecen intactos.
+- `docs/IOS_1.0.3_APP_REVIEW_PREFLIGHT.md` deja constancia del preflight histórico. No hubo TestFlight externo, App Review ni publicación. La reanudación tras Siri requiere la nueva candidata 1.0.4 (1) interna con IDs demo y QA físico. Si el código no cambia después de ese QA, la candidata de producción deberá ser 1.0.4 (2), con AdMob real verificado y un preflight repetido contra ese binario exacto. Android, `artifact/` y los dos scripts locales previos permanecen intactos.
+
+## Ideas futuras registradas
+
+- Temporizador opcional de grabación: permitir que el usuario elija una duración antes de empezar y que la app detenga y guarde automáticamente la grabación al cumplirse. No está autorizado ni planificado para la candidata 1.0.4; deberá diseñarse y probarse después de cerrar la estabilidad y la publicación actuales.
 
 ## TestFlight interno iOS 1.0.2 (1) — estabilidad de grabación — 2026-08-30
 
