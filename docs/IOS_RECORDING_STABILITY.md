@@ -189,6 +189,15 @@ corrección.
 
 ## Matriz de QA físico pendiente
 
+Evidencia automatizada de la candidata 1.0.4 (1): el commit `ff46277` pasó
+XCTest y Release device en `33317813454`; el run `33318104211` archivó, firmó,
+validó y subió la IPA interna con IDs demo. Apple procesó el recurso
+`47d060ec-9a1d-44ed-be8f-5d06c26a6a80` como `VALID`, `INTERNAL_ONLY` e
+`IN_BETA_TESTING`; `33318596898` confirmó dos testers privados y ninguna
+selección por una versión App Store. Esto no sustituye las pruebas físicas:
+Siri, llamadas, alarmas, rutas y disponibilidad real del micrófono no se pueden
+reproducir fielmente mediante XCTest.
+
 | Caso | Dispositivo/condición | Resultado esperado |
 |---|---|---|
 | Rotación continua | iPhone iOS 16 y iPhone iOS actual; 5 cortes mínimos | Cinco archivos válidos y la sesión continúa |

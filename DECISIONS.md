@@ -407,8 +407,16 @@ La recomendación `shouldResume` deja de ser una puerta para VoiceRecorder: Appl
 
 ### F-041 - Corrección local de reanudación tras Siri preparada - 2026-08-30
 
-La fuente local corrige el estado detenido observado en TestFlight 1.0.3 (1): al comenzar conserva/finaliza el fragmento válido y arma recuperación cancelable; al finalizar intenta recuperar incluso sin `shouldResume`; los fallos de `setActive` o engine permanecen en retry hasta éxito o Stop. XCTest determinista cubre fin favorable/no favorable, fin omitido, fallos repetidos, foreground, Stop, interrupciones múltiples, finalización única y no duplicación. La candidata se versionó como iOS 1.0.4 (1), combinación confirmada como no usada; todavía no hubo commit/push/Actions/build/TestFlight/App Review. Android, `artifact/`, AdMob, interfaz, localizaciones y cambios ajenos permanecen intactos.
+La fuente corrige el estado detenido observado en TestFlight 1.0.3 (1): al comenzar conserva/finaliza el fragmento válido y arma recuperación cancelable; al finalizar intenta recuperar incluso sin `shouldResume`; los fallos de `setActive` o engine permanecen en retry hasta éxito o Stop. XCTest determinista cubre fin favorable/no favorable, fin omitido, fallos repetidos, foreground, Stop, interrupciones múltiples, finalización única y no duplicación. La candidata se versionó como iOS 1.0.4 (1). Android, `artifact/`, AdMob, interfaz, localizaciones y cambios ajenos permanecieron intactos.
 
 ### D-047 - Compatibilidad de notificaciones de audio iOS 16–27 - 2026-08-30
 
 La metadata oficial actual de Apple confirma que `interruptionNotification` no está deprecada en iOS, que `InterruptionOptions.shouldResume` se depreca a partir de iOS 27.0 y que `resumptionRecommendationNotification` se introduce en iOS 27.0 como API beta. La candidata, compilada con Xcode/SDK 26.6 y deployment iOS 16, debe conservar la notificación clásica: el SDK actual no conoce la sustituta. Cuando el proyecto adopte un SDK estable de iOS 27, añadirá la nueva señal solo bajo disponibilidad iOS 27+, mantendrá el fallback clásico para iOS 16–26 y dejará que `RecordingContinuityPolicy` deduplique eventos. `setPrefersNoInterruptionsFromSystemAlerts` está disponible desde iOS 14.5 y Apple la recomienda para sesiones de grabación audiovisual, por lo que es compatible con `playAndRecord` y el mínimo iOS 16.
+
+### F-042 - iOS 1.0.4 (1) disponible para QA interno - 2026-08-30
+
+El commit `ff46277` está en `main`. `33317813454` superó todos los XCTest de continuidad y Release device; `33318104211` archivó, firmó, validó y subió el IPA con IDs demo. Apple procesó la build `47d060ec-9a1d-44ed-be8f-5d06c26a6a80` como `VALID`, `INTERNAL_ONLY` e `IN_BETA_TESTING`, con cifrado no exento `false` y testing externo `NOT_APPLICABLE`. `33318596898` confirmó acceso automático del grupo privado `Testers`, dos testers y ninguna versión App Store seleccionando el binario. No se creó ni modificó train de App Store, ni hubo App Review o publicación.
+
+### D-048 - 1.0.4 (1) es solo una prueba interna de recuperación - 2026-08-30
+
+La build incorpora IDs demo oficiales y no puede promoverse a TestFlight externo ni App Review. Primero debe pasar QA físico de Siri, llamadas, alarma, Bluetooth, background, Stop durante interrupción y rotación de segmentos. Si el código queda sin cambios, la futura candidata de producción será 1.0.4 (2), con AdMob real activo/verificable y preflight repetido contra ese binario exacto.
