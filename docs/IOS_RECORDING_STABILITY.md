@@ -1,7 +1,45 @@
-# VoiceRecorder iOS — estabilidad de grabación 1.0.5
+# VoiceRecorder iOS — estabilidad de grabación y diagnóstico 1.0.6
 
 Fecha de auditoría: 2026-08-30
 Alcance: `native-ios/`; Android, distribución y servicios externos fuera de alcance.
+
+## Fallo físico confirmado en 1.0.5 (1): evidencia insuficiente del dispositivo
+
+El propietario repitió la prueba en iPhone: Siri detiene la captura y cerrarlo
+no la reactiva. Por tanto 1.0.5 (1) queda fallida. Los tests demostraron la
+máquina de estados y el orden de closures inyectados, pero no pueden probar qué
+notificaciones, errores ni formatos entrega AVFoundation en el dispositivo. Aún
+no se puede afirmar si falta el `ended`, si el `began` llegó retrasado por una
+suspensión, si falla `setActive`, si el input queda a cero, si `engine.start()`
+termina sin producir buffers o si una señal cancela el retry.
+
+## Instrumentación diagnóstica local 1.0.6 (1)
+
+La candidata local amplía el rastro acotado y privado con:
+
+- tipo y options de la interrupción, `AVAudioSessionInterruptionReasonKey` y
+  `AVAudioSessionInterruptionWasSuspendedKey`;
+- background y active, configuration change y generación del engine;
+- intención, `engine.isRunning`, último sample rate/canales observado,
+  estado interrumpido/recovering y existencia de retry;
+- intento y resultado de `activateSession`, rebuild, apertura del segmento e
+  instalación del tap/`engine.start()`, con domain/code numérico del error;
+- programación, deduplicación, disparo y cancelación de retries;
+- primer callback de buffer tras recuperar y si ya había escritura en esa
+  primera vuelta.
+
+`RecordingDiagnostics` conserva como máximo 200 eventos. La exportación crea un
+JSON con esquema 1, fecha, versión, build e iOS. No contiene audio,
+transcripciones, nombres o rutas, identificadores de hardware, cuentas ni datos
+introducidos por el usuario, y no tiene transporte. La acción provisional
+`INTERNAL QA > Exportar diagnóstico de grabación` vive en Ajustes y solo se
+muestra cuando el binario usa el App ID demo oficial de Google; una build con
+AdMob real no puede mostrarla.
+
+Procedimiento de evidencia: comenzar a grabar, esperar unos segundos, abrir
+Siri, mantenerlo activo, cerrarlo, esperar al menos 15 segundos y exportar el
+JSON inmediatamente. Repetir una vez con la app visible y otra bloqueada. No
+reiniciar ni reinstalar entre el fallo y la exportación.
 
 ## Causas demostradas en la fuente 1.0.1
 

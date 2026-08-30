@@ -1,6 +1,20 @@
 import Foundation
 import OSLog
 
+enum InternalRecordingDiagnosticsAvailability {
+    private static let googleDemoAppID = "ca-app-pub-3940256099942544~1458002511"
+
+    static func isEnabled(adMobAppID: String?) -> Bool {
+        adMobAppID == googleDemoAppID
+    }
+
+    static var isEnabledForCurrentBuild: Bool {
+        isEnabled(
+            adMobAppID: Bundle.main.object(forInfoDictionaryKey: "GADApplicationIdentifier") as? String
+        )
+    }
+}
+
 enum RecordingDiagnosticCode: String, Codable {
     case startRequested
     case started
@@ -24,10 +38,31 @@ enum RecordingDiagnosticCode: String, Codable {
     case enteredForeground
     case mediaServicesLost
     case mediaServicesReset
+    case recoveryAttemptStarted
+    case audioSessionActivationAttempted
+    case audioSessionActivationSucceeded
+    case audioSessionActivationFailed
+    case recoverySegmentOpened
+    case recoveryEngineStartAttempted
+    case recoveryEngineStarted
+    case recoveryFirstBufferObserved
     case recoveryScheduled
+    case recoveryRetryDeduplicated
+    case recoveryRetryFired
+    case recoveryRetryCancelled
     case recoverySucceeded
     case recoveryFailed
     case inputUnavailable
+}
+
+struct RecordingDiagnosticRuntimeState: Codable, Equatable {
+    let recordingIntent: Bool
+    let engineRunning: Bool
+    let inputSampleRate: Double
+    let inputChannelCount: Int
+    let interrupted: Bool
+    let recovering: Bool
+    let retryScheduled: Bool
 }
 
 struct RecordingDiagnosticEntry: Codable, Equatable {
@@ -37,8 +72,23 @@ struct RecordingDiagnosticEntry: Codable, Equatable {
     let phase: String
     let mode: String?
     let detailCode: Int?
+    let interruptionType: Int?
+    let interruptionOptions: Int?
+    let interruptionReason: Int?
+    let interruptionWasSuspended: Bool?
+    let recoveryStage: String?
     let errorDomain: String?
     let errorCode: Int?
+    let runtime: RecordingDiagnosticRuntimeState
+}
+
+struct RecordingDiagnosticExportDocument: Codable, Equatable {
+    let schemaVersion: Int
+    let generatedAt: Date
+    let appVersion: String
+    let buildNumber: String
+    let operatingSystemVersion: String
+    let entries: [RecordingDiagnosticEntry]
 }
 
 enum RecordingDiagnosticBuffer {
@@ -76,7 +126,13 @@ final class RecordingDiagnostics {
         phase: RecordingContinuityPhase,
         mode: RecordingMode?,
         detailCode: Int? = nil,
-        error: Error? = nil
+        interruptionType: Int? = nil,
+        interruptionOptions: Int? = nil,
+        interruptionReason: Int? = nil,
+        interruptionWasSuspended: Bool? = nil,
+        recoveryStage: RecordingRecoveryStage? = nil,
+        error: Error? = nil,
+        runtime: RecordingDiagnosticRuntimeState
     ) {
         let nsError = error.map { $0 as NSError }
         let entry = RecordingDiagnosticEntry(
@@ -86,8 +142,14 @@ final class RecordingDiagnostics {
             phase: String(describing: phase),
             mode: mode?.rawValue,
             detailCode: detailCode,
+            interruptionType: interruptionType,
+            interruptionOptions: interruptionOptions,
+            interruptionReason: interruptionReason,
+            interruptionWasSuspended: interruptionWasSuspended,
+            recoveryStage: recoveryStage?.rawValue,
             errorDomain: nsError?.domain,
-            errorCode: nsError?.code
+            errorCode: nsError?.code,
+            runtime: runtime
         )
 
         logger.info("event=\(code.rawValue, privacy: .public) phase=\(entry.phase, privacy: .public) detail=\(detailCode ?? -1, privacy: .public) error=\(nsError?.code ?? 0, privacy: .public)")
@@ -110,6 +172,36 @@ final class RecordingDiagnostics {
         } catch {
             logger.error("Unable to persist local recording diagnostics; error=\((error as NSError).code, privacy: .public)")
         }
+    }
+
+    func makeExportFile(generatedAt: Date = Date()) throws -> URL {
+        let entries: [RecordingDiagnosticEntry]
+        if let cachedEntries {
+            entries = cachedEntries
+        } else if let logURL {
+            entries = loadEntries(from: logURL)
+        } else {
+            entries = []
+        }
+        let document = RecordingDiagnosticExportDocument(
+            schemaVersion: 1,
+            generatedAt: generatedAt,
+            appVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown",
+            buildNumber: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown",
+            operatingSystemVersion: ProcessInfo.processInfo.operatingSystemVersionString,
+            entries: Array(entries.suffix(maximumEntries))
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        let data = try encoder.encode(document)
+        let exportURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("voice-recorder-recording-diagnostics.json")
+        try data.write(
+            to: exportURL,
+            options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication]
+        )
+        return exportURL
     }
 
     private func loadEntries(from url: URL) -> [RecordingDiagnosticEntry] {

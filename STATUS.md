@@ -1,5 +1,15 @@
 # VoiceRecorder / AudioRecorder — estado actual
 
+## Candidata diagnóstica local iOS 1.0.6 (1) — Siri sigue sin reanudar — 2026-08-31
+
+- El propietario probó 1.0.5 (1) en iPhone y confirmó el mismo resultado físico: Siri interrumpe la grabación y, al cerrarlo, la captura no vuelve. 1.0.5 queda fallida y no puede promoverse ni considerarse evidencia de resolución.
+- El código y los XCTest anteriores no permiten demostrar si falta `interruption ended`, si el `began` fue entregado tarde por suspensión, si `setActive` falla, si el formato de entrada sigue en cero, si el engine arranca sin buffers o si un retry se cancela. No se aplica otra corrección especulativa sin esa evidencia.
+- La fuente local se versiona como iOS 1.0.6 (1) y amplía el diagnóstico acotado a 200 eventos. Registra `began/ended`, options, `AVAudioSessionInterruptionReasonKey`, `AVAudioSessionInterruptionWasSuspendedKey`, background/active, configuration change, intent, engine running, sample rate/canales, retries/cancelaciones, error domain/code y resultado por etapa `activateSession/rebuild/open/start`, incluido el primer callback de buffer tras recuperar.
+- Ajustes muestra una sección provisional `INTERNAL QA` con `Exportar diagnóstico de grabación` solo cuando el binario contiene el App ID demo oficial de Google. Genera y comparte un JSON explícito con versión/build e iOS. No incluye audio, transcripciones, nombres/rutas de archivos, hardware identificable, cuentas ni red; no se transmite automáticamente.
+- Pruebas deterministas amplían el esquema minimizado, el documento exportable, el límite del buffer, los datos de interrupción/estado y la compuerta que oculta la acción en builds con AdMob real.
+- Cambios exclusivamente locales: no hay commit, push, Actions, build, TestFlight, App Review ni publicación. Android, `artifact/`, AdMob, localizaciones y los dos scripts previos se conservan intactos.
+- Próximo paso, solo tras autorización: compilar/subir 1.0.6 (1) con IDs demo a TestFlight interno. En iPhone: iniciar grabación, abrir Siri, cerrarlo, esperar al menos 15 segundos y exportar inmediatamente el JSON desde Ajustes; repetir con la app bloqueada. Ese archivo permitirá localizar el primer punto real que no progresa.
+
 ## Candidata interna iOS 1.0.5 (1): reconstrucción real tras Siri — 2026-08-30
 
 - El propietario probó 1.0.4 (1) en iPhone: al abrir Siri la captura se detiene y no vuelve. La build queda considerada fallida y no puede promoverse ni reutilizarse como evidencia de estabilidad.
@@ -14,7 +24,7 @@
 - El run macOS `33326890651` terminó correctamente: prohibición de `AVAudioRecorder`/`record(forDuration:)`, 41 XCTest —incluidas generaciones/stale notification, invalidación durante recovery, fallos de `setActive`, formato cero, `engine.start`, finalización única y no duplicación— y compilación Release para dispositivo.
 - El run firmado `33327128802` superó la puerta GDPR/ATT, archive y candidato firmados, exportación/verificación del IPA, validación de Apple y upload con `ad_configuration=test`. Apple procesó iOS 1.0.5 (1), recurso `549fc26d-3786-446d-a379-163485cbe57c`, como `VALID`, `INTERNAL_ONLY`, `IN_BETA_TESTING`, cifrado no exento `false` y testing externo `NOT_APPLICABLE`.
 - El run `33327511155` confirmó disponibilidad automática en el grupo privado `Testers`, exactamente dos testers, acceso a todas las builds y `selectedByAppStoreVersions=[]`. No se creó ni modificó train de App Store, no hubo TestFlight externo, App Review ni publicación.
-- 1.0.5 (1) usa IDs demo oficiales y existe solo para QA interno; no puede promoverse. La compilación demuestra estructura y recuperación determinista, pero Siri, llamadas y rutas siguen requiriendo prueba física antes de afirmar que la incidencia está resuelta.
+- 1.0.5 (1) usa IDs demo oficiales y existe solo para QA interno; no puede promoverse. La prueba física posterior falló de nuevo y queda sustituida como siguiente candidata de diagnóstico por 1.0.6 (1).
 
 ## TestFlight interno iOS 1.0.4 (1) — fallido en reanudación física — 2026-08-30
 

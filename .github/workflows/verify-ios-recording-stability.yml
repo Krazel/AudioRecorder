@@ -68,7 +68,7 @@ jobs:
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
             -derivedDataPath build/recording-stability-derived \
-            MARKETING_VERSION=1.0.5 \
+            MARKETING_VERSION=1.0.6 \
             CURRENT_PROJECT_VERSION=1 \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
@@ -78,7 +78,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: AudioRecorder-1.0.5-1-${{ github.sha }}-Recording-Stability-Tests
+          name: AudioRecorder-1.0.6-1-${{ github.sha }}-Recording-Stability-Tests
           path: build/recording-stability-tests.xcresult
           if-no-files-found: warn
           retention-days: 7

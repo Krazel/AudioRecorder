@@ -436,3 +436,11 @@ La autorización vigente permite commit, CI macOS y TestFlight interno. Como la 
 ### F-044 - iOS 1.0.5 (1) disponible para QA interno - 2026-08-30
 
 La reconstrucción del graph quedó en `7072aee` y la deduplicación de recovery en `b162787`. El run `33326449264` falló antes de distribución y demostró una segunda arista de recuperación; la fase `retryScheduled` la cerró. `33326890651` pasó los 41 XCTest y Release device. `33327128802` archivó, firmó, validó y subió con IDs demo. Apple procesó el recurso `549fc26d-3786-446d-a379-163485cbe57c` como `VALID`, `INTERNAL_ONLY` e `IN_BETA_TESTING`, con cifrado no exento `false` y estado externo `NOT_APPLICABLE`. `33327511155` confirmó asignación automática al grupo privado `Testers`, dos testers, acceso a todas las builds y ninguna versión App Store seleccionándola. No hubo TestFlight externo, App Review ni publicación; el resultado físico de Siri sigue pendiente.
+
+### F-045 - iOS 1.0.5 (1) también falla físicamente tras Siri - 2026-08-31
+
+El propietario confirmó que 1.0.5 (1) no reanuda al cerrar Siri. Los tests de policy, recovery driver y compilación no distinguen qué señales y estado de AVFoundation entrega el dispositivo real. La build queda fallida y no puede promoverse. No se atribuye una nueva causa sin evidencia del iPhone.
+
+### D-051 - La siguiente build es diagnóstica, minimizada e interna - 2026-08-31
+
+La siguiente combinación será iOS 1.0.6 (1). Antes de otra corrección, debe capturar un rastro local acotado que distinga notificación/tipo/options/reason/suspended, lifecycle, configuración del engine, intención, estado de engine/formato, cada etapa de recuperación, retries/cancelaciones y primer buffer posterior. La exportación es una acción provisional dentro de Ajustes, visible únicamente cuando el binario usa el App ID demo oficial; no existe en una configuración AdMob real. El JSON incluye versión/build/iOS pero prohíbe audio, contenido, nombres/rutas, identificadores de hardware, cuentas y transporte. La fuente permanece local hasta una autorización posterior de commit/build/TestFlight.

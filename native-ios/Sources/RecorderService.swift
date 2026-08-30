@@ -41,8 +41,12 @@ final class RecorderService: ObservableObject {
     private var segmentRotationRetryTask: Task<Void, Never>?
     private var continuityPolicy = RecordingContinuityPolicy()
     private var recoveryDriver = RecordingRecoveryDriver()
+    private var currentAudioEngineGeneration = 0
+    private var lastObservedInputSampleRate: Double = 0
+    private var lastObservedInputChannelCount = 0
     private var recoveryInvalidationGate = RecordingRecoveryInvalidationGate()
     private var recoveryMustAbandonEngine = false
+    private var awaitingFirstRecoveredBuffer = false
     private let diagnostics = RecordingDiagnostics()
     private var diagnosticSessionID = UUID()
     private let persistedRecordingIntentKey = "RecorderService.persistedRecordingIntent"
@@ -54,6 +58,10 @@ final class RecorderService: ObservableObject {
     var activeRecordingMode: RecordingMode? {
         guard isRecording else { return nil }
         return currentSettings?.mode
+    }
+
+    func makeRecordingDiagnosticsExport() throws -> URL {
+        try diagnostics.makeExportFile()
     }
 
     func start(
@@ -101,6 +109,7 @@ final class RecorderService: ObservableObject {
     private func stopRecordingSession(clearIntent: Bool, deactivateSession: Bool) {
         isInterrupted = false
         isPerformingRecovery = false
+        awaitingFirstRecoveredBuffer = false
         waitingForMediaServicesReset = false
         cancelRecoveryRetry()
         cancelSegmentRotationRetry()
@@ -246,6 +255,7 @@ final class RecorderService: ObservableObject {
 
         let input = engine.inputNode
         let inputFormat = input.outputFormat(forBus: 0)
+        captureDiagnosticInputFormat(inputFormat)
         guard inputFormat.sampleRate > 0, inputFormat.channelCount > 0 else {
             recordDiagnostic(.inputUnavailable)
             throw RecorderError.audioInputUnavailable
@@ -289,6 +299,7 @@ final class RecorderService: ObservableObject {
         guard let settings = activeSettings else { throw RecorderError.missingSettings }
         let url = try RecordingStorage.nextSegmentURL(mode: settings.mode, quality: settings.quality)
         let inputFormat = engine.inputNode.outputFormat(forBus: 0)
+        captureDiagnosticInputFormat(inputFormat)
         guard inputFormat.sampleRate > 0, inputFormat.channelCount > 0 else {
             throw RecorderError.audioInputUnavailable
         }
@@ -372,6 +383,13 @@ final class RecorderService: ObservableObject {
 
     private func applySoundProcessorProgress(_ progress: SoundActivatedAudioProgress) {
         guard progress.generation == soundProcessorGeneration else { return }
+        if awaitingFirstRecoveredBuffer {
+            awaitingFirstRecoveredBuffer = false
+            recordDiagnostic(
+                .recoveryFirstBufferObserved,
+                detailCode: progress.didWrite ? 1 : 0
+            )
+        }
         lastBackendActivityAt = Date()
         applySoundProcessorState(progress)
         if let errorDescription = progress.errorDescription {
@@ -575,12 +593,12 @@ final class RecorderService: ObservableObject {
 
     func applicationDidBecomeActive() async {
         guard !waitingForMediaServicesReset else { return }
-        let action = continuityPolicy.handle(
-            .enteredForeground(backendActive: hasActiveRecordingBackend)
-        )
         if isRecording {
             recordDiagnostic(.enteredForeground)
         }
+        let action = continuityPolicy.handle(
+            .enteredForeground(backendActive: hasActiveRecordingBackend)
+        )
         if action == .recover {
             await recoverRecordingBackend(
                 messageFormat: L("No se pudo reactivar la grabacion: %@")
@@ -620,20 +638,39 @@ final class RecorderService: ObservableObject {
 
         switch type {
         case .began:
-            pauseForAudioInterruption()
+            pauseForAudioInterruption(
+                rawType: Int(rawType),
+                rawReason: (notification.userInfo?[AVAudioSessionInterruptionReasonKey] as? NSNumber)?.intValue,
+                wasSuspended: (notification.userInfo?[AVAudioSessionInterruptionWasSuspendedKey] as? NSNumber)?.boolValue
+            )
         case .ended:
             let rawOptions = notification.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
             let shouldResume = AVAudioSession.InterruptionOptions(rawValue: rawOptions).contains(.shouldResume)
             Task {
-                await resumeAfterAudioInterruption(shouldResume: shouldResume)
+                await resumeAfterAudioInterruption(
+                    shouldResume: shouldResume,
+                    rawOptions: Int(rawOptions),
+                    rawReason: (notification.userInfo?[AVAudioSessionInterruptionReasonKey] as? NSNumber)?.intValue,
+                    wasSuspended: (notification.userInfo?[AVAudioSessionInterruptionWasSuspendedKey] as? NSNumber)?.boolValue
+                )
             }
         @unknown default:
             break
         }
     }
 
-    private func pauseForAudioInterruption() {
+    private func pauseForAudioInterruption(
+        rawType: Int,
+        rawReason: Int?,
+        wasSuspended: Bool?
+    ) {
         guard isRecording else { return }
+        recordDiagnostic(
+            .interruptionBegan,
+            interruptionType: rawType,
+            interruptionReason: rawReason,
+            interruptionWasSuspended: wasSuspended
+        )
         guard continuityPolicy.handle(.interruptionBegan) == .pauseAndFinalize else { return }
         isInterrupted = true
         isCapturingAudio = false
@@ -644,21 +681,37 @@ final class RecorderService: ObservableObject {
         abandonAudioObjectsPreservingSegment()
         let pausedMessage = L("Grabacion pausada por otra app. Se reanudara sola.")
         lastError = pausedMessage
-        recordDiagnostic(.interruptionBegan)
         // Apple doesn't guarantee a matching interruption-ended notification.
         // Keep a single, cancellable retry alive so a recording with explicit
         // user intent can recover even when Siri or suspension omits that edge.
         scheduleRecoveryRetry(message: pausedMessage)
     }
 
-    private func resumeAfterAudioInterruption(shouldResume: Bool) async {
+    private func resumeAfterAudioInterruption(
+        shouldResume: Bool,
+        rawOptions: Int,
+        rawReason: Int?,
+        wasSuspended: Bool?
+    ) async {
         guard isRecording, settingsStore != nil else { return }
-        let action = continuityPolicy.handle(.interruptionEnded(shouldResume: shouldResume))
         if shouldResume {
-            recordDiagnostic(.interruptionEndedResume)
+            recordDiagnostic(
+                .interruptionEndedResume,
+                interruptionType: Int(AVAudioSession.InterruptionType.ended.rawValue),
+                interruptionOptions: rawOptions,
+                interruptionReason: rawReason,
+                interruptionWasSuspended: wasSuspended
+            )
         } else {
-            recordDiagnostic(.interruptionEndedNoResume)
+            recordDiagnostic(
+                .interruptionEndedNoResume,
+                interruptionType: Int(AVAudioSession.InterruptionType.ended.rawValue),
+                interruptionOptions: rawOptions,
+                interruptionReason: rawReason,
+                interruptionWasSuspended: wasSuspended
+            )
         }
+        let action = continuityPolicy.handle(.interruptionEnded(shouldResume: shouldResume))
         guard action == .recover else { return }
         // `shouldResume` is a playback-oriented recommendation. This app has
         // an explicit, still-active recording intent, so it attempts recovery
@@ -680,7 +733,10 @@ final class RecorderService: ObservableObject {
             return
         }
 
-        recordDiagnostic(.audioEngineConfigurationChanged)
+        recordDiagnostic(
+            .audioEngineConfigurationChanged,
+            detailCode: currentAudioEngineGeneration
+        )
         invalidateCurrentAudioEngine()
         guard !waitingForMediaServicesReset else { return }
         if isInterrupted {
@@ -751,6 +807,8 @@ final class RecorderService: ObservableObject {
     private func recoverRecordingBackend(messageFormat: String) async {
         guard isRecording, !isPerformingRecovery else { return }
         isPerformingRecovery = true
+        awaitingFirstRecoveredBuffer = false
+        recordDiagnostic(.recoveryAttemptStarted)
         cancelSegmentRotationRetry()
         defer { isPerformingRecovery = false }
 
@@ -767,16 +825,51 @@ final class RecorderService: ObservableObject {
         do {
             let generation = try driver.attempt(using: RecordingRecoveryHardwareSteps(
                 activateSession: { [unowned self] in
-                    try self.configureAudioSession()
+                    self.recordDiagnostic(
+                        .audioSessionActivationAttempted,
+                        recoveryStage: .activateSession
+                    )
+                    do {
+                        try self.configureAudioSession()
+                        self.recordDiagnostic(
+                            .audioSessionActivationSucceeded,
+                            recoveryStage: .activateSession
+                        )
+                    } catch {
+                        self.recordDiagnostic(
+                            .audioSessionActivationFailed,
+                            recoveryStage: .activateSession,
+                            error: error
+                        )
+                        throw error
+                    }
                 },
                 rebuildAudioEngine: { [unowned self] generation in
                     self.replaceAudioEngine(generation: generation)
                 },
                 validateInputAndOpenSegment: { [unowned self] in
                     try self.startNewSegment()
+                    self.recordDiagnostic(
+                        .recoverySegmentOpened,
+                        recoveryStage: .validateInputAndOpenSegment
+                    )
                 },
                 installTapAndStartEngine: { [unowned self] in
-                    try self.startRecordingBackend()
+                    self.awaitingFirstRecoveredBuffer = true
+                    self.recordDiagnostic(
+                        .recoveryEngineStartAttempted,
+                        recoveryStage: .installTapAndStartEngine
+                    )
+                    do {
+                        try self.startRecordingBackend()
+                        self.recordDiagnostic(
+                            .recoveryEngineStarted,
+                            recoveryStage: .installTapAndStartEngine
+                        )
+                    } catch {
+                        self.awaitingFirstRecoveredBuffer = false
+                        throw error
+                    }
                 }
             ))
             recoveryDriver = driver
@@ -791,6 +884,7 @@ final class RecorderService: ObservableObject {
             recordDiagnostic(.recoverySucceeded, detailCode: generation)
         } catch {
             recoveryDriver = driver
+            awaitingFirstRecoveredBuffer = false
             isCapturingAudio = false
             invalidateCurrentAudioEngine()
             _ = continuityPolicy.handle(.recoveryFailed)
@@ -801,6 +895,7 @@ final class RecorderService: ObservableObject {
             recordDiagnostic(
                 .recoveryFailed,
                 detailCode: attemptError?.generation,
+                recoveryStage: attemptError?.stage,
                 error: reportedError
             )
             scheduleRecoveryRetry(
@@ -825,6 +920,8 @@ final class RecorderService: ObservableObject {
         retiredEngine.stop()
         audioTapInstalled = false
         engine = AVAudioEngine()
+        lastObservedInputSampleRate = 0
+        lastObservedInputChannelCount = 0
 
         let shouldApplyFinalProgress = soundProcessorGeneration != nil
         soundProcessorGeneration = nil
@@ -843,9 +940,16 @@ final class RecorderService: ObservableObject {
         // release keeps this path safe if recovery was entered directly.
         engine.stop()
         engine = AVAudioEngine()
+        currentAudioEngineGeneration = generation
+        lastObservedInputSampleRate = 0
+        lastObservedInputChannelCount = 0
         audioTapInstalled = false
         lastBackendActivityAt = nil
-        recordDiagnostic(.audioEngineRebuilt, detailCode: generation)
+        recordDiagnostic(
+            .audioEngineRebuilt,
+            detailCode: generation,
+            recoveryStage: .rebuildAudioEngine
+        )
     }
 
     private func invalidateCurrentAudioEngine() {
@@ -861,7 +965,10 @@ final class RecorderService: ObservableObject {
         lastError = message
         recordDiagnostic(.recoveryScheduled, error: error)
 
-        guard recoveryRetryTask == nil else { return }
+        guard recoveryRetryTask == nil else {
+            recordDiagnostic(.recoveryRetryDeduplicated)
+            return
+        }
         let token = UUID()
         recoveryRetryToken = token
         recoveryRetryTask = Task { [weak self] in
@@ -874,6 +981,7 @@ final class RecorderService: ObservableObject {
         guard recoveryRetryToken == token else { return }
         recoveryRetryTask = nil
         recoveryRetryToken = nil
+        recordDiagnostic(.recoveryRetryFired)
         guard isRecording else { return }
         await recoverActiveRecordingIfNeeded()
 
@@ -883,9 +991,13 @@ final class RecorderService: ObservableObject {
     }
 
     private func cancelRecoveryRetry() {
+        let didCancel = recoveryRetryTask != nil || recoveryRetryToken != nil
         recoveryRetryTask?.cancel()
         recoveryRetryTask = nil
         recoveryRetryToken = nil
+        if didCancel {
+            recordDiagnostic(.recoveryRetryCancelled)
+        }
     }
 
     private func scheduleSegmentRotationRetry(message: String, error: Error?) {
@@ -921,6 +1033,11 @@ final class RecorderService: ObservableObject {
     private func recordDiagnostic(
         _ code: RecordingDiagnosticCode,
         detailCode: Int? = nil,
+        interruptionType: Int? = nil,
+        interruptionOptions: Int? = nil,
+        interruptionReason: Int? = nil,
+        interruptionWasSuspended: Bool? = nil,
+        recoveryStage: RecordingRecoveryStage? = nil,
         error: Error? = nil
     ) {
         diagnostics.record(
@@ -929,8 +1046,31 @@ final class RecorderService: ObservableObject {
             phase: continuityPolicy.phase,
             mode: currentSettings?.mode,
             detailCode: detailCode,
-            error: error
+            interruptionType: interruptionType,
+            interruptionOptions: interruptionOptions,
+            interruptionReason: interruptionReason,
+            interruptionWasSuspended: interruptionWasSuspended,
+            recoveryStage: recoveryStage,
+            error: error,
+            runtime: diagnosticRuntimeState
         )
+    }
+
+    private var diagnosticRuntimeState: RecordingDiagnosticRuntimeState {
+        return RecordingDiagnosticRuntimeState(
+            recordingIntent: continuityPolicy.hasRecordingIntent,
+            engineRunning: engine.isRunning,
+            inputSampleRate: lastObservedInputSampleRate,
+            inputChannelCount: lastObservedInputChannelCount,
+            interrupted: isInterrupted,
+            recovering: isPerformingRecovery,
+            retryScheduled: recoveryRetryTask != nil || recoveryRetryToken != nil
+        )
+    }
+
+    private func captureDiagnosticInputFormat(_ format: AVAudioFormat) {
+        lastObservedInputSampleRate = format.sampleRate
+        lastObservedInputChannelCount = Int(format.channelCount)
     }
 
     private func emergencyStopAndSave() {
