@@ -1,0 +1,47 @@
+name: Finalize iOS 1.0.3 Internal TestFlight
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_internal_only_and_metadata:
+        description: Confirm private internal assignment and seven Marketing URL updates; never submits App Review
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  finalize:
+    if: ${{ github.actor == github.repository_owner && github.ref == 'refs/heads/main' && !github.event.repository.private && inputs.confirm_internal_only_and_metadata }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: app-store-production
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_PRIVATE_KEY_BASE64: ${{ secrets.ASC_PRIVATE_KEY_BASE64 }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install temporary App Store Connect key
+        run: |
+          set -euo pipefail
+          if [[ -z "${ASC_KEY_ID}" || -z "${ASC_ISSUER_ID}" || -z "${ASC_PRIVATE_KEY_BASE64}" ]]; then
+            echo "Missing App Store Connect credentials"
+            exit 1
+          fi
+          KEY_PATH="$RUNNER_TEMP/AuthKey_${ASC_KEY_ID}.p8"
+          printf '%s' "$ASC_PRIVATE_KEY_BASE64" | base64 --decode > "$KEY_PATH"
+          chmod 600 "$KEY_PATH"
+          echo "ASC_PRIVATE_KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
+
+      - name: Verify processing, assign internal testers, and normalize metadata
+        run: node scripts/finalize-testflight-1.0.3.mjs --confirm-internal-only-and-metadata
+
+      - name: Clean temporary key
+        if: always()
+        run: rm -f "${ASC_PRIVATE_KEY_PATH:-}"
