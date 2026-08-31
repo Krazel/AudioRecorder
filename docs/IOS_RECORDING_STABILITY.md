@@ -39,6 +39,14 @@ segundos, exportar el diagnóstico, pulsar Stop y reproducir ambos segmentos. El
 segundo debe contener esa voz. Repetir con pantalla bloqueada y con Bluetooth
 HFP conectado/desconectado. Stop durante Siri no debe reactivar nada.
 
+La candidata quedó en `main` mediante `181fe83`. `33346790879` pasó XCTest y
+Release y `33347088605` pasó firma, archive, privacidad, IPA, validación Apple y
+upload con IDs demo. El finalizador `33347538527` confirmó la build Apple
+`82c918a0-19e3-4528-858b-06dbb6912af1` como `VALID`, `INTERNAL_ONLY` e
+`IN_BETA_TESTING`, asignada automáticamente al grupo privado de dos testers y
+sin ninguna versión App Store seleccionándola. No hubo App Review ni
+publicación.
+
 ## Fallo físico confirmado en 1.0.5 (1): evidencia insuficiente del dispositivo
 
 El propietario repitió la prueba en iPhone: Siri detiene la captura y cerrarlo

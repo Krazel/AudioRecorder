@@ -1,12 +1,14 @@
 # VoiceRecorder / AudioRecorder — estado actual
 
-## Candidata local iOS 1.0.7 (1) — reanudación tras Siri sin foreground — 2026-08-31
+## TestFlight interno iOS 1.0.7 (1) — listo para QA de Siri sin foreground — 2026-08-31
 
 - El propietario aclaró el criterio físico real de 1.0.6: al cerrar Siri sin volver manualmente a VoiceRecorder, el indicador naranja no reaparece y no hay captura. La traza demuestra que los intentos de background fallaron con `560557684` (`!int`, `AVAudioSession.ErrorCode.cannotInterruptOthers`) y que la primera activación válida ocurrió solo cuando la app comenzó a regresar al foreground. Por tanto, 1.0.6 repara el backend al volver, pero falla la continuidad automática exigida en segundo plano y no debe promoverse.
 - Causa concreta: `playAndRecord` es no mezclable por defecto. Apple define `cannotInterruptOthers` como el intento de activar desde background una sesión no mezclable. El proyecto ya declara `UIBackgroundModes=audio`; el bloqueo restante era la configuración de la sesión, no el retry ni el engine.
 - La candidata 1.0.7 (1) centraliza `RecordingAudioSessionPolicy` y usa `playAndRecord` con `[allowBluetoothHFP, defaultToSpeaker, mixWithOthers]`. Apple permite `mixWithOthers` con `playAndRecord`; así la reactivación ya no necesita interrumpir otra sesión desde background. Se conservan reconstrucción del engine, retries, Stop, Bluetooth y altavoz.
 - XCTest determinista fija la categoría/modo, exige `mixWithOthers`, conserva Bluetooth/altavoz y prohíbe introducir `duckOthers` o `interruptSpokenAudioAndMixWithOthers`. El cambio puede permitir que audio de otras apps continúe mientras se graba y llegue acústicamente al micrófono; es el coste documentado de hacer cooperativa la sesión y la puerta necesaria para recuperar sin foreground.
-- 1.0.7 (1) está solo preparada localmente. No hay commit, push, Actions, build, TestFlight, App Review ni publicación. Debe pasar XCTest/Release macOS y después QA físico cerrando Siri sin volver a la app durante al menos 20 segundos; el indicador naranja debe reaparecer y la voz posterior debe quedar en el segundo segmento.
+- La fuente y el finalizador quedaron en `main` mediante `181fe83`. El run `33346790879` superó la arquitectura continua, todos los XCTest y Release para dispositivo. El run firmado `33347088605` superó Xcode 26.6, firma/perfil, puerta UMP/ATT, XCTest, archive, privacidad, siete idiomas, exportación IPA, validación de Apple y upload con IDs demo oficiales.
+- El finalizador `33347538527` confirmó la build Apple `82c918a0-19e3-4528-858b-06dbb6912af1`: iOS 1.0.7 (1), `VALID`, `INTERNAL_ONLY`, `usesNonExemptEncryption=false`, `IN_BETA_TESTING`, externo `NOT_APPLICABLE`, grupo privado `Testers` con exactamente dos testers, acceso automático y relación activa; `selectedByAppStoreVersions=[]`.
+- No hubo TestFlight externo, selección para App Store, App Review ni publicación. La build usa IDs demo y solo puede utilizarse para QA interno. Falta la prueba física cerrando Siri sin volver a la app durante al menos 20 segundos; el indicador naranja debe reaparecer y la voz posterior debe quedar en el segundo segmento.
 
 ## TestFlight interno diagnóstico iOS 1.0.6 (1) — recupera solo al volver a foreground — 2026-08-31
 
