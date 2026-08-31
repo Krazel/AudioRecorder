@@ -16,10 +16,13 @@ const expectedProductIds = new Set([
   "com.dmkr.audio.support.monthly.50"
 ]);
 const operation = process.argv[2] ?? "status";
-const validOperations = new Set(["status", "verify-unused", "finalize-production", "prepare", "submit"]);
+const validOperations = new Set(["status", "verify-unused", "finalize-production", "promotional-text", "prepare", "submit"]);
 
 if (!validOperations.has(operation)) {
-  fail("Use status, verify-unused, finalize-production, prepare, or submit.");
+  fail("Use status, verify-unused, finalize-production, promotional-text, prepare, or submit.");
+}
+if (operation === "promotional-text" && process.argv[3] !== "--confirm-promotional-text") {
+  fail("Updating App Store promotional text requires --confirm-promotional-text.");
 }
 if (operation === "prepare" && process.argv[3] !== "--confirm-prepare") {
   fail("Preparing App Store Connect requires --confirm-prepare.");
@@ -46,6 +49,18 @@ if (operation === "verify-unused") {
 
 if (operation === "status") {
   console.log(JSON.stringify(await snapshot(), null, 2));
+  process.exit(0);
+}
+
+if (operation === "promotional-text") {
+  const version = await exactAppStoreVersion();
+  const result = await updatePromotionalText(version.id);
+  console.log(JSON.stringify({
+    status: "PROMOTIONAL_TEXT_UPDATED",
+    versionId: version.id,
+    versionState: version.attributes?.appVersionState,
+    localizations: result
+  }, null, 2));
   process.exit(0);
 }
 
@@ -232,6 +247,32 @@ async function updateVersionLocalizations(versionId) {
   }
 }
 
+async function updatePromotionalText(versionId) {
+  const values = (await request("GET", `/v1/appStoreVersions/${versionId}/appStoreVersionLocalizations?limit=200`)).data ?? [];
+  assertLocales(values);
+  const texts = promotionalTexts();
+  const result = [];
+  for (const value of values) {
+    const locale = value.attributes?.locale;
+    const promotionalText = texts[locale];
+    const characters = [...promotionalText].length;
+    if (characters > 170) fail(`Promotional Text exceeds 170 characters for ${locale}: ${characters}.`);
+    if (value.attributes?.promotionalText !== promotionalText) {
+      await request("PATCH", `/v1/appStoreVersionLocalizations/${value.id}`, {
+        data: {
+          type: "appStoreVersionLocalizations",
+          id: value.id,
+          attributes: { promotionalText }
+        }
+      });
+    }
+    const verified = (await request("GET", `/v1/appStoreVersionLocalizations/${value.id}`)).data;
+    if (verified.attributes?.promotionalText !== promotionalText) fail(`Promotional Text verification failed for ${locale}.`);
+    result.push({ locale, characters, promotionalText, localizationId: value.id });
+  }
+  return result.sort((a, b) => a.locale.localeCompare(b.locale));
+}
+
 async function preflight(versionId, expectedBuildId) {
   const version = (await request("GET", `/v1/appStoreVersions/${versionId}?include=build`)).data;
   if (version.attributes?.versionString !== marketingVersion) fail("Wrong marketing version selected.");
@@ -353,6 +394,20 @@ function releaseNotes() {
     it: "Migliora l’affidabilità delle registrazioni lunghe e il ripristino dopo le interruzioni. Rafforza la protezione dei file locali e rimuove gli strumenti diagnostici interni.",
     "pt-PT": "Melhora a fiabilidade das gravações longas e a recuperação após interrupções. Reforça a proteção dos ficheiros locais e remove ferramentas internas de diagnóstico."
   };
+}
+
+function promotionalTexts() {
+  const manifest = JSON.parse(fs.readFileSync(new URL("../store/store-manifest.json", import.meta.url), "utf8"));
+  const locales = manifest?.ios?.locales ?? {};
+  const actual = new Set(Object.keys(locales));
+  if (actual.size !== expectedLocales.size || [...expectedLocales].some((locale) => !actual.has(locale))) {
+    fail(`Promotional Text manifest locale set changed: ${JSON.stringify([...actual])}.`);
+  }
+  return Object.fromEntries([...expectedLocales].map((locale) => {
+    const value = locales[locale]?.promotionalText?.trim();
+    if (!value) fail(`Promotional Text is empty for ${locale}.`);
+    return [locale, value];
+  }));
 }
 
 function reviewNotes() {

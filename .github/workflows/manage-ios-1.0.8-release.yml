@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       operation:
-        description: Read status, verify build number, finalize processing, prepare metadata, or submit App Review
+        description: Read status, verify build number, finalize processing, update promotional text, prepare metadata, or submit App Review
         required: true
         default: status
         type: choice
@@ -12,8 +12,14 @@ on:
           - status
           - verify-unused
           - finalize-production
+          - promotional-text
           - prepare
           - submit
+      confirm_promotional_text:
+        description: Required only for promotional-text; updates only Promotional Text in the seven existing localizations
+        required: true
+        default: false
+        type: boolean
       confirm_prepare:
         description: Required only for prepare; selects 1.0.8 (1) and updates review metadata without submitting
         required: true
@@ -30,7 +36,7 @@ permissions:
 
 jobs:
   manage:
-    if: ${{ github.actor == github.repository_owner && github.ref == 'refs/heads/main' && !github.event.repository.private && (inputs.operation != 'prepare' || inputs.confirm_prepare) && (inputs.operation != 'submit' || inputs.confirm_submit) }}
+    if: ${{ github.actor == github.repository_owner && github.ref == 'refs/heads/main' && !github.event.repository.private && (inputs.operation != 'promotional-text' || inputs.confirm_promotional_text) && (inputs.operation != 'prepare' || inputs.confirm_prepare) && (inputs.operation != 'submit' || inputs.confirm_submit) }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     environment: app-store-production
@@ -67,6 +73,7 @@ jobs:
         run: |
           set -euo pipefail
           case "${{ inputs.operation }}" in
+            promotional-text) node scripts/manage-ios-1.0.8-release.mjs promotional-text --confirm-promotional-text ;;
             prepare) node scripts/manage-ios-1.0.8-release.mjs prepare --confirm-prepare ;;
             submit) node scripts/manage-ios-1.0.8-release.mjs submit --confirm-submit ;;
             *) node scripts/manage-ios-1.0.8-release.mjs "${{ inputs.operation }}" ;;

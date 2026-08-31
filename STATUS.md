@@ -1,5 +1,11 @@
 # VoiceRecorder / AudioRecorder — estado actual
 
+## Metadatos de ficha y texto promocional — 2026-09-01
+
+- `Novedades de esta versión` es el campo localizado de cada versión que alimenta el historial público. La versión iOS 1.0.8 ya conserva sus notas exactas en `ca`, `de-DE`, `en-US`, `es-ES`, `fr-FR`, `it` y `pt-PT` dentro de `store/store-manifest.json`.
+- Se preparó un texto promocional propio y fiel a la build para esos siete idiomas, con 122–135 caracteres, documentado en `store/PROMOTIONAL_TEXT.md` y añadido al manifiesto canónico.
+- App Store Connect se abrió con sesión válida, pero el editor de distribución no renderizó el formulario. No se modificó ningún campo remoto ni la submission 1.0.8 en revisión. Próximo paso opcional: aplicar únicamente `Promotional Text` cuando el editor o la API segura estén disponibles; no tocar `What's New`, build ni revisión.
+
 ## Candidata de producción iOS 1.0.8 (1) — preparada para CI, carga y App Review — 2026-08-31
 
 - El propietario aprobó las pruebas físicas: grabación prolongada y recuperación tras Siri funcionan. Una llamada aceptada puede suspender cualquier grabadora general; 1.0.8 conserva intención y reintenta en cuanto iOS vuelve a ejecutar el proceso o la app retorna a foreground, sin usar CallKit, PushToTalk, audio silencioso ni capacidades impropias.
