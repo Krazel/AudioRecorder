@@ -1,7 +1,43 @@
-# VoiceRecorder iOS — estabilidad de grabación y diagnóstico 1.0.6
+# VoiceRecorder iOS — estabilidad de grabación y candidata 1.0.7
 
 Fecha de auditoría: 2026-08-30
 Alcance: `native-ios/`; Android, distribución y servicios externos fuera de alcance.
+
+## Causa demostrada en 1.0.6: `!int` impide recuperar desde background
+
+La traza física distingue recuperación al volver a foreground de continuidad
+real en background. Siri comenzó a las `00:01:57Z`; los intentos de activación
+de `00:01:57Z`, `00:02:02Z`, `00:02:03Z` y `00:02:08Z` fallaron con
+`560557684` (`0x21696E74`, `!int`). Apple define ese valor como
+[`AVAudioSession.ErrorCode.cannotInterruptOthers`](https://developer.apple.com/documentation/coreaudiotypes/avaudiosessionerrorcode/avaudiosessionerrorcodecannotinterruptothers):
+una app en background intentó activar una sesión no mezclable. La activación
+solo tuvo éxito a las `00:02:09Z`, al comenzar el retorno de la app; el primer
+buffer escrito llegó a las `00:02:10Z`. El propietario confirma que, si no abre
+la app, el indicador naranja no reaparece y no se graba.
+
+`playAndRecord` es no mezclable por defecto. Apple permite hacerla cooperativa
+con
+[`mixWithOthers`](https://developer.apple.com/documentation/avfaudio/avaudiosession/categoryoptions-swift.struct/mixwithothers),
+y el proyecto ya declara `UIBackgroundModes=audio`. La candidata 1.0.7 (1)
+centraliza estas opciones:
+
+```swift
+[.allowBluetoothHFP, .defaultToSpeaker, .mixWithOthers]
+```
+
+Esto evita que la reactivación necesite interrumpir otra sesión desde
+background. No elimina la exclusividad del micrófono mientras Siri lo usa: el
+primer segmento se conserva y el retry continúa hasta que Siri libere la ruta.
+El coste es que audio de otras apps puede seguir reproduciéndose y entrar por
+el micrófono. No se añaden `duckOthers` ni
+`interruptSpokenAudioAndMixWithOthers`.
+
+QA físico obligatorio: empezar en modo Todo, hablar 10 segundos, abrir Siri,
+cerrarlo y no volver a VoiceRecorder durante 20 segundos. El indicador naranja
+debe reaparecer estando todavía fuera de la app. Después volver, hablar 10
+segundos, exportar el diagnóstico, pulsar Stop y reproducir ambos segmentos. El
+segundo debe contener esa voz. Repetir con pantalla bloqueada y con Bluetooth
+HFP conectado/desconectado. Stop durante Siri no debe reactivar nada.
 
 ## Fallo físico confirmado en 1.0.5 (1): evidencia insuficiente del dispositivo
 
@@ -91,10 +127,11 @@ permitirán comparar notificaciones, suspensión, etapas y primer buffer.
    Tampoco se observaba la pérdida previa de media services.
 6. El procesador por sonido no limitaba buffers pendientes. Un atasco sostenido
    de escritura podía crecer sin cota y terminar por presión de memoria.
-7. `mixWithOthers` permitía que otras sesiones se mezclaran con una grabación
-   controlada por el usuario y que otro componente de la propia app volviera a
-   aplicar esa opción al reproducir. La configuración de captura y reproducción
-   ya usa una categoría no mezclable coherente.
+7. La auditoría inicial retiró `mixWithOthers` para aislar la grabación y
+   unificar captura/reproducción. La evidencia física posterior de 1.0.6
+   sustituye esa decisión: la sesión no mezclable no puede recuperarse en
+   background tras Siri. Desde 1.0.7, captura y reproducción usan la misma
+   política mezclable para que ningún componente revierta la opción compartida.
 
 La revisión no atribuye todas las paradas reales a una sola causa. Los puntos
 1–5 contienen caminos concretos capaces de producir la rotación fallida o una

@@ -189,7 +189,11 @@ final class RecorderService: ObservableObject {
 
     private func configureAudioSession() throws {
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playAndRecord, mode: .default, options: [.allowBluetoothHFP, .defaultToSpeaker])
+        try session.setCategory(
+            RecordingAudioSessionPolicy.category,
+            mode: RecordingAudioSessionPolicy.mode,
+            options: RecordingAudioSessionPolicy.options
+        )
         do {
             // This is a preference, not a guarantee. It prevents some banner-
             // style system alerts from interrupting an active recording, while
