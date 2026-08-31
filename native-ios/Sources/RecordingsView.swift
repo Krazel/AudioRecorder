@@ -2,7 +2,6 @@ import SwiftUI
 
 struct RecordingsView: View {
     @EnvironmentObject private var library: RecordingLibrary
-    @EnvironmentObject private var uploadQueue: CloudUploadQueue
     @EnvironmentObject private var playback: AudioPlaybackService
 
     @State private var shareItem: ShareItem?
@@ -181,7 +180,6 @@ struct RecordingsView: View {
         playback.stop()
         Task {
             for item in items {
-                await uploadQueue.removeJobs(recordingID: item.id)
                 await library.delete(item)
             }
             selection.removeAll()
@@ -214,7 +212,6 @@ struct RecordingsView: View {
     private func delete(_ item: RecordingItem) {
         playback.stop()
         Task {
-            await uploadQueue.removeJobs(recordingID: item.id)
             await library.delete(item)
         }
     }

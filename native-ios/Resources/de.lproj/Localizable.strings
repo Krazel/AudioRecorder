@@ -109,13 +109,6 @@
 "No se pudo codificar el audio." = "Das Audio konnte nicht codiert werden.";
 "Contacto" = "Kontakt";
 "Cargando opciones" = "Optionen werden geladen";
-"Sin subida" = "Kein Upload";
-"Servidor propio" = "Eigener Server";
-"La subida automatica esta desactivada." = "Automatischer Upload ist deaktiviert.";
-"Falta iniciar sesion en %@." = "Anmeldung bei %@ fehlt.";
-"Falta configurar la URL de subida del servidor propio." = "Die Upload-URL des eigenen Servers fehlt.";
-"El servidor rechazo la subida con codigo %d." = "Der Server hat den Upload mit Code %d abgelehnt.";
-"No se pudo guardar el archivo en %@." = "Die Datei konnte nicht in %@ gespeichert werden.";
 "Idioma" = "Sprache";
 "Idioma de la aplicacion" = "App-Sprache";
 "Suscripcion mensual" = "Monatsabonnement";

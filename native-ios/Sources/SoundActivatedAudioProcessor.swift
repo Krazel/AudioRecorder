@@ -23,12 +23,14 @@ struct SoundActivatedAudioProgress: Sendable {
 /// handoff are retained in a bounded FIFO. State is confined to `queue`.
 final class SoundActivatedAudioProcessor: @unchecked Sendable {
     typealias ProgressHandler = @Sendable (SoundActivatedAudioProgress) -> Void
+    typealias ActivityHandler = @Sendable (UUID?) -> Void
 
     private let queue = DispatchQueue(label: "com.dmkr.audio.sound-processing", qos: .userInitiated)
     private let pendingBufferLock = NSLock()
     private let maximumPendingBuffers = 64
     private let analyzer = VoiceNoiseAnalyzer()
     private let progressHandler: ProgressHandler
+    private let activityHandler: ActivityHandler
 
     private var file: AVAudioFile?
     private var settings: SoundActivatedAudioSettings?
@@ -44,8 +46,12 @@ final class SoundActivatedAudioProcessor: @unchecked Sendable {
     private var pendingBufferCount = 0
     private var didSignalBufferOverflow = false
 
-    init(progressHandler: @escaping ProgressHandler) {
+    init(
+        progressHandler: @escaping ProgressHandler,
+        activityHandler: @escaping ActivityHandler = { _ in }
+    ) {
         self.progressHandler = progressHandler
+        self.activityHandler = activityHandler
     }
 
     func start(file: AVAudioFile, settings: SoundActivatedAudioSettings) -> UUID {
@@ -86,8 +92,10 @@ final class SoundActivatedAudioProcessor: @unchecked Sendable {
             return
         }
         queue.async { [weak self] in
-            defer { self?.releasePendingBufferSlot() }
-            self?.process(copiedBuffer.value)
+            autoreleasepool {
+                defer { self?.releasePendingBufferSlot() }
+                self?.process(copiedBuffer.value)
+            }
         }
     }
 
@@ -141,6 +149,7 @@ final class SoundActivatedAudioProcessor: @unchecked Sendable {
     }
 
     private func process(_ buffer: AVAudioPCMBuffer) {
+        activityHandler(generation)
         if isAwaitingSegmentRotation {
             guard rotationBacklog.append(buffer) else {
                 isAwaitingSegmentRotation = false

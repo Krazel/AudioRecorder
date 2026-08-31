@@ -4,12 +4,14 @@ import Foundation
 @MainActor
 final class RecordingLibrary: ObservableObject {
     @Published private(set) var items: [RecordingItem] = []
+    @Published private(set) var isLoaded = false
 
     private var indexURL: URL {
         RecordingStorage.rootDirectory.appendingPathComponent("recordings.json")
     }
 
     func load() async {
+        defer { isLoaded = true }
         do {
             try RecordingStorage.ensureDirectories()
             guard FileManager.default.fileExists(atPath: indexURL.path) else {

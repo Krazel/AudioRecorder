@@ -460,3 +460,43 @@ El JSON físico de iOS 16.7.16 demuestra que 1.0.6 conservó la intención, cerr
 ### F-048 - iOS 1.0.7 (1) disponible exclusivamente en TestFlight interno - 2026-08-31
 
 El commit `181fe83` está en `main`. `33346790879` pasó XCTest y Release; `33347088605` archivó, firmó, validó y subió el IPA con IDs demo. Apple procesó el recurso `82c918a0-19e3-4528-858b-06dbb6912af1` como `VALID`, `INTERNAL_ONLY`, `IN_BETA_TESTING`, cifrado no exento `false` y testing externo `NOT_APPLICABLE`. `33347538527` confirmó asignación automática al grupo privado `Testers`, exactamente dos testers, acceso a todas las builds y `selectedByAppStoreVersions=[]`. No hubo TestFlight externo, App Review ni publicación; falta demostrar físicamente que el indicador naranja reaparece y se escribe audio sin volver a foreground tras cerrar Siri.
+
+### F-049 - iOS 1.0.7 (1) reanuda y escribe audio tras Siri sin volver a foreground - 2026-08-31
+
+El diagnóstico físico exportado desde un iPhone con iOS 16.7.16 demuestra el criterio pendiente. En la sesión `0F70F9D7-FEA3-4661-A7FA-12D57C7A7EF2`, VoiceRecorder entró en background a `01:37:22Z`, Siri comenzó la interrupción a `01:37:24Z` y la terminó a `01:37:26Z`. A esa misma hora la app activó correctamente `AVAudioSession`, reconstruyó e inició `AVAudioEngine`, marcó `recoverySucceeded` y recibió el primer buffer del nuevo segmento. `enteredForeground` no ocurrió hasta `01:37:30Z`; la recuperación y escritura fueron, por tanto, anteriores a la reapertura. La misma exportación contiene además dos rotaciones de archivo correctas en background a los quince minutos. La corrección `mixWithOthers` de D-052 queda validada para este caso físico de Siri; no elimina el intervalo inevitable durante el cual Siri posee el micrófono.
+
+### F-050 - 1.0.7 desaparece durante una grabación prolongada sin evento terminal observable - 2026-08-31
+
+`voice-recorder-recording-diagnostics (3).json` conserva una sesión 1.0.7 sana hasta la segunda rotación en background a `02:07:26Z` y luego no registra Stop, error, interrupción ni terminación. La apertura a `10:17:10Z` crea un UUID de sesión nuevo y autoarranca porque la intención persistida seguía activa. La evidencia prueba pérdida de la instancia anterior sin Stop, pero no distingue jetsam, crash, cierre forzado u otra terminación; queda prohibido presentar cualquiera de esas variantes como causa confirmada sin nueva evidencia.
+
+### D-053 - La salud de captura se decide por buffers reales y no solo por `engine.isRunning` o el main run loop - 2026-08-31
+
+La candidata 1.0.8 sustituye el watchdog principal basado en `Timer` por un monitor con `DispatchSourceTimer` alimentado desde la cola serial que procesa cada buffer. Cinco segundos sin actividad real disparan recuperación aunque AVFoundation aún declare el engine activo. Un proceso suspendido o terminado no puede ejecutar watchdogs; por eso se añade un diario de ejecución local que permite clasificar la siguiente apertura sin inventar el motivo de la desaparición.
+
+### D-054 - Los archivos activos deben seguir accesibles con el iPhone bloqueado y recuperarse antes del autoarranque - 2026-08-31
+
+La raíz, carpetas y archivos de grabación usan explícitamente `completeUntilFirstUserAuthentication`. Al relanzar con intención persistida, la biblioteca recupera primero archivos no indexados y solo después se permite iniciar un segmento nuevo. Los segmentos cerrados son la frontera durable; si iOS termina el proceso, la app no puede grabar durante su ausencia y un contenedor AAC cortado en un punto arbitrario no es reparable de forma universal.
+
+### D-055 - No simular una reanudación automática tras llamadas aceptadas cuando iOS suspende el proceso - 2026-08-31
+
+Apple distingue entre una llamada rechazada, que normalmente produce `interruption ended` y deja continuar a la app, y una llamada aceptada, que suspende la app. VoiceRecorder reactiva al recibir el final, ignora la ausencia de `shouldResume` porque conserva intención explícita, mantiene retry y aprovecha foreground; ninguna de esas rutas puede ejecutarse mientras el proceso está suspendido. No se incorporan CallKit/PushToTalk, reproducción silenciosa, background tasks prolongadas ni otras capacidades que no corresponden a una grabadora general. Antes de cualquier cambio de política se exige diagnóstico físico de llamada rechazada, aceptada y saliente; 1.0.8 añade el evento minimizado `enteredInactive` para distinguir la secuencia.
+
+### D-056 - La candidata publica no incluye herramientas de diagnostico exportables - 2026-08-31
+
+La exportacion JSON y la seccion visible `INTERNAL QA` eran instrumentos temporales para builds internas con IDs demo y no forman parte de 1.0.8 de produccion. Se eliminan UI, almacenamiento en Caches y documento exportable. Solo permanecen Unified Log con codigos tecnicos fijos y el diario local minimo de ejecucion requerido para distinguir un relanzamiento inesperado; ninguno contiene audio, contenido, rutas, hardware, cuentas o identificadores de sesion publicados.
+
+### D-057 - Produccion es la configuracion segura por defecto del workflow 1.0.8 - 2026-08-31
+
+La fuente base usa IDs demo oficiales para impedir clics reales accidentales durante desarrollo, y el workflow manual selecciona `production` por defecto. Una build publica debe recibir IDs reales desde secrets protegidos, rechaza el prefijo demo de Google y verifica los valores dentro del archive. El modo `test` permanece disponible solo de forma explicita para TestFlight interno y nunca puede promoverse a App Review.
+
+### D-058 - Eliminar integraciones de nube inactivas antes de produccion - 2026-08-31
+
+La interfaz publica no ofrece subida automatica, pero la app seguia compilando una cola, proveedores incompletos, copia iCloud y un cliente de servidor capaz de persistir endpoint/token y transmitir audio mediante Bearer multipart. Se elimina toda esa superficie y sus textos. El inicio borra las preferencias heredadas `cloudProvider`, `uploadAutomatically`, `customUploadEndpoint` y `customUploadToken`. Compartir continua exclusivamente mediante la hoja local de iOS.
+
+### D-059 - iOS 1.0.8 (1) es la candidata publica con publicacion manual - 2026-08-31
+
+El propietario autoriza commit, push, CI macOS, firma, carga en App Store Connect y envio a App Review de la candidata exacta iOS 1.0.8 (1). El workflow de produccion debe inyectar y comparar exactamente los IDs AdMob reales aprobados; el proyecto base conserva los IDs demo para desarrollo seguro. La version solo puede enviarse tras comprobar build `VALID` y `APP_STORE_ELIGIBLE`, firma, privacidad agregada, siete localizaciones con capturas, las siete suscripciones existentes en `APPROVED`, `usesIdfa=true`, notas 1.0.8 y `releaseType=MANUAL`. El envio a revision no autoriza publicacion automatica ni un binario distinto.
+
+### F-051 - AdMob real y superficie publica revalidados antes de 1.0.8 - 2026-08-31
+
+La consola viva muestra la app `2340753104`, App ID `ca-app-pub-3425091654264901~2340753104`, un unico banner `5497133550`, solicitudes, impresiones e ingresos reales, un mensaje europeo activo, ningun mensaje explicativo IDFA publicado y Centro de Politicas sin problemas. La ficha de App Store, la landing y `app-ads.txt` responden HTTP 200; `app-ads.txt` contiene `google.com, pub-3425091654264901, DIRECT, f08c47fec0942fa0`. AdMob aun etiqueta la verificacion de aplicacion como pendiente; esta diferencia se documenta y no permite sustituir los IDs reales por demos en el binario publico.

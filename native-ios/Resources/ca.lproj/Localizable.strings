@@ -109,13 +109,6 @@
 "No se pudo codificar el audio." = "No s ha pogut codificar l audio.";
 "Contacto" = "Contacte";
 "Cargando opciones" = "Carregant opcions";
-"Sin subida" = "Sense pujada";
-"Servidor propio" = "Servidor propi";
-"La subida automatica esta desactivada." = "La pujada automatica esta desactivada.";
-"Falta iniciar sesion en %@." = "Falta iniciar sessio a %@.";
-"Falta configurar la URL de subida del servidor propio." = "Falta configurar l URL de pujada del servidor propi.";
-"El servidor rechazo la subida con codigo %d." = "El servidor ha rebutjat la pujada amb el codi %d.";
-"No se pudo guardar el archivo en %@." = "No s ha pogut desar el fitxer a %@.";
 "Idioma" = "Idioma";
 "Idioma de la aplicacion" = "Idioma de l'aplicació";
 "Suscripcion mensual" = "Subscripció mensual";

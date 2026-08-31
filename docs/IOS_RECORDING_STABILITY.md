@@ -1,4 +1,63 @@
-# VoiceRecorder iOS — estabilidad de grabación y candidata 1.0.7
+# VoiceRecorder iOS — estabilidad de grabación y candidata 1.0.8
+
+## Parada silenciosa prolongada observada en 1.0.7
+
+La exportación física `voice-recorder-recording-diagnostics (3).json` prueba una
+desaparición sin Stop observable después de dos rotaciones correctas. No prueba
+si fue jetsam, crash, cierre forzado u otra terminación. Apple explica que un
+proceso suspendido no puede recibir la notificación de desactivación de audio
+hasta volver a ejecutarse, y que el sistema puede terminar apps en background
+para liberar recursos. Por tanto, `AVAudioEngine.isRunning` y un `Timer` del
+main run loop no son evidencia suficiente de que sigan llegando buffers:
+
+- https://developer.apple.com/documentation/avfaudio/avaudiosession/interruptionnotification
+- https://developer.apple.com/documentation/uikit/preparing-your-ui-to-run-in-the-background
+
+1.0.8 observa actividad en la cola que consume los buffers del tap. Un
+`DispatchSourceTimer` independiente exige un latido como máximo cada cinco
+segundos; un timeout registra `audioInputStalled` y usa la recuperación completa
+ya existente. Esto funciona mientras el proceso recibe tiempo de CPU. Ningún
+watchdog puede ejecutarse cuando iOS ha suspendido o terminado el proceso.
+
+Un diario protegido de ejecución conserva únicamente UUID aleatorios y fechas.
+En el siguiente launch distingue una ejecución previa sin Stop y si UIKit llegó
+a entregar `willTerminate`; no intenta adivinar la causa. La grabación y el
+diario usan `completeUntilFirstUserAuthentication`, y la biblioteca recupera
+archivos no indexados antes del autoarranque. Apple documenta que las apps en
+background pueden ser terminadas y que un usuario espera recuperar su estado:
+
+- https://developer.apple.com/documentation/uikit/preserving-your-app-s-ui-across-launches
+
+Los trabajos de la cola de audio usan `autoreleasepool` para acotar objetos
+temporales durante horas de captura. Los segmentos cerrados e indexados son la
+frontera segura. Si el proceso deja de existir, iOS no permite que la app siga
+capturando durante ese intervalo; el relanzamiento conserva la intención y
+rescata cualquier archivo abierto que AVFoundation pueda leer, sin prometer la
+reparación universal de un AAC cortado en cualquier byte.
+
+## Llamadas telefónicas: límite del sistema y evidencia requerida
+
+Apple documenta que una llamada ignorada o un aviso descartado normalmente
+produce `interruption ended` y permite a la app continuar. Si el usuario acepta
+la llamada, el sistema suspende la app. También advierte que no todo `began`
+tiene un `ended` correspondiente. VoiceRecorder conserva la intención, intenta
+recuperar tanto con `shouldResume` como sin él, mantiene un retry y vuelve a
+comprobar al entrar en foreground; esas acciones solo pueden ejecutarse cuando
+iOS concede tiempo de proceso.
+
+- https://developer.apple.com/library/archive/documentation/Audio/Conceptual/AudioSessionProgrammingGuide/HandlingAudioInterruptions/HandlingAudioInterruptions.html
+- https://developer.apple.com/documentation/avfaudio/avaudiosession/interruptionnotification
+
+CallKit y PushToTalk corresponden a apps que proporcionan sus propias llamadas,
+no a una grabadora general que observa llamadas del sistema. Tampoco se usa
+audio silencioso ni una background task indefinida para evitar la suspensión.
+La candidata registra `enteredInactive` además de background/foreground,
+interruption type/options/reason/wasSuspended, activación y retries. La matriz
+física debe cubrir por separado llamada rechazada, aceptada y saliente, esperar
+20 segundos tras colgar sin abrir VoiceRecorder y exportar el JSON antes de
+Stop. Solo un `ended` entregado seguido de un fallo demostrable justificaría
+otro cambio del motor; la ausencia de ejecución confirma un límite de wake-up,
+no un retry que el código pueda hacer correr mientras está suspendido.
 
 Fecha de auditoría: 2026-08-30
 Alcance: `native-ios/`; Android, distribución y servicios externos fuera de alcance.
@@ -289,15 +348,25 @@ una invalidación del graph podía quedar fuera de interrupción, ruta y watchdo
 - Los archivos no indexados siguen recuperándose desde `Documents/Recordings`
   al cargar la biblioteca. Un fallo del índice no elimina el audio.
 
-## Telemetría local
+## Observabilidad de producción
 
-`RecordingDiagnostics` conserva como máximo 200 eventos JSON en
-`Library/Caches/RecordingDiagnostics/events.json` y los replica en Unified Log.
-Solo contiene fecha, UUID efímero de sesión, código de ciclo de vida, fase,
-modo y dominio/código numérico del error. No contiene audio, transcripciones,
-nombres o rutas de archivo, nombre de dispositivo/ruta, cuentas, publicidad ni
-contenido introducido por el usuario. No existe código de envío y Caches puede
-ser purgado por iOS.
+La candidata 1.0.8 no incluye la sección `INTERNAL QA`, exportación, hoja de
+compartir ni fichero de eventos en Caches. `RecordingDiagnostics` emite solo
+códigos técnicos fijos y valores booleanos/numéricos a Unified Log. No registra
+el UUID de sesión ni sample rate/canales, y nunca incluye audio, contenido,
+nombres/rutas, hardware, cuentas, publicidad ni datos de llamadas.
+
+El diario `active-execution.json` permanece en Application Support con
+protección `completeUntilFirstUserAuthentication`: guarda exclusivamente UUID
+aleatorios de proceso/sesión y fechas. Permite reconocer en el siguiente
+arranque que la ejecución anterior desapareció sin Stop, sin atribuir una causa
+no demostrada. No se exporta ni se transmite.
+
+La candidata tampoco compila el scaffolding historico de subida automatica:
+no hay proveedores cloud, endpoint configurable, token Bearer, cola de red ni
+POST multipart. Las preferencias heredadas se eliminan al inicializar Ajustes.
+La exportacion voluntaria de una grabacion sigue usando unicamente la hoja de
+compartir del sistema.
 
 ## Pruebas automatizadas
 
@@ -316,8 +385,9 @@ ser purgado por iOS.
 - fallos/reintentos de audio y recuperación;
 - media-services lost/reset con reconstrucción.
 
-`RecordingDiagnosticsTests` comprueba el límite del buffer local y que el
-esquema codificado no incluye campos de audio, archivo/ruta o transcripción.
+`RecordingDiagnosticsTests` comprueba que los códigos de producción no contienen
+datos de usuario, archivo, dispositivo o llamada y que el estado se limita a
+valores técnicos de liveness.
 
 `ContinuousSegmentRotationTests` fija que ambos modos usan el engine continuo,
 que separar un archivo no detiene la captura, que la cola de rotación conserva

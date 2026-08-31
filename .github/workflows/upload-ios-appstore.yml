@@ -10,7 +10,7 @@ on:
       ad_configuration:
         description: AdMob configuration embedded in the signed build
         required: true
-        default: test
+        default: production
         type: choice
         options:
           - test
@@ -45,7 +45,7 @@ jobs:
     runs-on: macos-latest
     environment: app-store-production
     env:
-      APP_VERSION: "1.0.7"
+      APP_VERSION: "1.0.8"
       APP_BUILD_NUMBER: ${{ inputs.build_number }}
       ADMOB_CONFIGURATION: ${{ inputs.ad_configuration }}
       ADMOB_TEST_APP_ID: ca-app-pub-3940256099942544~1458002511
@@ -298,6 +298,11 @@ jobs:
                 echo "Google demo identifiers are forbidden in the production configuration"
                 exit 1
               fi
+              if [[ "${EFFECTIVE_APP_ID}" != "ca-app-pub-3425091654264901~2340753104" ]] || \
+                 [[ "${EFFECTIVE_BANNER_ID}" != "ca-app-pub-3425091654264901/5497133550" ]]; then
+                echo "Protected AdMob secrets do not match the approved VoiceRecorder production app and banner"
+                exit 1
+              fi
               if [[ "${{ inputs.upload_to_app_store }}" == "true" ]] && \
                  [[ "${{ inputs.confirm_admob_idfa_message_unpublished }}" != "true" ]]; then
                 echo "A production upload requires the AdMob IDFA message to remain unpublished so the app can enforce its consent gate"
@@ -316,6 +321,15 @@ jobs:
       - name: Generate native Xcode project
         working-directory: native-ios
         run: xcodegen generate
+
+      - name: Verify production surface has no diagnostic export
+        run: |
+          set -euo pipefail
+          ! grep -R -Fq 'INTERNAL QA' native-ios/Sources
+          ! grep -R -Fq 'makeRecordingDiagnosticsExport' native-ios/Sources
+          ! grep -R -Fq 'voice-recorder-recording-diagnostics.json' native-ios/Sources
+          grep -Fq 'userVisibleExportEnabled = false' native-ios/Sources/RecordingDiagnostics.swift
+          grep -Fq 'persistedEventTrailEnabled = false' native-ios/Sources/RecordingDiagnostics.swift
 
       - name: Verify explicit GDPR-to-ATT consent gate
         run: |

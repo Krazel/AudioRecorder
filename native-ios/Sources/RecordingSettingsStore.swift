@@ -14,14 +14,6 @@ final class RecordingSettingsStore: ObservableObject {
         didSet { save() }
     }
 
-    @Published var cloudProvider: CloudProvider {
-        didSet { save() }
-    }
-
-    @Published var uploadAutomatically: Bool {
-        didSet { save() }
-    }
-
     @Published var recordingThresholdDB: Float {
         didSet { save() }
     }
@@ -34,14 +26,6 @@ final class RecordingSettingsStore: ObservableObject {
         didSet { save() }
     }
 
-    @Published var customUploadEndpoint: String {
-        didSet { save() }
-    }
-
-    @Published var customUploadToken: String {
-        didSet { save() }
-    }
-
     private let defaults = UserDefaults.standard
 
     init() {
@@ -51,28 +35,18 @@ final class RecordingSettingsStore: ObservableObject {
         quality = AudioQuality(rawValue: defaults.string(forKey: "quality") ?? "") ?? .medium
         mode = RecordingMode(rawValue: defaults.string(forKey: "mode") ?? "") ?? .everything
         segmentMinutes = storedSegmentMinutes == 0 ? 15 : (storedSegmentMinutes ?? 15)
-        cloudProvider = CloudProvider(rawValue: defaults.string(forKey: "cloudProvider") ?? "") ?? .none
-        uploadAutomatically = false
         recordingThresholdDB = storedThreshold ?? -45
         soundTailSeconds = storedSoundTailSeconds ?? 1.0
         startRecordingOnLaunch = defaults.object(forKey: "startRecordingOnLaunch") as? Bool ?? false
-        customUploadEndpoint = defaults.string(forKey: "customUploadEndpoint") ?? ""
-        customUploadToken = defaults.string(forKey: "customUploadToken") ?? ""
+        defaults.removeObject(forKey: "cloudProvider")
+        defaults.removeObject(forKey: "uploadAutomatically")
+        defaults.removeObject(forKey: "customUploadEndpoint")
+        defaults.removeObject(forKey: "customUploadToken")
     }
 
     var segmentDuration: TimeInterval {
         guard segmentMinutes > 0 else { return TimeInterval(15 * 60) }
         return TimeInterval(segmentMinutes * 60)
-    }
-
-    var customUploadEndpointURL: URL? {
-        guard let components = URLComponents(string: customUploadEndpoint.trimmingCharacters(in: .whitespacesAndNewlines)),
-              let scheme = components.scheme?.lowercased(),
-              ["http", "https"].contains(scheme),
-              components.host != nil else {
-            return nil
-        }
-        return components.url
     }
 
     var sensitivityPercent: Int {
@@ -89,12 +63,8 @@ final class RecordingSettingsStore: ObservableObject {
         defaults.set(quality.rawValue, forKey: "quality")
         defaults.set(mode.rawValue, forKey: "mode")
         defaults.set(segmentMinutes, forKey: "segmentMinutes")
-        defaults.set(cloudProvider.rawValue, forKey: "cloudProvider")
-        defaults.set(uploadAutomatically, forKey: "uploadAutomatically")
         defaults.set(recordingThresholdDB, forKey: "recordingThresholdDB")
         defaults.set(soundTailSeconds, forKey: "soundTailSeconds")
         defaults.set(startRecordingOnLaunch, forKey: "startRecordingOnLaunch")
-        defaults.set(customUploadEndpoint, forKey: "customUploadEndpoint")
-        defaults.set(customUploadToken, forKey: "customUploadToken")
     }
 }

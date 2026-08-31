@@ -1,6 +1,22 @@
 # VoiceRecorder / AudioRecorder — estado actual
 
-## TestFlight interno iOS 1.0.7 (1) — listo para QA de Siri sin foreground — 2026-08-31
+## Candidata de producción iOS 1.0.8 (1) — preparada para CI, carga y App Review — 2026-08-31
+
+- El propietario aprobó las pruebas físicas: grabación prolongada y recuperación tras Siri funcionan. Una llamada aceptada puede suspender cualquier grabadora general; 1.0.8 conserva intención y reintenta en cuanto iOS vuelve a ejecutar el proceso o la app retorna a foreground, sin usar CallKit, PushToTalk, audio silencioso ni capacidades impropias.
+- El watchdog recibe latidos desde la cola real de buffers y usa `DispatchSourceTimer`; detecta cinco segundos sin audio aunque `AVAudioEngine.isRunning` siga verdadero. El diario protegido conserva solo UUID aleatorio y fechas técnicas para clasificar conservadoramente una ejecución anterior; no contiene audio, rutas, nombres, hardware, cuentas ni red.
+- Archivos, carpetas y raíz usan `completeUntilFirstUserAuthentication`; la biblioteca recupera archivos no indexados antes del autoarranque. La cola de audio usa `autoreleasepool` para reducir presión en sesiones largas.
+- Se eliminan por completo Ajustes > `INTERNAL QA`, la exportación/JSON de diagnóstico y su almacenamiento. Solo queda Unified Log minimizado y el diario de ejecución no exportable.
+- Se elimina todo scaffolding inactivo de subida a nube/servidor, incluidos endpoint/token y POST multipart; preferencias heredadas se purgan. Las grabaciones permanecen locales y solo se comparten mediante la hoja nativa elegida por el usuario.
+- La fuente conserva IDs demo para desarrollo. El workflow de producción inyecta secrets y exige que coincidan exactamente con `ca-app-pub-3425091654264901~2340753104` y `ca-app-pub-3425091654264901/5497133550` dentro del archive.
+- AdMob revalidado en vivo: app y banner reales, solicitudes e impresiones reales, mensaje europeo activo, mensaje IDFA sin publicar y Centro de Políticas sin problemas. La consola aún muestra verificación de aplicación pendiente, aunque App Store, landing y `app-ads.txt` responden HTTP 200 con la línea DIRECT correcta.
+- `store/store-manifest.json`, inventario y preflight ya apuntan a 1.0.8 y contienen `What's New` en siete idiomas. La automatización nueva separa status, número libre, procesamiento, preparación y envío; exige publicación `MANUAL`, build exacta, siete localizaciones/capturas y siete suscripciones ya `APPROVED`.
+- Pendiente operativo: integrar en `main`, ejecutar CI/XCTest/Release, firmar y validar el archive de producción, subirlo, verificar App Store Connect, seleccionar exclusivamente 1.0.8 (1) y enviarlo a App Review. La autorización vigente cubre esos pasos; nunca la publicación automática.
+
+## TestFlight interno iOS 1.0.7 (1) — QA físico de Siri sin foreground aprobado — 2026-08-31
+
+- El diagnóstico físico `voice-recorder-recording-diagnostics (2).json`, exportado desde 1.0.7 (1) en iOS 16.7.16, confirma la recuperación automática exigida. En la sesión `0F70F9D7-FEA3-4661-A7FA-12D57C7A7EF2`, la app estaba en background desde `01:37:22Z`; Siri interrumpió a `01:37:24Z`; iOS notificó el fin con permiso de reanudación a `01:37:26Z`; ese mismo segundo la sesión se activó, se reconstruyó e inició el engine y `recoveryFirstBufferObserved` confirmó escritura de audio. La app no volvió a foreground hasta `01:37:30Z`, cuatro segundos después. Por tanto, la recuperación ocurrió realmente en segundo plano y no fue provocada por reabrir VoiceRecorder.
+- La interrupción de aproximadamente dos segundos mientras Siri posee el micrófono es comportamiento del sistema; los segmentos válidos anteriores y posteriores se conservan. La traza no muestra una parada solicitada ni pérdida de intención.
+- El mismo archivo conserva una sesión anterior larga con dos rotaciones correctas en background a `00:17:10Z` y `00:32:10Z`, con `engineRunning=true`, lo que aporta evidencia adicional de continuidad al separar archivos.
 
 - El propietario aclaró el criterio físico real de 1.0.6: al cerrar Siri sin volver manualmente a VoiceRecorder, el indicador naranja no reaparece y no hay captura. La traza demuestra que los intentos de background fallaron con `560557684` (`!int`, `AVAudioSession.ErrorCode.cannotInterruptOthers`) y que la primera activación válida ocurrió solo cuando la app comenzó a regresar al foreground. Por tanto, 1.0.6 repara el backend al volver, pero falla la continuidad automática exigida en segundo plano y no debe promoverse.
 - Causa concreta: `playAndRecord` es no mezclable por defecto. Apple define `cannotInterruptOthers` como el intento de activar desde background una sesión no mezclable. El proyecto ya declara `UIBackgroundModes=audio`; el bloqueo restante era la configuración de la sesión, no el retry ni el engine.
@@ -8,7 +24,7 @@
 - XCTest determinista fija la categoría/modo, exige `mixWithOthers`, conserva Bluetooth/altavoz y prohíbe introducir `duckOthers` o `interruptSpokenAudioAndMixWithOthers`. El cambio puede permitir que audio de otras apps continúe mientras se graba y llegue acústicamente al micrófono; es el coste documentado de hacer cooperativa la sesión y la puerta necesaria para recuperar sin foreground.
 - La fuente y el finalizador quedaron en `main` mediante `181fe83`. El run `33346790879` superó la arquitectura continua, todos los XCTest y Release para dispositivo. El run firmado `33347088605` superó Xcode 26.6, firma/perfil, puerta UMP/ATT, XCTest, archive, privacidad, siete idiomas, exportación IPA, validación de Apple y upload con IDs demo oficiales.
 - El finalizador `33347538527` confirmó la build Apple `82c918a0-19e3-4528-858b-06dbb6912af1`: iOS 1.0.7 (1), `VALID`, `INTERNAL_ONLY`, `usesNonExemptEncryption=false`, `IN_BETA_TESTING`, externo `NOT_APPLICABLE`, grupo privado `Testers` con exactamente dos testers, acceso automático y relación activa; `selectedByAppStoreVersions=[]`.
-- No hubo TestFlight externo, selección para App Store, App Review ni publicación. La build usa IDs demo y solo puede utilizarse para QA interno. Falta la prueba física cerrando Siri sin volver a la app durante al menos 20 segundos; el indicador naranja debe reaparecer y la voz posterior debe quedar en el segundo segmento.
+- No hubo TestFlight externo, selección para App Store, App Review ni publicación. La build usa IDs demo y solo puede utilizarse para QA interno. La prueba principal de Siri sin foreground ya está aprobada; siguen siendo prudentes pruebas físicas separadas de llamada/alarma, bloqueo prolongado, Bluetooth/cambio de ruta y poco espacio antes de promover una futura candidata de producción.
 
 ## TestFlight interno diagnóstico iOS 1.0.6 (1) — recupera solo al volver a foreground — 2026-08-31
 
@@ -364,3 +380,17 @@ Proximo paso: instalar y probar la build 2 desde TestFlight en un iPhone real. A
 - La inspeccion de AdMob en el navegador integrado sigue bloqueada por un fallo del controlador local; se abrio una pestaña nueva, pero no se modifico ningun recurso de AdMob.
 
 Proximo paso: instalar la build 4 desde TestFlight y comparar el icono blanco con el negro conservado. Antes de una candidata publica con AdMob real, verificar que el mensaje europeo de privacidad figure como publicado.
+
+## Candidata local de produccion iOS 1.0.8 (1) - 2026-08-31
+
+- La fuente local integra el watchdog basado en buffers reales, proteccion de archivos y recuperacion de segmentos no indexados de la candidata 1.0.8. No hay commit, push, Actions, build ni subida.
+- Se elimino de Ajustes toda la seccion `INTERNAL QA`, su boton, alertas, hoja de compartir y la generacion/exportacion del JSON. La app de produccion no conserva un fichero de 200 eventos ni expone diagnostico al usuario.
+- La observabilidad restante se limita a codigos tecnicos fijos en Unified Log. No escribe audio, contenido, nombres/rutas, UUID de sesion, hardware, cuentas ni datos de llamadas. El diario minimo de ejecucion permanece local y protegido para reconocer una ejecucion anterior terminada sin Stop; solo contiene UUID aleatorios y fechas.
+- `native-ios/project.yml` conserva los IDs demo oficiales para que una ejecucion de desarrollo nunca genere clics reales. El workflow de App Store selecciona `production` por defecto, inyecta los IDs reales desde secrets protegidos, valida formato, rechaza IDs demo y vuelve a comprobar los IDs dentro del archive.
+- UMP continua siendo la puerta de anuncios (`canRequestAds`); Mobile Ads no arranca antes. ATT solo se solicita cuando las senales TCF permiten tracking y nunca inmediatamente despues de retirar/rechazar consentimiento. Ajustes conserva opciones de privacidad cuando UMP las exige.
+- StoreKit conserva siete productos mensuales verificados, restauracion, gestion/cancelacion, privacidad y EULA; cualquier suscripcion activa retira anuncios.
+- `PrivacyInfo.xcprivacy` declara unicamente File Timestamp y UserDefaults como Required Reason APIs, sin dominios de tracking propios. `Info.plist` conserva microfono, ATT, background audio, IDs AdMob parametrizados y cifrado no exento `false`.
+- Se elimino el scaffolding compilado pero inactivo de nube: cola, proveedores, iCloud/Drive/OneDrive, endpoint de servidor, token Bearer y POST multipart. Al iniciar se borran las cuatro preferencias heredadas; compartir grabaciones sigue siendo local mediante la hoja de iOS.
+- Riesgo externo pendiente: antes de distribuir hay que demostrar en CI macOS/XCTest/Release que la fuente exacta compila y que los secrets protegidos contienen los mismos IDs reales. La consola AdMob/UMP y la ficha App Privacy deben verificarse contra el binario exacto; eso no puede certificarse desde Windows.
+
+Proximo paso coordinado: integrar esta fuente sin los dos scripts ajenos ni `artifact/`, ejecutar CI macOS con `ad_configuration=production` y sin upload primero, revisar el archive exacto y completar QA fisico. Las llamadas aceptadas pueden suspender una app general; la recuperacion automatica solo puede ejecutarse cuando iOS vuelve a darle tiempo de proceso o al regresar a foreground.

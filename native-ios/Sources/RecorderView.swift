@@ -4,7 +4,6 @@ struct RecorderView: View {
     @EnvironmentObject private var recorder: RecorderService
     @EnvironmentObject private var settings: RecordingSettingsStore
     @EnvironmentObject private var library: RecordingLibrary
-    @EnvironmentObject private var uploadQueue: CloudUploadQueue
 
     var body: some View {
         NavigationStack {
@@ -123,7 +122,7 @@ struct RecorderView: View {
             recorder.stop()
         } else {
             Task {
-                await recorder.start(settings: settings, library: library, uploadQueue: uploadQueue)
+                await recorder.start(settings: settings, library: library)
             }
         }
     }

@@ -109,13 +109,6 @@
 "No se pudo codificar el audio." = "Impossible d encoder l audio.";
 "Contacto" = "Contact";
 "Cargando opciones" = "Chargement des options";
-"Sin subida" = "Sans envoi";
-"Servidor propio" = "Serveur propre";
-"La subida automatica esta desactivada." = "L envoi automatique est desactive.";
-"Falta iniciar sesion en %@." = "Connexion manquante dans %@.";
-"Falta configurar la URL de subida del servidor propio." = "L URL d envoi du serveur propre manque.";
-"El servidor rechazo la subida con codigo %d." = "Le serveur a refuse l envoi avec le code %d.";
-"No se pudo guardar el archivo en %@." = "Impossible d enregistrer le fichier dans %@.";
 "Idioma" = "Langue";
 "Idioma de la aplicacion" = "Langue de l'application";
 "Suscripcion mensual" = "Abonnement mensuel";

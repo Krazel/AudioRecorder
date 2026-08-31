@@ -14,13 +14,21 @@ final class RecorderService: ObservableObject {
     @Published private(set) var isCapturingAudio = false
 
     private var engine = AVAudioEngine()
-    private lazy var soundProcessor = SoundActivatedAudioProcessor { [weak self] progress in
-        Task { @MainActor [weak self] in
-            self?.applySoundProcessorProgress(progress)
-        }
-    }
+    private let livenessBridge = RecordingLivenessBridge()
+    private lazy var soundProcessor: SoundActivatedAudioProcessor = {
+        let bridge = livenessBridge
+        return SoundActivatedAudioProcessor(
+            progressHandler: { [weak self] progress in
+                Task { @MainActor [weak self] in
+                    self?.applySoundProcessorProgress(progress)
+                }
+            },
+            activityHandler: { generation in
+                bridge.observedAudioActivity(generation: generation)
+            }
+        )
+    }()
     private var soundProcessorGeneration: UUID?
-    private var recorderTimer: Timer?
     private var audioTapInstalled = false
     private var currentFile: AVAudioFile?
     private var currentURL: URL?
@@ -32,7 +40,6 @@ final class RecorderService: ObservableObject {
     private var installedObservers = false
     private var settingsStore: RecordingSettingsStore?
     private var library: RecordingLibrary?
-    private var uploadQueue: CloudUploadQueue?
     private var isPerformingRecovery = false
     private var waitingForMediaServicesReset = false
     private var lastBackendActivityAt: Date?
@@ -50,6 +57,19 @@ final class RecorderService: ObservableObject {
     private let diagnostics = RecordingDiagnostics()
     private var diagnosticSessionID = UUID()
     private let persistedRecordingIntentKey = "RecorderService.persistedRecordingIntent"
+    private let processID = RecordingProcessIdentity.current
+    private var pendingPreviousExecutionAssessment: PreviousRecordingExecutionAssessment?
+
+    init() {
+        let persistedIntent = UserDefaults.standard.bool(forKey: persistedRecordingIntentKey)
+        let assessment = livenessBridge.ledger.assessment(
+            persistedRecordingIntent: persistedIntent,
+            currentProcessID: processID
+        )
+        if assessment != .none {
+            pendingPreviousExecutionAssessment = assessment
+        }
+    }
 
     var shouldResumePersistedRecording: Bool {
         UserDefaults.standard.bool(forKey: persistedRecordingIntentKey)
@@ -60,23 +80,18 @@ final class RecorderService: ObservableObject {
         return currentSettings?.mode
     }
 
-    func makeRecordingDiagnosticsExport() throws -> URL {
-        try diagnostics.makeExportFile()
-    }
-
     func start(
         settings: RecordingSettingsStore,
-        library: RecordingLibrary,
-        uploadQueue: CloudUploadQueue
+        library: RecordingLibrary
     ) async {
         guard !isRecording else { return }
         guard continuityPolicy.handle(.startRequested) == .startBackend else { return }
         diagnosticSessionID = UUID()
         settingsStore = settings
         self.library = library
-        self.uploadQueue = uploadQueue
         currentSettings = RecordingSnapshot(settings)
         installEmergencySaveObserversIfNeeded()
+        recordPendingPreviousExecutionAssessmentIfNeeded()
         recordDiagnostic(.startRequested)
 
         do {
@@ -89,6 +104,10 @@ final class RecorderService: ObservableObject {
             isCapturingAudio = true
             cancelRecoveryRetry()
             persistRecordingIntent(true)
+            livenessBridge.ledger.begin(
+                processID: processID,
+                sessionID: diagnosticSessionID
+            )
             lastError = nil
             _ = continuityPolicy.handle(.backendStarted)
             recordDiagnostic(.started)
@@ -115,6 +134,7 @@ final class RecorderService: ObservableObject {
         cancelSegmentRotationRetry()
         if clearIntent {
             persistRecordingIntent(false)
+            livenessBridge.ledger.clear()
         }
         if recoveryMustAbandonEngine {
             abandonAudioObjectsPreservingSegment()
@@ -213,34 +233,6 @@ final class RecorderService: ObservableObject {
         try startEngine()
     }
 
-    private func startBackendHealthTimer() {
-        recorderTimer?.invalidate()
-        let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.updateBackendHealth()
-            }
-        }
-        RunLoop.main.add(timer, forMode: .common)
-        recorderTimer = timer
-    }
-
-    private func updateBackendHealth() {
-        guard isRecording, !isInterrupted, !isPerformingRecovery else { return }
-        if !engine.isRunning {
-            handleUnexpectedBackendFailure(
-                RecorderError.backendStoppedUnexpectedly,
-                diagnosticCode: .backendStoppedUnexpectedly
-            )
-        } else if segmentRotationRetryTask == nil,
-                  let lastBackendActivityAt,
-                  Date().timeIntervalSince(lastBackendActivityAt) > 5 {
-            handleUnexpectedBackendFailure(
-                RecorderError.audioInputStalled,
-                diagnosticCode: .backendStoppedUnexpectedly
-            )
-        }
-    }
-
     private func startEngine() throws {
         guard let currentFile, let settings = currentSettings else {
             throw RecorderError.missingSettings
@@ -278,13 +270,19 @@ final class RecorderService: ObservableObject {
         try engine.start()
         lastBackendActivityAt = Date()
         isCapturingAudio = true
-        startBackendHealthTimer()
+        guard let soundProcessorGeneration else {
+            throw RecorderError.missingSettings
+        }
+        livenessBridge.watchdog.start(generation: soundProcessorGeneration) { [weak self] generation in
+            Task { @MainActor [weak self] in
+                self?.handleAudioActivityTimeout(generation: generation)
+            }
+        }
     }
 
     private func stopEngine() {
         cancelSegmentRotationRetry()
-        recorderTimer?.invalidate()
-        recorderTimer = nil
+        livenessBridge.watchdog.stop()
         if audioTapInstalled {
             engine.inputNode.removeTap(onBus: 0)
             audioTapInstalled = false
@@ -307,10 +305,20 @@ final class RecorderService: ObservableObject {
         guard inputFormat.sampleRate > 0, inputFormat.channelCount > 0 else {
             throw RecorderError.audioInputUnavailable
         }
-        let preparedFile = try AVAudioFile(
-            forWriting: url,
-            settings: settings.quality.recordingSettings(matching: inputFormat)
-        )
+        let preparedFile: AVAudioFile
+        do {
+            preparedFile = try AVAudioFile(
+                forWriting: url,
+                settings: settings.quality.recordingSettings(matching: inputFormat)
+            )
+            // AVAudioFile creates the destination. File protection can only be
+            // applied after that succeeds; applying attributes to a future URL
+            // would make every recording fail before the first buffer.
+            try RecordingStorage.prepareOpenSegmentForBackgroundRecording(url)
+        } catch {
+            deleteFileIfNeeded(url)
+            throw error
+        }
 
         // Commit only after the next destination is known to be writable. A
         // preparation failure must never discard or relabel the prior segment.
@@ -355,6 +363,13 @@ final class RecorderService: ObservableObject {
                     capturesAllAudio: settings.mode == .everything
                 )
             )
+            if let soundProcessorGeneration {
+                livenessBridge.watchdog.start(generation: soundProcessorGeneration) { [weak self] generation in
+                    Task { @MainActor [weak self] in
+                        self?.handleAudioActivityTimeout(generation: generation)
+                    }
+                }
+            }
             lastBackendActivityAt = Date()
             isCapturingAudio = hasActiveRecordingBackend
             _ = continuityPolicy.handle(.nextSegmentStarted)
@@ -478,28 +493,14 @@ final class RecorderService: ObservableObject {
             customName: nil
         )
 
-        addCompletedSegment(item)
+        library?.addImmediately(item)
+        livenessBridge.ledger.markSegmentCommitted()
         recordDiagnostic(.segmentCompleted)
         currentURL = nil
         currentSegmentCompletionToken = nil
         currentSegmentStartedAt = nil
         writtenDuration = 0
         didWriteCurrentSegment = false
-    }
-
-    private func addCompletedSegment(_ item: RecordingItem) {
-        library?.addImmediately(item)
-        guard settingsStore?.uploadAutomatically == true else { return }
-
-        Task {
-            await uploadQueue?.enqueue(
-                recording: item,
-                provider: settingsStore?.cloudProvider ?? .none,
-                endpointURL: settingsStore?.cloudProvider == .customServer ? settingsStore?.customUploadEndpointURL : nil,
-                authToken: settingsStore?.customUploadToken ?? ""
-            )
-            await uploadQueue?.processNext(library: library)
-        }
     }
 
     private func deleteFileIfNeeded(_ url: URL) {
@@ -540,6 +541,16 @@ final class RecorderService: ObservableObject {
         ) { [weak self] notification in
             Task { @MainActor in
                 self?.handleAudioInterruption(notification)
+            }
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.didReceiveMemoryWarningNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.recordDiagnostic(.memoryWarningReceived)
             }
         }
 
@@ -595,6 +606,12 @@ final class RecorderService: ObservableObject {
         }
     }
 
+    func applicationWillResignActive() {
+        if isRecording {
+            recordDiagnostic(.enteredInactive)
+        }
+    }
+
     func applicationDidBecomeActive() async {
         guard !waitingForMediaServicesReset else { return }
         if isRecording {
@@ -608,6 +625,19 @@ final class RecorderService: ObservableObject {
                 messageFormat: L("No se pudo reactivar la grabacion: %@")
             )
         }
+    }
+
+    private func handleAudioActivityTimeout(generation: UUID) {
+        guard isRecording,
+              !isInterrupted,
+              !isPerformingRecovery,
+              generation == soundProcessorGeneration else {
+            return
+        }
+        handleUnexpectedBackendFailure(
+            RecorderError.audioInputStalled,
+            diagnosticCode: .audioInputStalled
+        )
     }
 
     private func handleMediaServicesLost() {
@@ -910,8 +940,7 @@ final class RecorderService: ObservableObject {
     }
 
     private func abandonAudioObjectsPreservingSegment() {
-        recorderTimer?.invalidate()
-        recorderTimer = nil
+        livenessBridge.watchdog.stop()
         cancelSegmentRotationRetry()
 
         // Every caller reaches this method after the AVFoundation notification
@@ -1031,7 +1060,9 @@ final class RecorderService: ObservableObject {
     }
 
     private var hasActiveRecordingBackend: Bool {
-        engine.isRunning && soundProcessorGeneration != nil
+        engine.isRunning
+            && soundProcessorGeneration != nil
+            && livenessBridge.watchdog.isFresh(generation: soundProcessorGeneration)
     }
 
     private func recordDiagnostic(
@@ -1080,6 +1111,7 @@ final class RecorderService: ObservableObject {
     private func emergencyStopAndSave() {
         guard isRecording else { return }
         recordDiagnostic(.backendStoppedUnexpectedly)
+        livenessBridge.ledger.markTerminationNotification()
         isInterrupted = false
         cancelRecoveryRetry()
         cancelSegmentRotationRetry()
@@ -1093,6 +1125,22 @@ final class RecorderService: ObservableObject {
         isRecording = false
         isCapturingAudio = false
         setWritingAudio(false)
+    }
+
+    private func recordPendingPreviousExecutionAssessmentIfNeeded() {
+        guard let assessment = pendingPreviousExecutionAssessment else { return }
+        pendingPreviousExecutionAssessment = nil
+        switch assessment {
+        case .none:
+            return
+        case let .endedWithoutStop(secondsSinceLastAudioActivity, receivedTerminationNotification):
+            recordDiagnostic(
+                receivedTerminationNotification
+                    ? .previousExecutionTerminationNotified
+                    : .previousExecutionEndedWithoutStop,
+                detailCode: secondsSinceLastAudioActivity
+            )
+        }
     }
 }
 
@@ -1125,7 +1173,7 @@ private struct RecordingSnapshot {
         mode = settings.mode
         quality = settings.quality
         segmentDuration = settings.segmentDuration
-        uploadState = settings.uploadAutomatically && settings.cloudProvider != .none ? .queued : .localOnly
+        uploadState = .localOnly
         thresholdDB = settings.recordingThresholdDB
         soundTailDuration = settings.soundTailSeconds
     }

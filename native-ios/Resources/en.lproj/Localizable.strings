@@ -109,13 +109,6 @@
 "No se pudo codificar el audio." = "The audio could not be encoded.";
 "Contacto" = "Contact";
 "Cargando opciones" = "Loading options";
-"Sin subida" = "No upload";
-"Servidor propio" = "Custom server";
-"La subida automatica esta desactivada." = "Automatic upload is disabled.";
-"Falta iniciar sesion en %@." = "Sign-in is missing for %@.";
-"Falta configurar la URL de subida del servidor propio." = "The custom server upload URL is missing.";
-"El servidor rechazo la subida con codigo %d." = "The server rejected the upload with code %d.";
-"No se pudo guardar el archivo en %@." = "The file could not be saved in %@.";
 "Idioma" = "Language";
 "Idioma de la aplicacion" = "App language";
 "Suscripcion mensual" = "Monthly subscription";

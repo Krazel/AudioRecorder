@@ -1,6 +1,6 @@
 # VoiceRecorder iOS — release data inventory
 
-Last verified: 2026-08-30. Scope: the iOS 1.0.3 build 1 source candidate and its declared Google Mobile Ads 12.14.0, Google UMP 3.1.0, and Apple StoreKit integrations. The continuous-segmentation correction and bounded, device-local lifecycle diagnostics do not add a recipient, analytics service, account, or transmission.
+Last verified: 2026-08-31. Scope: the iOS 1.0.8 build 1 production source candidate and its declared Google Mobile Ads 12.14.0, Google UMP 3.1.0, and Apple StoreKit integrations. Recording liveness uses only minimised Unified Log events and a protected local execution ledger; neither adds a recipient, analytics service, account, or transmission.
 
 This inventory is the source of truth for privacy copy and App Store Privacy answers. It describes the shipped build, not possible future features.
 
@@ -20,14 +20,11 @@ This inventory is the source of truth for privacy copy and App Store Privacy ans
 - User-assigned file names, favorites, and selection state needed for file management.
 - Recording quality, mode, segment duration, sound threshold/tail, launch-recording preference, and selected app language.
 - Local ad-removal state derived from the active StoreKit entitlement.
-- Up to 200 local recording lifecycle events in Caches: timestamp, ephemeral session UUID, event/phase/mode, numeric route-reason code, and error domain/code. They exclude audio, filenames/paths, hardware-route names, accounts, and user-entered content; iOS may purge them.
+- A minimal protected execution ledger containing only an installation-random execution UUID and start/last-buffer/last-segment timestamps. It classifies an interrupted prior execution conservatively and is cleared after a normal Stop.
+- Fixed recording lifecycle codes and numeric state can appear in Apple's device-local Unified Log. They exclude audio, filenames/paths, hardware-route names, accounts, call/contact metadata, and user-entered content. The app contains no user-visible diagnostic export and writes no diagnostic JSON trail.
 - StoreKit provides verified product/transaction entitlement state; the app does not receive payment-card details.
 
-The app has no account, developer backend, cloud account, analytics SDK, social graph, or automatic upload feature enabled in the shipped UI.
-
-### Legacy local-only fields
-
-`RecordingSettingsStore` still contains disabled cloud-provider, custom-endpoint, and custom-token preferences inherited from older scaffolding. `uploadAutomatically` is forced to `false` at initialization and the shipped UI does not expose these fields, so build 5 does not transmit them. Strict minimization requires removing these unused fields and clearing any legacy values in the next source build; this cleanup must not be represented as already present in build 5.
+The app has no account, developer backend, cloud account, analytics SDK, social graph, automatic upload feature, server endpoint, stored upload token, or cloud-upload client. Version 1.0.8 removes the previous inactive upload scaffolding and clears its legacy preferences on launch.
 
 ## User-initiated disclosures
 
@@ -41,7 +38,7 @@ The app has no account, developer backend, cloud account, analytics SDK, social 
 
 Ads are enabled for free users and removed while an eligible StoreKit subscription is active. UMP updates consent information and presents required consent/privacy options before the app requests ads.
 
-The build 8 source candidate requests ATT only after UMP finishes and an explicit fail-closed gate confirms that the applicable European choices permit personalized advertising for Google. The gate requires positive TCF signals for device storage/access, personalized-ad profile creation and selection, the operational legal bases used by Google, and Google vendor 755. A European refusal, missing signal, malformed value, or UMP error never triggers ATT. Outside the European scope, ATT may be requested after the UMP update. `canRequestAds` is used only to decide whether Google Mobile Ads may start; it is never treated as consent to tracking. The AdMob IDFA message remains unpublished so it cannot bypass this gate. If ATT is denied or restricted when legitimately presented, the app remains fully usable and Google Mobile Ads may serve ads without sending IDFA; the app does not permit tracking without Apple's authorization.
+The 1.0.8 source candidate requests ATT only after UMP finishes and an explicit fail-closed gate confirms that the applicable European choices permit personalized advertising for Google. The gate requires positive TCF signals for device storage/access, personalized-ad profile creation and selection, the operational legal bases used by Google, and Google vendor 755. A European refusal, missing signal, malformed value, or UMP error never triggers ATT. Outside the European scope, ATT may be requested after the UMP update. `canRequestAds` is used only to decide whether Google Mobile Ads may start; it is never treated as consent to tracking. The AdMob IDFA message remains unpublished so it cannot bypass this gate. If ATT is denied or restricted when legitimately presented, the app remains fully usable and Google Mobile Ads may serve ads without sending IDFA; the app does not permit tracking without Apple's authorization.
 
 The app target's root privacy manifest declares `NSPrivacyTracking=false` and no `NSPrivacyTrackingDomains`, because first-party app code does not provide tracking domains. Google Mobile Ads and UMP retain their vendor manifests. This does not replace or weaken ATT, `usesIdfa=true`, or the App Store privacy disclosure; it prevents the invalid `true` plus empty-domain-array combination rejected as `ITMS-91064`.
 
@@ -62,11 +59,11 @@ StoreKit processes optional monthly subscriptions and restoration. The app recei
 
 ## App Store Privacy disclosure baseline
 
-The release disclosure must include the Google SDK categories actually present: coarse location derived from IP, device ID, advertising data, product interaction, crash data, and performance/diagnostic data, with the purposes supported by Google's current disclosure. Because build 8 supports personalized advertising and measurement only when the regulatory gate and ATT both authorize it, coarse location, device ID, advertising data, product interaction, and performance data are declared as used for tracking. Crash data remains collected for diagnostics/analytics but is not declared as used for tracking.
+The release disclosure must include the Google SDK categories actually present: coarse location derived from IP, device ID, advertising data, product interaction, crash data, and performance/diagnostic data, with the purposes supported by Google's current disclosure. Because 1.0.8 supports personalized advertising and measurement only when the regulatory gate and ATT both authorize it, coarse location, device ID, advertising data, product interaction, and performance data are declared as used for tracking. Crash data remains collected for diagnostics/analytics but is not declared as used for tracking.
 
 Do not declare the user's recordings as collected by the developer: they are processed and stored only on device unless the user initiates sharing to a destination they select. Do not declare payment information as developer-collected because payment entry and processing occur in Apple's App Store flow.
 
-Conservative linked-data baseline for the App Store questionnaire: coarse location, device ID, advertising data, product interaction, and performance data are linked to the user; Google's non-user-related crash data is not. This mapping and the conditional tracking behavior must be reconciled against the aggregated privacy report from the exact build 8 archive before submission.
+Conservative linked-data baseline for the App Store questionnaire: coarse location, device ID, advertising data, product interaction, and performance data are linked to the user; Google's non-user-related crash data is not. This mapping and the conditional tracking behavior must be reconciled against the aggregated privacy report from the exact 1.0.8 archive before submission.
 
 ## Public and private contact separation
 
@@ -79,6 +76,6 @@ Conservative linked-data baseline for the App Store questionnaire: coarse locati
 
 - Generate and inspect Xcode's aggregated privacy report for the exact release archive.
 - Compare App Store Privacy answers with the report and Google's then-current official data-disclosure page.
-- Keep the required Privacy Policy and Support URLs; leave optional Privacy Choices, marketing, and promotional fields blank unless a concrete function requires them. Apple explicitly requested the subscription review screenshot for this submission.
+- Keep the required Privacy Policy and Support URLs. The Marketing URL intentionally points to the public app landing because AdMob uses the linked developer website to discover `app-ads.txt`. Leave unrelated optional fields blank. Existing subscription review screenshots remain private App Review evidence, not storefront artwork.
 - Test clean installs in an EEA review path: rejecting the European message must not show ATT; only the explicit positive TCF gate may allow the app to request ATT. Test ATT allow/deny separately, plus a non-EEA path and later withdrawal through Privacy Options. Keep the AdMob IDFA message unpublished during these tests and in production.
 - Confirm the public policy names the shipped app, states that ads are enabled for free users, names Google Mobile Ads/UMP and StoreKit, and contains no hypothetical services or personal owner details.

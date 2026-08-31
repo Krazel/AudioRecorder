@@ -1,0 +1,77 @@
+name: Manage iOS 1.0.8 Production Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Read status, verify build number, finalize processing, prepare metadata, or submit App Review
+        required: true
+        default: status
+        type: choice
+        options:
+          - status
+          - verify-unused
+          - finalize-production
+          - prepare
+          - submit
+      confirm_prepare:
+        description: Required only for prepare; selects 1.0.8 (1) and updates review metadata without submitting
+        required: true
+        default: false
+        type: boolean
+      confirm_submit:
+        description: Required only for submit; sends 1.0.8 (1) to App Review with manual release
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  manage:
+    if: ${{ github.actor == github.repository_owner && github.ref == 'refs/heads/main' && !github.event.repository.private && (inputs.operation != 'prepare' || inputs.confirm_prepare) && (inputs.operation != 'submit' || inputs.confirm_submit) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment: app-store-production
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_PRIVATE_KEY_BASE64: ${{ secrets.ASC_PRIVATE_KEY_BASE64 }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install temporary App Store Connect key
+        run: |
+          set -euo pipefail
+          if [[ -z "${ASC_KEY_ID}" || -z "${ASC_ISSUER_ID}" || -z "${ASC_PRIVATE_KEY_BASE64}" ]]; then
+            echo "Missing App Store Connect credentials"
+            exit 1
+          fi
+          KEY_PATH="$RUNNER_TEMP/AuthKey_${ASC_KEY_ID}.p8"
+          python3 - <<'PY'
+          import base64
+          import os
+          from pathlib import Path
+
+          encoded = os.environ["ASC_PRIVATE_KEY_BASE64"].strip().lstrip("\ufeff")
+          private_key = base64.b64decode(encoded, validate=True)
+          Path(os.environ["RUNNER_TEMP"], f"AuthKey_{os.environ['ASC_KEY_ID']}.p8").write_bytes(private_key)
+          PY
+          chmod 600 "$KEY_PATH"
+          echo "ASC_PRIVATE_KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
+
+      - name: Run guarded release operation
+        run: |
+          set -euo pipefail
+          case "${{ inputs.operation }}" in
+            prepare) node scripts/manage-ios-1.0.8-release.mjs prepare --confirm-prepare ;;
+            submit) node scripts/manage-ios-1.0.8-release.mjs submit --confirm-submit ;;
+            *) node scripts/manage-ios-1.0.8-release.mjs "${{ inputs.operation }}" ;;
+          esac
+
+      - name: Clean temporary key
+        if: always()
+        run: rm -f "${ASC_PRIVATE_KEY_PATH:-}"

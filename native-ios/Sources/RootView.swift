@@ -60,12 +60,17 @@ private struct AutoStartRecorderView: View {
     @EnvironmentObject private var recorder: RecorderService
     @EnvironmentObject private var settings: RecordingSettingsStore
     @EnvironmentObject private var library: RecordingLibrary
-    @EnvironmentObject private var uploadQueue: CloudUploadQueue
 
     var body: some View {
         Color.clear
             .task {
                 await startIfNeeded()
+            }
+            .onChange(of: library.isLoaded) { isLoaded in
+                guard isLoaded else { return }
+                Task {
+                    await startIfNeeded()
+                }
             }
             .onChange(of: scenePhase) { phase in
                 Task {
@@ -76,7 +81,7 @@ private struct AutoStartRecorderView: View {
                     case .background:
                         recorder.applicationDidEnterBackground()
                     case .inactive:
-                        break
+                        recorder.applicationWillResignActive()
                     @unknown default:
                         break
                     }
@@ -85,10 +90,11 @@ private struct AutoStartRecorderView: View {
     }
 
     private func startIfNeeded() async {
-        guard (settings.startRecordingOnLaunch || recorder.shouldResumePersistedRecording),
+        guard library.isLoaded,
+              (settings.startRecordingOnLaunch || recorder.shouldResumePersistedRecording),
               !recorder.isRecording else {
             return
         }
-        await recorder.start(settings: settings, library: library, uploadQueue: uploadQueue)
+        await recorder.start(settings: settings, library: library)
     }
 }

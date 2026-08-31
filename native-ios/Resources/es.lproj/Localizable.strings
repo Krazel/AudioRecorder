@@ -109,13 +109,6 @@
 "No se pudo codificar el audio." = "No se pudo codificar el audio.";
 "Contacto" = "Contacto";
 "Cargando opciones" = "Cargando opciones";
-"Sin subida" = "Sin subida";
-"Servidor propio" = "Servidor propio";
-"La subida automatica esta desactivada." = "La subida automatica esta desactivada.";
-"Falta iniciar sesion en %@." = "Falta iniciar sesion en %@.";
-"Falta configurar la URL de subida del servidor propio." = "Falta configurar la URL de subida del servidor propio.";
-"El servidor rechazo la subida con codigo %d." = "El servidor rechazo la subida con codigo %d.";
-"No se pudo guardar el archivo en %@." = "No se pudo guardar el archivo en %@.";
 "Idioma" = "Idioma";
 "Idioma de la aplicacion" = "Idioma de la aplicación";
 "Suscripcion mensual" = "Suscripción mensual";

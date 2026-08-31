@@ -6,7 +6,6 @@ struct SettingsView: View {
     @EnvironmentObject private var recorder: RecorderService
     @EnvironmentObject private var monetization: MonetizationStore
     @EnvironmentObject private var library: RecordingLibrary
-    @EnvironmentObject private var uploadQueue: CloudUploadQueue
     @EnvironmentObject private var playback: AudioPlaybackService
     @EnvironmentObject private var language: AppLanguageStore
     @EnvironmentObject private var adConsent: AdConsentManager
@@ -14,8 +13,6 @@ struct SettingsView: View {
 
     @State private var supportExpanded = false
     @State private var confirmingDeleteAllFiles = false
-    @State private var diagnosticShareItem: ShareItem?
-    @State private var diagnosticExportError: String?
 
     private let segmentOptions = [5, 15, 30, 60, 120]
     private let soundTailOptions = [0.0, 0.5, 1.0, 2.0, 3.0, 5.0]
@@ -126,20 +123,6 @@ struct SettingsView: View {
                     }
                 }
 
-                if InternalRecordingDiagnosticsAvailability.isEnabledForCurrentBuild {
-                    Section("INTERNAL QA") {
-                        Button {
-                            exportRecordingDiagnostics()
-                        } label: {
-                            Label("Exportar diagnóstico de grabación", systemImage: "stethoscope")
-                        }
-
-                        Text("Herramienta provisional para pruebas internas. Exporta solo eventos técnicos sanitizados; no incluye audio, nombres, rutas, hardware, cuentas ni envío automático.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
                 Section(L("Version")) {
                     HStack {
                         Text("Voice Recorder Pro - Audio K")
@@ -175,16 +158,6 @@ struct SettingsView: View {
                 }
             } message: {
                 Text(adConsent.privacyOptionsErrorMessage ?? "")
-            }
-            .alert("Diagnóstico interno", isPresented: diagnosticExportErrorBinding) {
-                Button(L("OK"), role: .cancel) {
-                    diagnosticExportError = nil
-                }
-            } message: {
-                Text(diagnosticExportError ?? "")
-            }
-            .sheet(item: $diagnosticShareItem) { item in
-                ShareSheet(urls: item.urls) { _ in }
             }
         }
     }
@@ -309,16 +282,7 @@ struct SettingsView: View {
     private func deleteAllFiles() {
         playback.stop()
         Task {
-            await uploadQueue.removeAllJobs()
             await library.deleteAll()
-        }
-    }
-
-    private func exportRecordingDiagnostics() {
-        do {
-            diagnosticShareItem = ShareItem(url: try recorder.makeRecordingDiagnosticsExport())
-        } catch {
-            diagnosticExportError = "No se pudo preparar el diagnóstico (\((error as NSError).domain) \((error as NSError).code))."
         }
     }
 
@@ -336,10 +300,4 @@ struct SettingsView: View {
         )
     }
 
-    private var diagnosticExportErrorBinding: Binding<Bool> {
-        Binding(
-            get: { diagnosticExportError != nil },
-            set: { if !$0 { diagnosticExportError = nil } }
-        )
-    }
 }

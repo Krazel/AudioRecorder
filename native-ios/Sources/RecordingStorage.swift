@@ -1,6 +1,8 @@
 import Foundation
 
 enum RecordingStorage {
+    static let backgroundRecordingProtection = FileProtectionType.completeUntilFirstUserAuthentication
+
     static var rootDirectory: URL {
         let base = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         return base.appendingPathComponent("Recordings", isDirectory: true)
@@ -8,12 +10,19 @@ enum RecordingStorage {
 
     static func ensureDirectories() throws {
         try FileManager.default.createDirectory(at: rootDirectory, withIntermediateDirectories: true)
+        try applyBackgroundRecordingProtection(to: rootDirectory)
         for mode in RecordingMode.allCases {
+            let directory = rootDirectory.appendingPathComponent(mode.folderName, isDirectory: true)
             try FileManager.default.createDirectory(
-                at: rootDirectory.appendingPathComponent(mode.folderName, isDirectory: true),
+                at: directory,
                 withIntermediateDirectories: true
             )
+            try applyBackgroundRecordingProtection(to: directory)
         }
+    }
+
+    static func prepareOpenSegmentForBackgroundRecording(_ url: URL) throws {
+        try applyBackgroundRecordingProtection(to: url)
     }
 
     static func nextSegmentURL(mode: RecordingMode, quality: AudioQuality, date: Date = Date()) throws -> URL {
@@ -34,5 +43,12 @@ enum RecordingStorage {
         }
 
         return url
+    }
+
+    private static func applyBackgroundRecordingProtection(to url: URL) throws {
+        try FileManager.default.setAttributes(
+            [.protectionKey: backgroundRecordingProtection],
+            ofItemAtPath: url.path
+        )
     }
 }

@@ -109,13 +109,6 @@
 "No se pudo codificar el audio." = "Impossibile codificare l audio.";
 "Contacto" = "Contatto";
 "Cargando opciones" = "Caricamento opzioni";
-"Sin subida" = "Nessun caricamento";
-"Servidor propio" = "Server proprio";
-"La subida automatica esta desactivada." = "Il caricamento automatico e disattivato.";
-"Falta iniciar sesion en %@." = "Accesso mancante in %@.";
-"Falta configurar la URL de subida del servidor propio." = "Manca l URL di caricamento del server proprio.";
-"El servidor rechazo la subida con codigo %d." = "Il server ha rifiutato il caricamento con codice %d.";
-"No se pudo guardar el archivo en %@." = "Impossibile salvare il file in %@.";
 "Idioma" = "Lingua";
 "Idioma de la aplicacion" = "Lingua dell'app";
 "Suscripcion mensual" = "Abbonamento mensile";

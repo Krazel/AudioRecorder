@@ -29,6 +29,15 @@ jobs:
         working-directory: native-ios
         run: xcodegen generate
 
+      - name: Verify production diagnostics stay internal and non-exportable
+        run: |
+          set -euo pipefail
+          ! grep -R -Fq 'INTERNAL QA' native-ios/Sources
+          ! grep -R -Fq 'makeRecordingDiagnosticsExport' native-ios/Sources
+          ! grep -R -Fq 'voice-recorder-recording-diagnostics.json' native-ios/Sources
+          grep -Fq 'userVisibleExportEnabled = false' native-ios/Sources/RecordingDiagnostics.swift
+          grep -Fq 'persistedEventTrailEnabled = false' native-ios/Sources/RecordingDiagnostics.swift
+
       - name: Enforce continuous capture architecture
         run: |
           set -euo pipefail
@@ -68,7 +77,7 @@ jobs:
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
             -derivedDataPath build/recording-stability-derived \
-            MARKETING_VERSION=1.0.7 \
+            MARKETING_VERSION=1.0.8 \
             CURRENT_PROJECT_VERSION=1 \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
@@ -78,7 +87,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: AudioRecorder-1.0.7-1-${{ github.sha }}-Recording-Stability-Tests
+          name: AudioRecorder-1.0.8-1-${{ github.sha }}-Recording-Stability-Tests
           path: build/recording-stability-tests.xcresult
           if-no-files-found: warn
           retention-days: 7
