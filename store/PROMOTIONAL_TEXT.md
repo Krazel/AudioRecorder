@@ -15,7 +15,8 @@ limit. They are separate from version-specific `What's New` release notes.
 | `pt-PT` | 122 | Grave notas de voz, reuniões e ideias em modo contínuo ou ativado por som, com segmentos configuráveis e biblioteca local. |
 
 Evidence: counts are Unicode code-point counts. `store/store-manifest.json`
-contains the same canonical strings under each iOS locale. The App Store
-Connect browser session loaded the app account on 2026-09-01, but the
-distribution editor did not render its form contents; therefore no live field
-was changed and the submission in review was left untouched.
+contains the same canonical strings under each iOS locale. GitHub Actions run
+`33451128043` updated only `promotionalText` through the official App Store
+Connect API and read every localization back successfully. The version remained
+`WAITING_FOR_REVIEW`; its build, `What's New`, submission and release settings
+were not changed.

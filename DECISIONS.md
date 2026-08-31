@@ -69,9 +69,9 @@ Este documento distingue hechos observados de decisiones del propietario. Un hec
 
 `What's New / Novedades de esta versión` permanece ligado a cada versión y es la fuente del historial público. `Promotional Text / Texto promocional` es una ficha localizada independiente, de hasta 170 caracteres, que puede actualizarse sin una build nueva. VoiceRecorder mantiene ambos campos separados: las novedades 1.0.8 no se sustituyen por el texto promocional.
 
-### F-053 — Texto promocional canónico preparado, sin escritura remota — 2026-09-01
+### F-053 — Texto promocional canónico publicado en la ficha — 2026-09-01
 
-Se prepararon textos originales en `ca`, `de-DE`, `en-US`, `es-ES`, `fr-FR`, `it` y `pt-PT`, entre 122 y 135 caracteres, fieles a grabación continua/por sonido, segmentación configurable y biblioteca local. Quedaron en `store/store-manifest.json` y `store/PROMOTIONAL_TEXT.md`. La sesión de App Store Connect autenticó y abrió la app, pero el editor de distribución no renderizó el formulario; no se alteró metadata remota, build, submission ni publicación.
+Se prepararon textos originales en `ca`, `de-DE`, `en-US`, `es-ES`, `fr-FR`, `it` y `pt-PT`, entre 122 y 135 caracteres, fieles a grabación continua/por sonido, segmentación configurable y biblioteca local. Quedaron en `store/store-manifest.json` y `store/PROMOTIONAL_TEXT.md`. El commit `f6cfcad` añadió una operación limitada a ese atributo; el run `33451128043` guardó y verificó por lectura los siete valores mediante la API oficial. La versión permaneció `WAITING_FOR_REVIEW` y no se alteraron `What's New`, build, submission ni publicación.
 
 ### D-001 — Plataforma exclusiva iOS — 2026-08-08
 
