@@ -22,6 +22,12 @@ enum RecordingStorage {
     }
 
     static func prepareOpenSegmentForBackgroundRecording(_ url: URL) throws {
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            throw CocoaError(
+                .fileNoSuchFile,
+                userInfo: [NSFilePathErrorKey: url.path]
+            )
+        }
         try applyBackgroundRecordingProtection(to: url)
     }
 
