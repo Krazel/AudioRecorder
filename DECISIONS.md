@@ -500,3 +500,7 @@ El propietario autoriza commit, push, CI macOS, firma, carga en App Store Connec
 ### F-051 - AdMob real y superficie publica revalidados antes de 1.0.8 - 2026-08-31
 
 La consola viva muestra la app `2340753104`, App ID `ca-app-pub-3425091654264901~2340753104`, un unico banner `5497133550`, solicitudes, impresiones e ingresos reales, un mensaje europeo activo, ningun mensaje explicativo IDFA publicado y Centro de Politicas sin problemas. La ficha de App Store, la landing y `app-ads.txt` responden HTTP 200; `app-ads.txt` contiene `google.com, pub-3425091654264901, DIRECT, f08c47fec0942fa0`. AdMob aun etiqueta la verificacion de aplicacion como pendiente; esta diferencia se documenta y no permite sustituir los IDs reales por demos en el binario publico.
+
+### F-052 - iOS 1.0.8 (1) enviada con publicacion manual - 2026-08-31
+
+`33431172301` paso 51 XCTest y compilacion Release; `33431859539` paso configuracion AdMob real, GDPR/ATT, firma, archive, privacidad, IPA, validacion Apple y upload. Apple proceso la build `16e8d8da-dc84-4d74-9ccc-7ae4fb3164e0` como `VALID` y `APP_STORE_ELIGIBLE`. `33433413455` comprobo siete idiomas, dos capturas por idioma, siete suscripciones `APPROVED`, contacto privado, `usesIdfa=true` y `MANUAL`. `33433553712` creo el envio `8ff4b4c8-56b9-46b5-9fc7-ff907b409569`, confirmado en `WAITING_FOR_REVIEW`. No hubo publicacion automatica, reenvio de IAP ya aprobadas ni cambios Android.

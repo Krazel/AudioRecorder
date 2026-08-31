@@ -394,3 +394,16 @@ Proximo paso: instalar la build 4 desde TestFlight y comparar el icono blanco co
 - Riesgo externo pendiente: antes de distribuir hay que demostrar en CI macOS/XCTest/Release que la fuente exacta compila y que los secrets protegidos contienen los mismos IDs reales. La consola AdMob/UMP y la ficha App Privacy deben verificarse contra el binario exacto; eso no puede certificarse desde Windows.
 
 Proximo paso coordinado: integrar esta fuente sin los dos scripts ajenos ni `artifact/`, ejecutar CI macOS con `ad_configuration=production` y sin upload primero, revisar el archive exacto y completar QA fisico. Las llamadas aceptadas pueden suspender una app general; la recuperacion automatica solo puede ejecutarse cuando iOS vuelve a darle tiempo de proceso o al regresar a foreground.
+
+## iOS 1.0.8 (1) enviada a App Review - 2026-08-31
+
+- La candidata definitiva esta en `main` mediante `e2fe225` y el endurecimiento final de proteccion de archivos mediante `7e057ea`.
+- El run [33431172301](https://github.com/Krazel/AudioRecorder/actions/runs/33431172301) paso los 51 XCTest deterministas, las puertas de arquitectura continua/diagnostico no exportable y la compilacion Release para dispositivo con Xcode 26.6.
+- El run [33431859539](https://github.com/Krazel/AudioRecorder/actions/runs/33431859539) selecciono la configuracion AdMob de produccion, comprobo los IDs reales sin imprimirlos, paso GDPR/ATT, archivo y firmo la app, verifico version/firma/privacidad/localizaciones, exporto el IPA, lo valido con Apple y lo subio a App Store Connect.
+- Apple proceso el recurso `16e8d8da-dc84-4d74-9ccc-7ae4fb3164e0` como iOS `1.0.8` build `1`, `VALID`, `APP_STORE_ELIGIBLE`, no caducado y `usesNonExemptEncryption=false`.
+- El run [33433413455](https://github.com/Krazel/AudioRecorder/actions/runs/33433413455) selecciono esa build, dejo `releaseType=MANUAL`, `usesIdfa=true`, actualizo las siete localizaciones y comprobo dos capturas reales por idioma, contacto privado de revision y las siete suscripciones en `APPROVED`.
+- El run [33433553712](https://github.com/Krazel/AudioRecorder/actions/runs/33433553712) creo el envio `8ff4b4c8-56b9-46b5-9fc7-ff907b409569`. Estado confirmado: `WAITING_FOR_REVIEW`; la publicacion sigue siendo manual.
+- No se enviaron de nuevo las suscripciones ya aprobadas y no se publico la version. Android, `artifact/` y los dos scripts locales ajenos quedaron intactos.
+- AdMob sirve anuncios reales y no tiene incidencias de politica; la consola aun muestra la verificacion de la aplicacion pendiente. Tras la publicacion manual de 1.0.8, forzar `Buscar actualizaciones` en AdMob y confirmar que detecta la ficha/Developer Website.
+
+Proximo paso: esperar la decision de Apple. Si aprueba, el propietario conserva el control del boton de publicacion manual; despues verificar la app publica y completar la verificacion de AdMob.
