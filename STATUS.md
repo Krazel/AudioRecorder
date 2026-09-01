@@ -1,5 +1,12 @@
 # VoiceRecorder / AudioRecorder — estado actual
 
+## AdMob verificó la aplicación — 2026-09-01
+
+- La ficha pública de Apple ya muestra `Sitio web del desarrollador` con `https://krazel.github.io/audio-recorder/`.
+- `https://krazel.github.io/app-ads.txt` responde HTTP 200, `text/plain`, y contiene exactamente `google.com, pub-3425091654264901, DIRECT, f08c47fec0942fa0`.
+- Se solicitó de nuevo `Buscar actualizaciones` en AdMob y la consola confirmó: `Has verificado correctamente Voice Recorder Pro - Audio K (iOS)`.
+- AdMob inició ahora su revisión automática de preparación de la app. Indica un plazo habitual de 2–3 días y servicio de anuncios limitado hasta completarla; ya no falta ninguna corrección de Developer Website ni de `app-ads.txt`.
+
 ## Metadatos de ficha y texto promocional — 2026-09-01
 
 - `Novedades de esta versión` es el campo localizado de cada versión que alimenta el historial público. La versión iOS 1.0.8 ya conserva sus notas exactas en `ca`, `de-DE`, `en-US`, `es-ES`, `fr-FR`, `it` y `pt-PT` dentro de `store/store-manifest.json`.
@@ -14,7 +21,7 @@
 - Se eliminan por completo Ajustes > `INTERNAL QA`, la exportación/JSON de diagnóstico y su almacenamiento. Solo queda Unified Log minimizado y el diario de ejecución no exportable.
 - Se elimina todo scaffolding inactivo de subida a nube/servidor, incluidos endpoint/token y POST multipart; preferencias heredadas se purgan. Las grabaciones permanecen locales y solo se comparten mediante la hoja nativa elegida por el usuario.
 - La fuente conserva IDs demo para desarrollo. El workflow de producción inyecta secrets y exige que coincidan exactamente con `ca-app-pub-3425091654264901~2340753104` y `ca-app-pub-3425091654264901/5497133550` dentro del archive.
-- AdMob revalidado en vivo: app y banner reales, solicitudes e impresiones reales, mensaje europeo activo, mensaje IDFA sin publicar y Centro de Políticas sin problemas. La consola aún muestra verificación de aplicación pendiente, aunque App Store, landing y `app-ads.txt` responden HTTP 200 con la línea DIRECT correcta.
+- AdMob revalidado en vivo: app y banner reales, solicitudes e impresiones reales, mensaje europeo activo, mensaje IDFA sin publicar y Centro de Políticas sin problemas. La propiedad de la aplicación quedó verificada el 2026-09-01; queda únicamente la revisión automática de preparación de AdMob.
 - `store/store-manifest.json`, inventario y preflight ya apuntan a 1.0.8 y contienen `What's New` en siete idiomas. La automatización nueva separa status, número libre, procesamiento, preparación y envío; exige publicación `MANUAL`, build exacta, siete localizaciones/capturas y siete suscripciones ya `APPROVED`.
 - Pendiente operativo: integrar en `main`, ejecutar CI/XCTest/Release, firmar y validar el archive de producción, subirlo, verificar App Store Connect, seleccionar exclusivamente 1.0.8 (1) y enviarlo a App Review. La autorización vigente cubre esos pasos; nunca la publicación automática.
 
@@ -410,6 +417,6 @@ Proximo paso coordinado: integrar esta fuente sin los dos scripts ajenos ni `art
 - El run [33433413455](https://github.com/Krazel/AudioRecorder/actions/runs/33433413455) selecciono esa build, dejo `releaseType=MANUAL`, `usesIdfa=true`, actualizo las siete localizaciones y comprobo dos capturas reales por idioma, contacto privado de revision y las siete suscripciones en `APPROVED`.
 - El run [33433553712](https://github.com/Krazel/AudioRecorder/actions/runs/33433553712) creo el envio `8ff4b4c8-56b9-46b5-9fc7-ff907b409569`. Estado confirmado: `WAITING_FOR_REVIEW`; la publicacion sigue siendo manual.
 - No se enviaron de nuevo las suscripciones ya aprobadas y no se publico la version. Android, `artifact/` y los dos scripts locales ajenos quedaron intactos.
-- AdMob sirve anuncios reales y no tiene incidencias de politica; la consola aun muestra la verificacion de la aplicacion pendiente. Tras la publicacion manual de 1.0.8, forzar `Buscar actualizaciones` en AdMob y confirmar que detecta la ficha/Developer Website.
+- AdMob sirve anuncios reales y no tiene incidencias de politica. La aplicación y su `app-ads.txt` quedaron verificados el 2026-09-01; AdMob mantiene la revisión automática de preparación, normalmente de 2–3 días.
 
 Proximo paso: esperar la decision de Apple. Si aprueba, el propietario conserva el control del boton de publicacion manual; despues verificar la app publica y completar la verificacion de AdMob.

@@ -73,6 +73,10 @@ Este documento distingue hechos observados de decisiones del propietario. Un hec
 
 Se prepararon textos originales en `ca`, `de-DE`, `en-US`, `es-ES`, `fr-FR`, `it` y `pt-PT`, entre 122 y 135 caracteres, fieles a grabación continua/por sonido, segmentación configurable y biblioteca local. Quedaron en `store/store-manifest.json` y `store/PROMOTIONAL_TEXT.md`. El commit `f6cfcad` añadió una operación limitada a ese atributo; el run `33451128043` guardó y verificó por lectura los siete valores mediante la API oficial. La versión permaneció `WAITING_FOR_REVIEW` y no se alteraron `What's New`, build, submission ni publicación.
 
+### F-054 — AdMob verificó propiedad y app-ads.txt — 2026-09-01
+
+La ficha pública de Apple muestra `Sitio web del desarrollador` apuntando a `https://krazel.github.io/audio-recorder/`; el archivo raíz responde HTTP 200 y contiene el publisher `pub-3425091654264901` con relación `DIRECT`. Tras solicitar un nuevo rastreo, AdMob confirmó `Has verificado correctamente Voice Recorder Pro - Audio K (iOS)`. Comienza la revisión automática de preparación, con plazo indicado de 2–3 días y servicio limitado hasta que termine. La antigua falta de verificación queda resuelta.
+
 ### D-001 — Plataforma exclusiva iOS — 2026-08-08
 
 VoiceRecorder se completa primero y únicamente para iOS. Android queda fuera de alcance hasta una nueva orden expresa del propietario.
